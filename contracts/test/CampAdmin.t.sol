@@ -119,6 +119,18 @@ contract CampAdminTest is BaseTest {
         assertEq(badges.getCamp(devCampId).name, "PRU Blockchain Developers 2027");
     }
 
+    function test_SetCampName_RevertsOnEmpty() public {
+        vm.prank(owner);
+        vm.expectRevert(CampNameEmpty.selector);
+        badges.setCampName(devCampId, "");
+    }
+
+    function test_SetCampName_RevertsOnUnknownCamp() public {
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CampNotFound.selector, 99));
+        badges.setCampName(99, "Olmayan Kamp");
+    }
+
     function test_SetCampName_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
@@ -203,6 +215,19 @@ contract CampAdminTest is BaseTest {
         uint256 tooBig = uint256(type(uint16).max) + 1;
         vm.expectRevert(abi.encodeWithSelector(InvalidTokenIdInput.selector, 1, tooBig));
         badges.encodeTokenId(1, tooBig);
+    }
+
+    /// @dev campId üst 240 bite sığmalı; aşarsa hafta bitleriyle çakışırdı.
+    function test_EncodeTokenId_RevertsOnCampIdOverflow() public {
+        uint256 tooBig = uint256(type(uint240).max) + 1;
+        vm.expectRevert(abi.encodeWithSelector(InvalidTokenIdInput.selector, tooBig, 1));
+        badges.encodeTokenId(tooBig, 1);
+    }
+
+    function test_SetCampWeekCount_RevertsOnZero() public {
+        vm.prank(owner);
+        vm.expectRevert(WeekCountZero.selector);
+        badges.setCampWeekCount(devCampId, 0);
     }
 
     /// @dev Kodlama ve çözme her zaman birbirinin tersi olmalı.
@@ -403,6 +428,13 @@ contract CampAdminTest is BaseTest {
         badges.setBaseURI("ipfs://bafyTEST/{id}.json");
 
         assertEq(badges.uri(0), "ipfs://bafyTEST/{id}.json");
+    }
+
+    function test_SetContractURI() public {
+        vm.prank(owner);
+        badges.setContractURI("ipfs://bafyKOLEKSIYON/collection.json");
+
+        assertEq(badges.contractURI(), "ipfs://bafyKOLEKSIYON/collection.json");
     }
 
     function test_SetBaseURI_RevertsOnEmpty() public {

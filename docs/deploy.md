@@ -1,5 +1,41 @@
 # Kontrat Kurulum ve Deploy Rehberi
 
+---
+
+## 📌 CANLI DEPLOY KAYDI
+
+### Base Sepolia (testnet) — 18 Ağustos 2026
+
+| | |
+|---|---|
+| **Proxy** (kullanılacak adres) | `0x298e083aF6B494DD504144dbc7C4edF01D7fB169` |
+| Implementation | `0x2613b9d03Be7befEb9687f583e7Dda2CA117f598` |
+| Sahip (owner) | `0x133aa2E0709a4339FFFCb3ca1FAaBB5Fd26EC4aa` |
+| Zincir ID | 84532 |
+| Sürüm | 1.0.0 |
+| Doğrulama | ✅ Blockscout |
+| Gezgin | https://base-sepolia.blockscout.com/address/0x298e083aF6B494DD504144dbc7C4edF01D7fB169 |
+
+**Oluşturulan kamplar:**
+
+| campId | Ad | Hafta | Durum |
+|---|---|---|---|
+| 1 | PRU Blockchain Developers | 15 | aktif |
+| 2 | PRU Blockchain Directors | 12 | aktif |
+
+**Deploy maliyeti (ölçülen):** 0.000026538 ETH
+(4.101.281 gas implementation + 319.610 gas proxy; L1 veri ücreti işlem başına 0.000000006 ETH)
+
+> ⚠️ Sahip cüzdanı **yalnızca testnet içindir**. Mainnet deploy'unda kullanılmayacak;
+> mainnet için ayrı bir cüzdan, kendi makinende oluşturulacak.
+
+### Base Mainnet
+
+*Henüz deploy edilmedi — Faz 4'te.*
+
+---
+
+
 Bu rehber `contracts/` klasörünü sıfırdan çalışır hâle getirir ve Base
 Sepolia'ya deploy eder. Adımları sırayla takip et; her adımın sonunda ne
 görmen gerektiği yazıyor.

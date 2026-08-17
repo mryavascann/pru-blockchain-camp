@@ -169,7 +169,8 @@ contract PruCampBadges is
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
+        // Not: `__UUPSUpgradeable_init()` OpenZeppelin v5.7'de kaldırıldı —
+        // gövdesi zaten boştu ve UUPS'in kurulum gerektiren bir durumu yok.
 
         _contractURI = contractURI_;
     }
@@ -539,9 +540,9 @@ contract PruCampBadges is
     ///      çağırabilen kişi kontratın TÜM kurallarını değiştirebilir —
     ///      devredilemezliği kaldırabilir, sınırsız rozet basabilir.
     ///      Sahip cüzdanının güvenliği bu yüzden kritiktir.
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
-        // Yeni implementation adresinin sıfır olmadığını UUPSUpgradeable
-        // zaten doğruluyor; ek kontrol gerekmiyor.
-        newImplementation;
-    }
+    ///      Gövde bilerek boştur: tüm yetkilendirme `onlyOwner` değiştiricisiyle
+    ///      yapılır ve yeni implementation adresinin geçerliliğini
+    ///      `UUPSUpgradeable` zaten doğrular. Parametre adı yazılmaz —
+    ///      kullanılmayan bir isim hem derleyici hem statik analiz uyarısı üretir.
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }

@@ -11,8 +11,7 @@ import {
     NicknameHasInvalidCharacter,
     NicknameAlreadyTaken,
     NicknameCooldownActive,
-    NicknameSameAsCurrent,
-    ZeroAddress
+    NicknameSameAsCurrent
 } from "./PruTypes.sol";
 
 /// @title NicknameRegistry — Cüzdan ↔ nick eşleşmesi
@@ -155,9 +154,14 @@ abstract contract NicknameRegistry is Initializable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Nick atar veya değiştirir. Erişim kontrolü çağıranın sorumluluğunda.
+    ///
+    ///      Not: `account` için sıfır adres kontrolü YOK. Bu fonksiyon yalnızca
+    ///      `_msgSender()` ile çağrılıyor ve bir işlemin göndereni hiçbir zaman
+    ///      sıfır adres olamaz. Ulaşılamayan bir kontrol eklemek bytecode'u
+    ///      büyütür ve test kapsamında asla kapanmayan bir dal bırakır.
+    ///      Gelecekte bu fonksiyon farklı bir kaynaktan çağrılacaksa kontrol
+    ///      ORADA yapılmalıdır.
     function _setNickname(address account, string memory nickname) internal {
-        if (account == address(0)) revert ZeroAddress();
-
         // 1) Kural doğrulaması + normalizasyon
         bytes32 key = _normalizeAndValidate(nickname);
 

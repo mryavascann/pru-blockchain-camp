@@ -10,8 +10,9 @@ import {PruCampBadges} from "../src/PruCampBadges.sol";
 /// @notice Testlerde hak ediş listesi oluşturup proof üretmek için kullanılır.
 ///
 /// @dev NEDEN KENDİ KÜTÜPHANEMİZİ YAZIYORUZ:
-///      Üretimde ağacı backend `@openzeppelin/merkle-tree` (JavaScript) ile
-///      kuracak. Kontrat ise yalnızca DOĞRULAMA yapıyor ve OpenZeppelin'in
+///      Üretimde ağacı backend OpenZeppelin'in `merkle-tree` kütüphanesiyle
+///      (JavaScript) kuracak.
+///      Kontrat ise yalnızca DOĞRULAMA yapıyor ve OpenZeppelin'in
 ///      `MerkleProof.verify` fonksiyonunu kullanıyor. Bu doğrulayıcı, kardeş
 ///      düğümleri hash'lemeden önce SIRALAYAN her ağaç kurulumuyla uyumludur —
 ///      ağacın nasıl inşa edildiğinden bağımsızdır.

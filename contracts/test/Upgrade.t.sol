@@ -4,10 +4,11 @@ pragma solidity 0.8.24;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import {BaseTest, MerkleLib} from "./Helpers.sol";
 import {PruCampBadges} from "../src/PruCampBadges.sol";
-import {Camp} from "../src/PruTypes.sol";
+import {Camp, TransfersDisabled, ZeroAddress, EmptyURI} from "../src/PruTypes.sol";
 
 /// @title PruCampBadgesV2Mock — Upgrade testleri için sahte 2. sürüm
 /// @notice Gerçek bir sürüm değildir; yalnızca upgrade mekanizmasının
@@ -54,6 +55,29 @@ contract UpgradeTest is BaseTest {
     function test_Proxy_CannotBeInitializedTwice() public {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         badges.initialize(attacker, BASE_URI, CONTRACT_URI);
+    }
+
+    /// @dev Sahipsiz bir kontrat deploy edilemez.
+    ///      Bu, deploy script'indeki bir yazım hatasının (boş OWNER_ADDRESS)
+    ///      sessizce sahipsiz bir kontrat üretmesini engeller.
+    function test_Initialize_RevertsOnZeroOwner() public {
+        PruCampBadges freshImpl = new PruCampBadges();
+        bytes memory initData = abi.encodeCall(
+            PruCampBadges.initialize, (address(0), BASE_URI, CONTRACT_URI)
+        );
+
+        vm.expectRevert(ZeroAddress.selector);
+        new ERC1967Proxy(address(freshImpl), initData);
+    }
+
+    /// @dev Metadata URI'si olmadan deploy edilemez — rozetler görselsiz doğardı.
+    function test_Initialize_RevertsOnEmptyBaseURI() public {
+        PruCampBadges freshImpl = new PruCampBadges();
+        bytes memory initData =
+            abi.encodeCall(PruCampBadges.initialize, (owner, "", CONTRACT_URI));
+
+        vm.expectRevert(EmptyURI.selector);
+        new ERC1967Proxy(address(freshImpl), initData);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -233,8 +257,18 @@ contract UpgradeTest is BaseTest {
         vm.prank(owner);
         badges.upgradeToAndCall(address(v2), "");
 
+        // DİKKAT: tokenId önceden hesaplanmalı.
+        // Solidity argümanları çağrıdan ÖNCE değerlendirir; `encodeTokenId`
+        // argümanın içinde bırakılırsa `vm.expectRevert` asıl transferi değil
+        // o zararsız çağrıyı beklemeye başlar ve test sessizce yanlış şeyi
+        // ölçer. (Bu tuzağa bir kez düşüldü, notu burada duruyor.)
+        uint256 tokenId = badges.encodeTokenId(devCampId, 1);
+
         vm.prank(alice);
-        vm.expectRevert();
-        badges.safeTransferFrom(alice, bob, badges.encodeTokenId(devCampId, 1), 1, "");
+        vm.expectRevert(TransfersDisabled.selector);
+        badges.safeTransferFrom(alice, bob, tokenId, 1, "");
+
+        // Rozet hâlâ alice'te
+        assertEq(badges.balanceOf(alice, tokenId), 1);
     }
 }

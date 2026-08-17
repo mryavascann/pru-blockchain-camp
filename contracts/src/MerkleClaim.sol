@@ -35,10 +35,11 @@ import {MerkleRootNotSet, InvalidMerkleProof, AlreadyClaimed} from "./PruTypes.s
 ///      kapatır: tek hash'lense, bir saldırgan ağacın iç düğümlerinden birini
 ///      yaprak gibi göstererek sahte proof üretebilirdi.
 ///
-///      Bu format `@openzeppelin/merkle-tree` JavaScript kütüphanesinin
+///      Bu format OpenZeppelin'in `merkle-tree` JavaScript kütüphanesinin
 ///      `StandardMerkleTree.of(values, ["address","uint256","uint256"])`
 ///      çıktısıyla BİREBİR uyumludur. Backend (Faz 2) ağacı o kütüphaneyle
 ///      kuracak, kontrat burada doğrulayacak.
+///      npm paketi: openzeppelin/merkle-tree
 ///      https://github.com/OpenZeppelin/merkle-tree
 ///
 ///      NEDEN campId VE week DE YAPRAĞA GİRİYOR

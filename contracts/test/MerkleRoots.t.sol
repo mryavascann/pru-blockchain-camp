@@ -227,9 +227,9 @@ contract MerkleRootsTest is BaseTest {
                               YAPRAK FORMATI
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Yaprak formatının kilitlenmesi. Bu format `@openzeppelin/merkle-tree`
-    ///      JavaScript kütüphanesinin `StandardMerkleTree` çıktısıyla uyumlu
-    ///      olmak ZORUNDA — backend ağacı onunla kuracak.
+    /// @dev Yaprak formatının kilitlenmesi. Bu format OpenZeppelin'in
+    ///      `merkle-tree` JavaScript kütüphanesindeki `StandardMerkleTree`
+    ///      çıktısıyla uyumlu olmak ZORUNDA — backend ağacı onunla kuracak.
     ///
     ///      Bu test formatı değiştirmeye karşı bir bekçidir: birisi çift
     ///      hash'lemeyi tek hash'e indirirse burada kırmızı yanar.

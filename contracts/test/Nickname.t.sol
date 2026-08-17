@@ -90,12 +90,37 @@ contract NicknameTest is BaseTest {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev TÜRKÇE KARAKTER REDDİ — bu bir güvenlik kuralıdır.
-    ///      "buğra" içindeki 'ğ' iki baytlık bir UTF-8 karakteridir; ilk baytı
-    ///      (0xC4) konum 3'te izinli kümenin dışındadır.
+    ///      "buğra" içindeki 'ğ' iki baytlık bir UTF-8 karakterdir (0xC4 0x9F).
+    ///      Kontrat dizeyi BAYT bayt tarar, karakter karakter değil; bu yüzden
+    ///      hata konumu 2'dir: b(0) u(1) ğ(2-3) r(4) a(5).
+    ///
+    ///      Bu ayrım frontend için önemli: kullanıcıya "3. karakter geçersiz"
+    ///      demek yanlış olur. Hata konumunu doğrudan göstermek yerine
+    ///      "Sadece a-z, A-Z, 0-9 ve _ kullanılabilir" mesajı gösterilecek.
     function test_Register_RejectsTurkishCharacters() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(NicknameHasInvalidCharacter.selector, 3));
+        vm.expectRevert(abi.encodeWithSelector(NicknameHasInvalidCharacter.selector, 2));
         badges.registerNickname(unicode"buğra");
+    }
+
+    /// @dev Türkçe karakterlerin hepsi reddedilmeli.
+    function test_Register_RejectsAllTurkishCharacters() public {
+        string[6] memory samples = [
+            unicode"çınar",
+            unicode"gökhan",
+            unicode"şule",
+            unicode"ümit",
+            unicode"İbrahim",
+            unicode"ağa_dev"
+        ];
+
+        for (uint256 i = 0; i < samples.length; ++i) {
+            vm.prank(alice);
+            vm.expectRevert();
+            badges.registerNickname(samples[i]);
+        }
+
+        assertFalse(badges.hasNickname(alice));
     }
 
     function test_Register_RejectsSpace() public {

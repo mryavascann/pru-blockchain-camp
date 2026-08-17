@@ -16,11 +16,16 @@ keystore/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
-contracts/lib/
 contracts/docs/
 
+# NOT: `contracts/lib/` BİLİNÇLİ olarak yok sayılmıyor.
+# Bağımlılıklar git submodule olarak eklendi; .gitmodules ve submodule
+# işaretçileri repoda durur. Böylece projeyi klonlayan herkes OpenZeppelin'in
+# TAM OLARAK aynı sürümünü alır. Kontrat projelerinde bu kritik: farklı bir OZ
+# sürümü farklı bytecode üretir ve deploy edilmiş kontratla doğrulama tutmaz.
+#
 # `broadcast/` deploy geçmişini tutar; içinde RPC URL ve adresler olabilir.
-# Deploy kayıtlarını saklamak istersen `broadcast/**/dry-run/` hariç tut.
+# `cache/` içinde Foundry'nin "sensitive values" dosyaları var — asla commit edilmez.
 
 # ---- Node / Next.js ----
 node_modules/
