@@ -208,6 +208,72 @@ export async function readOwner(): Promise<Address> {
   return result as Address;
 }
 
+/**
+ * Çok sayıda (adres, tokenId) ikilisinin bakiyesini TEK RPC çağrısında okur.
+ *
+ * LEADERBOARD'IN MOTORU BU FONKSİYON.
+ *
+ * 40 katılımcı × 27 hafta = 1080 sorgu demek. ERC-721 olsaydı bu 1080 ayrı
+ * `ownerOf` çağrısı olurdu ve leaderboard sayfası açılmazdı. ERC-1155'in
+ * `balanceOfBatch` fonksiyonu hepsini tek istekte döner.
+ *
+ * Yine de sonsuz büyütmüyoruz: çok büyük `eth_call` istekleri RPC
+ * sağlayıcılarında zaman aşımına uğrar. `CHUNK_SIZE` ile parçalıyoruz.
+ */
+const BALANCE_CHUNK_SIZE = 400;
+
+export async function readBalancesForPairs(
+  pairs: readonly {address: Address; tokenId: bigint}[],
+): Promise<boolean[]> {
+  if (pairs.length === 0) return [];
+
+  const client = getPublicClient();
+  const results: boolean[] = [];
+
+  for (let i = 0; i < pairs.length; i += BALANCE_CHUNK_SIZE) {
+    const chunk = pairs.slice(i, i + BALANCE_CHUNK_SIZE);
+
+    const balances = (await client.readContract({
+      ...contract,
+      functionName: "balanceOfBatch",
+      args: [
+        chunk.map((p) => getAddress(p.address)),
+        chunk.map((p) => p.tokenId),
+      ],
+    })) as readonly bigint[];
+
+    for (const balance of balances) {
+      results.push(balance > 0n);
+    }
+  }
+
+  return results;
+}
+
+/** Birden fazla adresin nickini tek seferde okur (sırayla, küçük listeler için) */
+export async function readNicknames(
+  addresses: readonly Address[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+
+  // Nickler `string` döndüğü için `balanceOfBatch` gibi toplu bir fonksiyon
+  // yok. Katılımcı sayısı düşük olduğu için paralel okuma yeterli.
+  const results = await Promise.all(
+    addresses.map(async (address) => {
+      try {
+        return [address.toLowerCase(), await readNickname(address)] as const;
+      } catch {
+        return [address.toLowerCase(), ""] as const;
+      }
+    }),
+  );
+
+  for (const [address, nickname] of results) {
+    map.set(address, nickname);
+  }
+  return map;
+}
+
 /** Kontrat duraklatılmış mı? */
 export async function readPaused(): Promise<boolean> {
   const result = await getPublicClient().readContract({

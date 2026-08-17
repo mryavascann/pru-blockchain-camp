@@ -1,0 +1,88 @@
+# =============================================================================
+# Notion senkronu — emniyet ağı (6 saatte bir)
+#
+# Üç katmanlı senkron planının İKİNCİ katmanı:
+#   1. Webhook  → saniyeler içinde  (birincil, Notion tetikler)
+#   2. Cron     → 6 saatte bir       (BU DOSYA — webhook kaçarsa yakalar)
+#   3. Manuel   → admin panelinden   (senin kontrolün)
+#
+# NEDEN VERCEL CRON DEĞİL:
+# Vercel'in Hobby planında cron job'lar günde EN FAZLA BİR KEZ çalışabilir;
+# 6 saatlik bir ifade deploy sırasında hata verir. GitHub Actions ücretsiz
+# katmanda bu sıklığı destekliyor ve repo zaten burada.
+#
+# Aylık maliyet: ~120 çalıştırma × ~1 dk ≈ 120 dakika.
+# Ücretsiz katman 2000 dakika — rahat sığıyor.
+#
+# -----------------------------------------------------------------------------
+# KURULUM (bir kez yapılır)
+#
+#   GitHub repo → Settings → Secrets and variables → Actions → New secret
+#
+#     APP_URL      = https://prublockchain.vercel.app
+#     CRON_SECRET  = web/.env.local içindeki CRON_SECRET ile AYNI değer
+#
+# -----------------------------------------------------------------------------
+# NOT: GitHub Actions'ın zamanlaması garanti değildir; yoğun saatlerde
+# gecikebilir. Sorun değil — bu yalnızca yedek katman, birincil senkron
+# webhook üzerinden saniyeler içinde çalışıyor.
+# =============================================================================
+
+name: Notion Senkronu
+
+on:
+  schedule:
+    # Her gün 6 saatte bir: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: "0 */6 * * *"
+  # Elle tetikleme (Actions sekmesinden "Run workflow")
+  workflow_dispatch:
+
+# Aynı anda birden fazla senkron çalışmasını engelle — Notion hız limitini
+# ikiye katlamanın anlamı yok.
+concurrency:
+  group: notion-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Senkronu tetikle
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::APP_URL veya CRON_SECRET tanımlı değil."
+            echo "Repo Settings → Secrets and variables → Actions altından ekle."
+            exit 1
+          fi
+
+          echo "Senkron isteği gönderiliyor: $APP_URL/api/cron/sync"
+
+          # -sS  : sessiz ama hataları göster
+          # -w   : sonuna HTTP kodunu ekle
+          # --max-time 300 : senkron 27 hafta için ~75 sn sürüyor, pay bırak
+          response=$(curl -sS -w "\n%{http_code}" --max-time 300 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/sync")
+
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -n1)
+
+          echo "HTTP $status"
+          echo "$body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Senkron başarısız (HTTP $status)"
+            exit 1
+          fi
+
+          # Uygulama seviyesinde başarısızlık (HTTP 200 ama ok:false)
+          if echo "$body" | grep -q '"ok":false'; then
+            echo "::warning::Senkron tamamlandı ama bazı uyarılar var."
+            echo "Not: Başarısız senkron MEVCUT İÇERİĞİ SİLMEZ —"
+            echo "site son başarılı hâliyle çalışmaya devam eder."
+          fi
