@@ -14,11 +14,14 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
     "verify:merkle": "tsx --env-file=.env.local scripts/verify-merkle-format.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "notion:probe": "tsx --env-file=.env.local scripts/notion-probe.ts",
+    "notion:sync": "tsx --env-file=.env.local scripts/notion-sync.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.25.2",
     "@openzeppelin/merkle-tree": "^1.0.8",
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "iron-session": "^8.0.4",
     "next": "16.3.1",

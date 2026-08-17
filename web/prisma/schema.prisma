@@ -55,8 +55,12 @@ model Camp {
   /// null ise hiçbir hafta public değildir.
   publicWeekNumber Int?
 
-  /// Bu kampın içeriğinin çekileceği Notion database (data source) kimliği.
-  notionDataSourceId String?
+  /// Bu kampın içeriğinin çekileceği Notion kaynağının kimliği.
+  ///
+  /// Şu an bir SAYFA kimliği (haftalar o sayfadaki iç içe toggle blokları).
+  /// İleride yapı bir database'e taşınırsa aynı alan data source kimliğini
+  /// tutar — ayrıştırıcı ikisini de destekleyecek şekilde yazıldı.
+  notionSourceId String?
 
   /// Kampın başlangıç tarihi (bilgi amaçlı, hafta hesabında kullanılmaz)
   startDate DateTime?
@@ -120,8 +124,25 @@ model Week {
   /// Hafta başlığı — HERKESE AÇIK (müfredat özetinde görünür)
   title String
 
-  /// Vitrin metni — HERKESE AÇIK (kilitli ekranda gösterilir)
+  /// Bulunduğu aşama/ay başlığı ("🔵 1. AŞAMA: Temeller ve Güçlü JavaScript")
+  /// HERKESE AÇIK — müfredat özetinde gruplama için kullanılır.
+  stage String?
+
+  /// Vitrin metni — HERKESE AÇIK (kilitli ekranda gösterilir).
+  ///
+  /// Notion'da bilerek yazılmış bir `callout`/`quote` bloğu varsa otomatik
+  /// doldurulur. Yoksa BOŞ KALIR ve admin panelinde doldurulması istenir —
+  /// ders içeriğinin ilk paragrafı otomatik olarak buraya KOPYALANMAZ.
   teaser String @default("")
+
+  /// Notion'dan çıkarılan özet ÖNERİSİ. `teaser` boşken admin paneline
+  /// "şunu kullanmak ister misin?" diye sunulur. Kilitli ekrana ASLA gitmez.
+  teaserSuggestion String?
+
+  /// Önerinin kaynağı: "callout" | "quote" | "paragraph"
+  /// "paragraph" ise bu gerçek ders içeriğidir — admin onayı olmadan
+  /// kullanılmaz.
+  teaserSource String?
 
   /// Tam içerik, HTML'e dönüştürülmüş — KİLİTLİ
   contentHtml String?
@@ -136,8 +157,9 @@ model Week {
 
   // ---- Notion senkron durumu ----
 
-  /// Notion'daki sayfanın kimliği
-  notionPageId String? @unique
+  /// Notion'daki toggle bloğunun kimliği.
+  /// Webhook geldiğinde hangi haftanın değiştiğini bulmak için kullanılır.
+  notionBlockId String? @unique
 
   /// İçeriğin hash'i. Değişmemişse gereksiz yazma ve cache temizleme yapılmaz.
   contentHash String?
