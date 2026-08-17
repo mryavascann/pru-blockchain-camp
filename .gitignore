@@ -1,0 +1,62 @@
+# ============================================================================
+# PRU Blockchain Kulübü — git yok sayma listesi
+# Kural: sır içeren HİÇBİR dosya repoya girmez.
+# ============================================================================
+
+# ---- Sırlar (en kritik bölüm) ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+keystore/
+
+# ---- Foundry ----
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+contracts/lib/
+contracts/docs/
+
+# `broadcast/` deploy geçmişini tutar; içinde RPC URL ve adresler olabilir.
+# Deploy kayıtlarını saklamak istersen `broadcast/**/dry-run/` hariç tut.
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Prisma ----
+web/prisma/*.db
+web/prisma/*.db-journal
+
+# ---- Test / kapsam çıktıları ----
+coverage/
+lcov.info
+*.lcov
+
+# ---- Editör / işletim sistemi ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Görseller: kaynak dosyalar repoya girmez, çıktılar girer ----
+art/*.psd
+art/*.ai
+art/*.fig
+art/**/kaynak/
+
+# ---- Loglar ----
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*

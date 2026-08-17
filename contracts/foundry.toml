@@ -1,0 +1,56 @@
+# PRU Blockchain Kulübü — Foundry yapılandırması
+# Dokümantasyon: https://book.getfoundry.sh/reference/config/
+
+[profile.default]
+src           = "src"
+out           = "out"
+test          = "test"
+script        = "script"
+libs          = ["lib"]
+
+# Solidity sürümü sabitlendi. Derleyici sürümünün proje ömrü boyunca
+# değişmemesi, üretilen bytecode'un tekrar edilebilir olmasını sağlar
+# (kontrat doğrulaması ve upgrade karşılaştırmaları için kritik).
+solc_version  = "0.8.24"
+
+# Base (mainnet ve Sepolia) Cancun opcode setini destekliyor.
+evm_version   = "cancun"
+
+optimizer      = true
+optimizer_runs = 200
+
+# via_ir kapalı: derleme süresi çok daha kısa ve bu kontrat boyutunda
+# ek optimizasyona ihtiyaç yok. Kontrat 24 KB sınırına yaklaşırsa açılabilir.
+via_ir = false
+
+# Testlerde kullanılmayan değişken/parametre uyarılarını bastırmıyoruz;
+# uyarılar bilinçli okunmalı.
+ignored_warnings_from = []
+
+[profile.default.fuzz]
+# Fuzz testleri varsayılan 256 yerine 512 tur koşsun — merkle proof ve
+# nick doğrulama testlerinin kapsamı bundan doğrudan faydalanıyor.
+runs = 512
+
+[profile.ci]
+# CI'da daha agresif fuzzing
+fuzz = { runs = 2048 }
+
+[fmt]
+line_length       = 100
+tab_width         = 4
+bracket_spacing   = false
+int_types         = "long"
+multiline_func_header = "params_first"
+number_underscore = "thousands"
+quote_style       = "double"
+
+# Ağ uç noktaları — değerler .env dosyasından okunur, repoya girmez.
+[rpc_endpoints]
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+base         = "${BASE_RPC_URL}"
+
+# Kontrat doğrulaması için BaseScan
+[etherscan]
+base_sepolia = {key = "${BASESCAN_API_KEY}", chain = 84532}
+base         = {key = "${BASESCAN_API_KEY}", chain = 8453}
