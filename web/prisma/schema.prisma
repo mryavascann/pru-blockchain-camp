@@ -1,0 +1,342 @@
+// ============================================================================
+// PRU Blockchain Kulübü — Veritabanı şeması
+//
+// TASARIM İLKESİ: Zincir ve veritabanı FARKLI şeyler tutar.
+//
+//   Zincir  → yapı ve yetki : kimin hangi rozeti var, kamplar, merkle root'lar
+//   Veritabanı → içerik ve süreç : Notion metinleri, başvurular, onaylar, cache
+//
+// Bu ayrımı bozmamak kritik. Örneğin "alice 3. haftayı tamamladı" bilgisi
+// veritabanında `WeeklyCompletion` olarak durur (senin onayınla), zincirde ise
+// bir merkle root'un içinde durur. İkisi aynı şey değildir: DB "hak ediyor"
+// der, zincir "aldı" der.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+//                                  KAMPLAR
+// ============================================================================
+
+/// Bir kamp programı. `id` alanı ZİNCİRDEKİ campId ile birebir aynıdır.
+///
+/// Neden otomatik artan id kullanmıyoruz: tokenId hesabı `(campId << 16) | week`
+/// formülüne dayanıyor. Veritabanı ile zincir farklı campId'ler kullanırsa
+/// yanlış rozet gösterilir. Bu yüzden id elle, zincirdeki değerle yazılır.
+model Camp {
+  /// Zincirdeki campId (1'den başlar)
+  id Int @id
+
+  /// URL'de kullanılan kısa ad: "developers", "directors"
+  slug String @unique
+
+  /// Görünen ad. Zincirdeki adla eşleşmeli (senkron admin panelinden yapılır).
+  name String
+
+  /// Landing ve müfredat sayfasında görünen kısa tanıtım. HERKESE AÇIK.
+  description String?
+
+  /// Zincirdeki weekCount ile eşleşmeli. Sadece artabilir.
+  weekCount Int
+
+  /// Kamp yeni rozet almaya açık mı (zincirdeki `active` ile eşleşmeli)
+  active Boolean @default(true)
+
+  /// HANGİ HAFTA HERKESE AÇIK OLACAK.
+  /// Bu bir ERİŞİM KONTROLÜ kararıdır, içerik değil — bu yüzden Notion'da
+  /// değil burada durur ve admin panelinden değiştirilir.
+  /// null ise hiçbir hafta public değildir.
+  publicWeekNumber Int?
+
+  /// Bu kampın içeriğinin çekileceği Notion database (data source) kimliği.
+  notionDataSourceId String?
+
+  /// Kampın başlangıç tarihi (bilgi amaçlı, hafta hesabında kullanılmaz)
+  startDate DateTime?
+
+  /// Sıralama (landing sayfasında hangi kamp önce görünsün)
+  displayOrder Int @default(0)
+
+  weeks        Week[]
+  applications Application[]
+  completions  WeeklyCompletion[]
+  merkleTrees  MerkleTree[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+// ============================================================================
+//                                  HAFTALAR
+// ============================================================================
+
+enum WeekStatus {
+  /// Notion'da hazırlanıyor — sitede HİÇ görünmez
+  DRAFT
+
+  /// Yayında — müfredat listesinde görünür, içeriği erişim kurallarına tabi
+  PUBLISHED
+}
+
+enum SyncStatus {
+  /// Henüz hiç senkron edilmedi
+  PENDING
+
+  /// Son senkron başarılı
+  OK
+
+  /// Son senkron başarısız — İÇERİK SİLİNMEZ, eski hâli durur
+  FAILED
+}
+
+/// Bir kampın bir haftası. İçeriği Notion'dan senkronlanır.
+///
+/// ⚠️ GÜVENLİK SINIRI BU MODELDE:
+///
+///   `title`, `teaser`, `publishDate`  →  HERKESE AÇIK
+///   `contentHtml`, `rawBlocks`        →  KİLİTLİ (yalnızca doğrulanmış oturum)
+///
+/// `teaser` gerçek içeriğin KESİLMİŞ HÂLİ DEĞİLDİR. Notion'daki ayrı bir
+/// "Özet" alanından gelir ve kasıtlı yazılmış bir vitrin metnidir. Bu sayede
+/// kilitli ekrana gerçek içeriğin tek baytı bile gitmez — sızıntı mümkün değil.
+model Week {
+  id String @id @default(cuid())
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  /// 1'den başlar
+  weekNumber Int
+
+  /// Hafta başlığı — HERKESE AÇIK (müfredat özetinde görünür)
+  title String
+
+  /// Vitrin metni — HERKESE AÇIK (kilitli ekranda gösterilir)
+  teaser String @default("")
+
+  /// Tam içerik, HTML'e dönüştürülmüş — KİLİTLİ
+  contentHtml String?
+
+  /// Notion'dan gelen ham bloklar — KİLİTLİ. Yeniden render için saklanır.
+  rawBlocks Json?
+
+  status WeekStatus @default(DRAFT)
+
+  /// Haftanın açılış tarihi — HERKESE AÇIK
+  publishDate DateTime?
+
+  // ---- Notion senkron durumu ----
+
+  /// Notion'daki sayfanın kimliği
+  notionPageId String? @unique
+
+  /// İçeriğin hash'i. Değişmemişse gereksiz yazma ve cache temizleme yapılmaz.
+  contentHash String?
+
+  /// Son BAŞARILI senkron zamanı
+  syncedAt DateTime?
+
+  syncStatus SyncStatus @default(PENDING)
+
+  /// Son hatanın mesajı (admin panelinde gösterilir)
+  lastError String?
+
+  /// Son deneme zamanı (başarılı ya da değil)
+  lastAttemptAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campId, weekNumber])
+  @@index([campId, status])
+}
+
+// ============================================================================
+//                           BAŞVURULAR (FAZ A)
+// ============================================================================
+
+enum ApplicationStatus {
+  /// Bekliyor — admin panelinde onay/red kuyruğunda
+  PENDING
+
+  /// Onaylandı — `WeeklyCompletion` kayıtları üretildi
+  APPROVED
+
+  /// Reddedildi
+  REJECTED
+}
+
+/// Geri doldurma başvurusu: "Ben bu kampın N. haftasındayım."
+///
+/// ⚠️ BU SİSTEMİN TEK GÜVEN NOKTASI.
+/// Beyan edilen hafta hiçbir otomatik doğrulamadan geçmez — bilinçli bir
+/// tercih. Admin (kulüp yöneticisi) her başvuruyu elle inceler ve onaylar.
+/// Onay verilene kadar zincirde hiçbir şey olmaz.
+model Application {
+  id String @id @default(cuid())
+
+  /// Cüzdan adresi — HER ZAMAN KÜÇÜK HARF saklanır.
+  /// Gerekçe: Postgres'te büyük/küçük harf duyarlı karşılaştırma, aynı cüzdanın
+  /// iki farklı kayıt oluşturmasına yol açar. Görüntülerken viem'in
+  /// `getAddress()` fonksiyonu ile checksum'lı hâle çevrilir.
+  address String
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  /// Katılımcının beyan ettiği hafta. 1..camp.weekCount aralığında olmalı.
+  declaredWeek Int
+
+  /// Katılımcının seçtiği nick (henüz zincirde değil, sadece beyan).
+  /// Zincire yazılması kullanıcının kendi işlemiyle olur.
+  nickname String?
+
+  /// Katılımcının notu ("3. haftadan katıldım, X arkadaşım referans")
+  note String?
+
+  status ApplicationStatus @default(PENDING)
+
+  /// Onaylayan/reddeden admin adresi (küçük harf)
+  reviewedBy String?
+
+  reviewedAt DateTime?
+
+  /// Adminin notu ("teyit edildi", "kayıt bulunamadı")
+  reviewNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Bir kişi bir kampa yalnızca bir kez başvurabilir.
+  /// Farklı kamplara ayrı ayrı başvurabilir (çift kayıt şartı).
+  @@unique([address, campId])
+  @@index([status, createdAt])
+}
+
+// ============================================================================
+//                    HAFTA TAMAMLAMALARI (HAK EDİŞ LİSTESİ)
+// ============================================================================
+
+/// "Bu adres, bu kampın bu haftasını tamamladı" kaydı.
+/// Merkle ağaçları DOĞRUDAN bu tablodan üretilir.
+///
+/// İki yoldan oluşur:
+///   1. Geri doldurma onayı → beyan edilen hafta N ise 1..N için N kayıt
+///   2. Haftalık işleyiş    → admin o haftayı tamamlayanları işaretler
+model WeeklyCompletion {
+  id String @id @default(cuid())
+
+  /// Küçük harf adres
+  address String
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  weekNumber Int
+
+  /// Kaydın kaynağı: "backfill" | "weekly" | "import"
+  /// Denetim için tutulur — bir rozetin nereden geldiği her zaman izlenebilir.
+  source String @default("weekly")
+
+  /// Bu kaydı oluşturan admin adresi
+  createdBy String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([address, campId, weekNumber])
+  @@index([campId, weekNumber])
+  @@index([address])
+}
+
+// ============================================================================
+//                              MERKLE AĞAÇLARI
+// ============================================================================
+
+/// Bir (kamp, hafta) için üretilmiş merkle ağacı.
+///
+/// Ağacın TAMAMI saklanır (`treeJson`). Gerekçe: proof üretmek için ağacın
+/// yeniden kurulması gerekir. Her istekte tüm listeyi çekip ağacı baştan
+/// kurmak yerine, `StandardMerkleTree.load()` ile hazır ağaç yüklenir.
+///
+/// Aynı (kamp, hafta) için birden fazla kayıt olabilir — listeye sonradan biri
+/// eklenirse yeni bir ağaç üretilir. En son üretilen (`createdAt` en büyük)
+/// geçerli olandır; zincire yazılan da odur.
+model MerkleTree {
+  id String @id @default(cuid())
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  weekNumber Int
+
+  /// 0x ile başlayan 32 baytlık kök
+  root String
+
+  /// `StandardMerkleTree.dump()` çıktısı — proof üretimi için
+  treeJson Json
+
+  /// Ağaçtaki yaprak sayısı (= hak eden kişi sayısı)
+  entryCount Int
+
+  /// Zincire yazıldıysa işlem hash'i. null ise henüz yayınlanmamış.
+  txHash String?
+
+  /// Zincire yazıldığı an
+  publishedAt DateTime?
+
+  /// Bu ağacı üreten admin adresi
+  createdBy String?
+
+  createdAt DateTime @default(now())
+
+  @@index([campId, weekNumber, createdAt])
+  @@index([root])
+}
+
+// ============================================================================
+//                              SENKRON GÜNLÜĞÜ
+// ============================================================================
+
+/// Her Notion senkron denemesinin kaydı. Admin panelindeki
+/// "son senkron ne zaman, başarılı mıydı" göstergesini besler.
+model SyncRun {
+  id String @id @default(cuid())
+
+  /// Neyin tetiklediği: "webhook" | "cron" | "manual"
+  trigger String
+
+  /// Hedef: belirli bir kamp veya "all"
+  scope String @default("all")
+
+  /// Kaç hafta güncellendi
+  updatedCount Int @default(0)
+
+  /// Kaç hafta değişmemişti (hash aynı)
+  unchangedCount Int @default(0)
+
+  /// Kaç hafta hata verdi
+  failedCount Int @default(0)
+
+  /// Genel sonuç
+  success Boolean @default(false)
+
+  /// Hata özeti
+  error String?
+
+  /// Süre (ms)
+  durationMs Int?
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([startedAt])
+}

@@ -41,6 +41,10 @@ next-env.d.ts
 web/prisma/*.db
 web/prisma/*.db-journal
 
+# Üretilen Prisma istemcisi — şemadan yeniden üretilir, repoda durmaz.
+# Klonlayan kişi `npx prisma generate` çalıştırır.
+web/lib/generated/
+
 # ---- Test / kapsam çıktıları ----
 coverage/
 lcov.info
