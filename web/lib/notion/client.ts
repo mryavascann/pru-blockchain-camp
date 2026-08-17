@@ -77,9 +77,18 @@ export async function throttled<T>(operation: () => Promise<T>): Promise<T> {
         throw error;
       }
 
-      const retryAfterHeader = error.headers?.get?.("retry-after");
-      const retryAfterMs = retryAfterHeader
-        ? Number(retryAfterHeader) * 1000
+      // Notion `Retry-After` başlığı gönderirse ona uyulur; yoksa üstel
+      // geri çekilme (1sn, 2sn, 4sn, 8sn) uygulanır.
+      //
+      // SDK'nın `headers` tipi sürümler arasında değiştiği için savunmacı
+      // okuyoruz — başlık okunamazsa geri çekilmeye düşmek zararsız.
+      const headers = error.headers as unknown;
+      const retryAfterRaw =
+        headers instanceof Headers ? headers.get("retry-after") : null;
+
+      const parsedRetry = retryAfterRaw ? Number(retryAfterRaw) : Number.NaN;
+      const retryAfterMs = Number.isFinite(parsedRetry)
+        ? parsedRetry * 1000
         : 1000 * 2 ** attempt;
 
       console.warn(

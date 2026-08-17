@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    // ES2020: tokenId hesabında `bigint` sabitleri (65539n) kullanılıyor.
+    // Bunlar ES2020 öncesinde derlenmez. `number` kullanmak seçenek değil —
+    // (campId << 16) işlemi güvenli tamsayı sınırını aşabilir ve sessiz
+    // yuvarlama hatası üretir.
+    "target": "ES2020",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,

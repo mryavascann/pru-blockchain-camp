@@ -65,6 +65,10 @@ model Camp {
   /// Kampın başlangıç tarihi (bilgi amaçlı, hafta hesabında kullanılmaz)
   startDate DateTime?
 
+  /// Koleksiyon kapak görselinin IPFS CID'i (`bafy...`, `ipfs://` öneksiz).
+  /// OpenSea koleksiyon avatarı olarak kullanılır.
+  coverCid String?
+
   /// Sıralama (landing sayfasında hangi kamp önce görünsün)
   displayOrder Int @default(0)
 
@@ -154,6 +158,13 @@ model Week {
 
   /// Haftanın açılış tarihi — HERKESE AÇIK
   publishDate DateTime?
+
+  /// Bu haftanın rozet görselinin IPFS CID'i (`bafy...`, `ipfs://` öneksiz).
+  ///
+  /// Görseller Faz 3'te üretilip Pinata'ya yüklenecek. Boşken metadata uç
+  /// noktası yer tutucu bir görsel döner — NFT "bozuk" görünmez, sadece
+  /// henüz tasarlanmamış görünür.
+  imageCid String?
 
   // ---- Notion senkron durumu ----
 
