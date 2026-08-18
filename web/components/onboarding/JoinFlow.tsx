@@ -2,11 +2,17 @@
 
 /**
  * ============================================================================
- * Kampa katılım akışı — üç adım
+ * Kampa katılım akışı — dört adım
  *
  *   1. Cüzdanı bağla ve imzala   (ücretsiz, zincire gitmez)
  *   2. Nick belirle              (zincir işlemi, gas gerekir)
- *   3. Haftanı bildir            (zincir dışı, admin onayına gider)
+ *   3. Kendini tanıt             (zincir dışı, yalnızca yönetim görür)
+ *   4. Haftanı bildir            (zincir dışı, admin onayına gider)
+ *
+ * 4. ADIM HER KAMP İÇİN AYRI: Bir kişi birden fazla kampa katılabilir ve
+ * kamplarda FARKLI haftalarda olabilir — hem Developers'ta 4. hafta, hem
+ * Directors'ta 2. hafta gibi. Bu yüzden tek bir kamp/hafta seçimi yerine
+ * her kamp kendi bloğunda, kendi haftasıyla beyan ediliyor.
  *
  * brand.md §9.1: cüzdan kapıda zorlanmaz. Kullanıcı buraya kendi isteğiyle
  * geliyor, o yüzden burada bağlantı istemek doğru.
@@ -45,6 +51,15 @@ type Camp = {
   active: boolean;
 };
 
+type ApplicationRecord = {
+  id: string;
+  campId: number;
+  declaredWeek: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewNote: string | null;
+  camp: {slug: string; name: string; weekCount: number};
+};
+
 export function JoinFlow({camps}: {camps: Camp[]}) {
   const {isConnected} = useAccount();
   const {session, needsSignIn, wrongNetwork, refresh} = useAuth();
@@ -68,6 +83,23 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
   });
 
   const profileDone = isProfileComplete(profileQuery.data ?? null);
+
+  /*
+   * Kişinin mevcut başvuruları. Her kampın kendi durumu var: hiç
+   * başvurmamış / bekliyor / onaylanmış / reddedilmiş.
+   */
+  const applicationsQuery = useQuery({
+    queryKey: ["applications"],
+    queryFn: async (): Promise<ApplicationRecord[]> => {
+      const response = await fetch("/api/applications", {cache: "no-store"});
+      const json = await response.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data.applications;
+    },
+    enabled: signedIn && profileDone,
+  });
+
+  const applications = applicationsQuery.data ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,10 +146,17 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
       <Step
         index={4}
         title={t.onboarding.step3}
-        done={false}
+        /* En az bir kampa başvurulduysa adım tamamlanmış sayılır;
+           diğer kamplar için blok açık kalmaya devam eder. */
+        done={applications.length > 0}
         active={signedIn && hasNickname && profileDone}
       >
-        <ApplicationStep camps={camps} />
+        <ApplicationStep
+          camps={camps}
+          applications={applications}
+          loading={applicationsQuery.isLoading}
+          onChanged={() => void applicationsQuery.refetch()}
+        />
       </Step>
     </div>
   );
@@ -447,131 +486,61 @@ function ProfileStep({
 /*                          4. ADIM — HAFTA BEYANI                            */
 /* -------------------------------------------------------------------------- */
 
-function ApplicationStep({camps}: {camps: Camp[]}) {
-  const active = camps.filter((c) => c.active);
-  const [campSlug, setCampSlug] = useState(active[0]?.slug ?? "");
-  const [week, setWeek] = useState(1);
-  const [note, setNote] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
-  const [message, setMessage] = useState("");
+/**
+ * HER KAMP İÇİN AYRI BEYAN.
+ *
+ * Önceki hâli tek bir açılır listeydi: bir kamp seç, bir hafta seç, gönder.
+ * Bu, iki kampa birden katılan kişiyi çıkmaza sokuyordu — birinci kampa
+ * başvurduktan sonra ikincisini beyan edecek yer kalmıyordu.
+ *
+ * Şimdi her kamp kendi bloğunda ve kendi durumunu gösteriyor. Kamplar
+ * BİRBİRİNDEN BAĞIMSIZ: Developers'ta 6. haftada, Directors'ta 2. haftada
+ * olabilirsin; iki ayrı başvuru, iki ayrı onay, iki ayrı rozet dizisi.
+ */
+function ApplicationStep({
+  camps,
+  applications,
+  loading,
+  onChanged,
+}: {
+  camps: Camp[];
+  applications: ApplicationRecord[];
+  loading: boolean;
+  onChanged: () => void;
+}) {
+  const activeCamps = camps.filter((c) => c.active);
+  const inactiveCamps = camps.filter((c) => !c.active);
 
-  const camp = camps.find((c) => c.slug === campSlug);
-
-  async function submit() {
-    setStatus("sending");
-    setMessage("");
-    try {
-      const response = await fetch("/api/applications", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({campSlug, declaredWeek: week, note: note || undefined}),
-      });
-      const json = await response.json();
-      if (json.ok) {
-        setStatus("done");
-      } else {
-        setStatus("error");
-        setMessage(json.error ?? t.errors.unknown);
-      }
-    } catch {
-      setStatus("error");
-      setMessage(t.errors.network);
-    }
-  }
-
-  if (status === "done") {
-    return (
-      <div className="rounded-lg border border-success bg-subtle p-4">
-        <p className="font-semibold text-success">✓ {t.onboarding.submitted}</p>
-        <p className="mt-1 text-sm text-fg-secondary">
-          {t.onboarding.submittedHelp}
-        </p>
-      </div>
-    );
+  if (loading) {
+    return <p className="text-sm text-fg-muted">{t.common.loading}</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="block">
-        <span className="mb-1 block text-sm font-semibold">
-          {t.onboarding.campLabel}
-        </span>
-        <select
-          value={campSlug}
-          onChange={(event) => {
-            setCampSlug(event.target.value);
-            setWeek(1);
-          }}
-          className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent"
-        >
-          {active.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name} ({c.weekCount} {t.camp.weeks})
-            </option>
-          ))}
-        </select>
-      </label>
+      <p className="text-sm leading-relaxed text-fg-secondary">
+        Katıldığın <strong className="text-fg">her kamp için ayrı ayrı</strong>{" "}
+        haftanı bildir. Kamplar birbirinden bağımsız ilerler — birinde 6.
+        haftada, diğerinde 2. haftada olabilirsin.
+      </p>
 
-      <div>
-        <span className="mb-1 block text-sm font-semibold">
-          {t.onboarding.weekLabel}
-        </span>
-
-        {/*
-          Hafta seçimi düğme ızgarası olarak — açılır listede 15 seçenek
-          taramak yerine tek bakışta görülüp tıklanabiliyor. Kutucuk sayısı
-          kampın hafta sayısından geliyor, sabit değil.
-        */}
-        <div className="flex flex-wrap gap-1.5">
-          {Array.from({length: camp?.weekCount ?? 0}, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setWeek(n)}
-              aria-pressed={week === n}
-              className={[
-                "h-9 w-9 rounded-md border text-sm font-semibold transition-colors",
-                week === n
-                  ? "border-line-accent bg-accent text-accent-fg"
-                  : "border-line-strong bg-surface text-fg-secondary hover:border-line-accent",
-              ].join(" ")}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-2 text-xs text-fg-muted">{t.onboarding.weekHelp}</p>
-      </div>
-
-      <label className="block">
-        <span className="mb-1 block text-sm font-semibold">
-          {t.onboarding.noteLabel}
-        </span>
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder={t.onboarding.notePlaceholder}
-          rows={3}
-          maxLength={500}
-          className="w-full resize-y rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent"
+      {activeCamps.map((camp) => (
+        <CampApplication
+          key={camp.id}
+          camp={camp}
+          application={applications.find((a) => a.campId === camp.id) ?? null}
+          onChanged={onChanged}
         />
-      </label>
+      ))}
 
-      <Button
-        variant="accent"
-        loading={status === "sending"}
-        disabled={!campSlug}
-        onClick={submit}
-      >
-        {status === "sending" ? t.onboarding.submitting : t.onboarding.submit}
-      </Button>
-
-      {status === "error" && (
-        <p role="alert" className="text-sm text-danger">
-          {message}
-        </p>
-      )}
+      {inactiveCamps.map((camp) => (
+        <div
+          key={camp.id}
+          className="rounded-lg border border-dashed border-line p-4"
+        >
+          <p className="font-semibold">{camp.name}</p>
+          <p className="mt-1 text-sm text-fg-muted">{t.camp.inactive}</p>
+        </div>
+      ))}
 
       {/*
         DÜRÜSTLÜK NOTU — Faz 0'da kararlaştırıldı:
@@ -583,9 +552,190 @@ function ApplicationStep({camps}: {camps: Camp[]}) {
           Beyan ettiğin hafta otomatik olarak doğrulanmaz. Kulüp yöneticisi
           başvurunu elle inceleyip onaylar. Onaylandığında{" "}
           <strong>1. haftadan beyan ettiğin haftaya kadar</strong> tüm rozetleri
-          tek işlemde alabilirsin.
+          tek işlemde alabilirsin. Beyan ettiğin haftadan itibaren, her haftanın
+          rozetini alırken ortak deftere bir not bırakman gerekecek.
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Tek bir kampın beyan bloğu — kendi haftası, kendi durumu */
+function CampApplication({
+  camp,
+  application,
+  onChanged,
+}: {
+  camp: Camp;
+  application: ApplicationRecord | null;
+  onChanged: () => void;
+}) {
+  const [week, setWeek] = useState(application?.declaredWeek ?? 1);
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  /* Bekleyen ve onaylı başvurular değiştirilemez; reddedilen yeniden gönderilir */
+  const locked =
+    application?.status === "PENDING" || application?.status === "APPROVED";
+
+  async function submit() {
+    setStatus("sending");
+    setMessage("");
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          campSlug: camp.slug,
+          declaredWeek: week,
+          note: note || undefined,
+        }),
+      });
+      const json = await response.json();
+
+      if (json.ok) {
+        setStatus("idle");
+        setNote("");
+        onChanged();
+      } else {
+        setStatus("error");
+        setMessage(json.error ?? t.errors.unknown);
+      }
+    } catch {
+      setStatus("error");
+      setMessage(t.errors.network);
+    }
+  }
+
+  return (
+    <div
+      className={[
+        "rounded-lg border p-4",
+        application?.status === "APPROVED"
+          ? "border-success"
+          : application?.status === "PENDING"
+            ? "border-line-accent"
+            : "border-line-strong",
+      ].join(" ")}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-bold">{camp.name}</p>
+
+        {application ? (
+          <Pill
+            tone={
+              application.status === "APPROVED"
+                ? "reward"
+                : application.status === "PENDING"
+                  ? "accent"
+                  : "danger"
+            }
+          >
+            {application.status === "APPROVED"
+              ? `✓ onaylandı — ${application.declaredWeek}. hafta`
+              : application.status === "PENDING"
+                ? `inceleniyor — ${application.declaredWeek}. hafta`
+                : "reddedildi"}
+          </Pill>
+        ) : (
+          <Pill tone="muted">
+            {camp.weekCount} {t.camp.weeks}
+          </Pill>
+        )}
+      </div>
+
+      {/* ---- Onaylanmış ---- */}
+      {application?.status === "APPROVED" && (
+        <p className="mt-2 text-sm text-fg-secondary">
+          1–{application.declaredWeek}. hafta rozetlerin hazır.{" "}
+          <a
+            href="/profil"
+            className="font-semibold text-accent-text underline underline-offset-2"
+          >
+            Profilinden alabilirsin →
+          </a>
+        </p>
+      )}
+
+      {/* ---- Bekliyor ---- */}
+      {application?.status === "PENDING" && (
+        <p className="mt-2 text-sm text-fg-secondary">
+          {t.onboarding.submittedHelp}
+        </p>
+      )}
+
+      {/* ---- Reddedilmiş: sebebi göster, tekrar denemeye izin ver ---- */}
+      {application?.status === "REJECTED" && application.reviewNote && (
+        <p className="mt-2 text-sm text-danger">
+          İnceleme notu: {application.reviewNote}
+        </p>
+      )}
+
+      {/* ---- Beyan formu ---- */}
+      {!locked && (
+        <div className="mt-3 flex flex-col gap-3">
+          <div>
+            <span className="mb-1.5 block text-sm font-semibold">
+              {t.onboarding.weekLabel}
+            </span>
+
+            {/*
+              Hafta seçimi düğme ızgarası olarak — açılır listede 15 seçenek
+              taramak yerine tek bakışta görülüp tıklanabiliyor. Kutucuk
+              sayısı kampın hafta sayısından geliyor, sabit değil.
+            */}
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({length: camp.weekCount}, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setWeek(n)}
+                  aria-pressed={week === n}
+                  className={[
+                    "h-9 w-9 rounded-md border text-sm font-semibold transition-colors",
+                    week === n
+                      ? "border-line-accent bg-accent text-accent-fg"
+                      : "border-line-strong bg-surface text-fg-secondary hover:border-line-accent",
+                  ].join(" ")}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-2 text-xs text-fg-muted">{t.onboarding.weekHelp}</p>
+          </div>
+
+          <label className="block">
+            <span className="mb-1 block text-sm font-semibold">
+              {t.onboarding.noteLabel}
+            </span>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={t.onboarding.notePlaceholder}
+              rows={2}
+              maxLength={500}
+              className="w-full resize-y rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent"
+            />
+          </label>
+
+          <Button variant="accent" loading={status === "sending"} onClick={submit}>
+            {status === "sending"
+              ? t.onboarding.submitting
+              : application?.status === "REJECTED"
+                ? "Tekrar gönder"
+                : `${camp.name} için gönder`}
+          </Button>
+
+          {status === "error" && (
+            <p role="alert" className="text-sm text-danger">
+              {message}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

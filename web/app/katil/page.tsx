@@ -28,8 +28,9 @@ export default async function JoinPage() {
           {t.onboarding.title}
         </h1>
         <p className="mt-3 text-lg leading-relaxed text-fg-secondary">
-          Üç adım: cüzdanını bağla, kendine bir nick seç, kaçıncı haftada
-          olduğunu bildir. Kulüp yöneticisi onayladığında rozetlerin hazır olur.
+          Dört adım: cüzdanını bağla, kendine bir nick seç, kendini tanıt ve
+          her kamp için kaçıncı haftada olduğunu bildir. Kulüp yöneticisi
+          onayladığında rozetlerin hazır olur.
         </p>
       </header>
 

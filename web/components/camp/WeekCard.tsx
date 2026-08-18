@@ -36,7 +36,13 @@ export function WeekCard({
   /** Kapalıysa sebebi. Yoksa hafta açık demektir. */
   lock?:
     | {kind: "not-approved"}
-    | {kind: "not-reached"}
+    | {
+        kind: "not-reached";
+        /** Hâlâ bekleyen not borcu (yoksa null) */
+        owedWeek: number | null;
+        /** "6 gün 11 saat" — planlanan açılışa kalan süre (bilinmiyorsa null) */
+        remaining: string | null;
+      }
     | {kind: "note-required"; blockingWeek: number};
 }) {
   const closed = Boolean(lock) && !isPublic;
@@ -93,9 +99,19 @@ export function WeekCard({
           </p>
         )}
 
+        {/*
+          "Henüz gelmedin" kartı, kişinin YAPACAK BİR İŞİ olup olmadığını
+          ayırt eder. Borç varsa iş var; yoksa beklemekten başka yapacağı
+          bir şey yok ve bunu açıkça söylemek gerekiyor — aksi hâlde
+          kullanıcı olmayan bir görev arıyor.
+        */}
         {lock?.kind === "not-reached" && (
           <p className="mt-3 text-xs text-fg-muted">
-            Bu haftaya henüz gelmedin.
+            {lock.owedWeek !== null
+              ? `Önce ${lock.owedWeek}. haftanın notunu bırak.`
+              : lock.remaining
+                ? `Planlanan açılışa ~${lock.remaining} var.`
+                : "Bu haftaya henüz gelmedin."}
           </p>
         )}
 

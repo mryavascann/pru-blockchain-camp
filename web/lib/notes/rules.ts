@@ -47,14 +47,16 @@ export const TITLE_MAX = 120;
 /**
  * Gövde için alt sınır.
  *
- * NEDEN VAR: Not zorunlu olduğu için "asdasd" yazıp geçme dürtüsü doğar.
- * 80 karakter, bir cümlelik gerçek bir açıklamanın altına düşmez ama
- * kimseye kompozisyon yazdırmaz.
+ * NEDEN VAR: Not zorunlu olduğu için "asd" yazıp geçme dürtüsü doğar.
+ * Bir alt sınır bunu zorlaştırır.
  *
- * NEDEN DAHA YÜKSEK DEĞİL: Zorunluluğu ağırlaştırmak, insanları anlamsız
- * metinle boşluk doldurmaya iter. Amaç uzun not değil, işe yarar not.
+ * NEDEN 20 (önce 80'di): 80 karakter, kısa ama gerçek bir katkıyı da
+ * engelliyordu — "Nonce, işlem sayacı. Her işlemde bir artar." işe yarar
+ * bir nottur ve 80'in altındadır. Sınırı yükseltmek insanları anlamsız
+ * metinle boşluk doldurmaya iter; amaç uzun not değil, işe yarar not.
+ * 20 karakter yalnızca "asd" türü geçiştirmeyi keser.
  */
-export const BODY_MIN = 80;
+export const BODY_MIN = 20;
 export const BODY_MAX = 4000;
 
 /* -------------------------------------------------------------------------- */

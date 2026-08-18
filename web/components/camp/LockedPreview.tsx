@@ -23,6 +23,7 @@ import Link from "next/link";
 import {ButtonLink} from "@/components/ui/Button";
 import {Pill} from "@/components/ui/Card";
 import type {LockReason, PublicWeek} from "@/lib/content/access";
+import {formatOpeningDate} from "@/lib/notes/schedule";
 import {fmt, t} from "@/lib/i18n";
 
 export function LockedPreview({
@@ -111,7 +112,9 @@ export function LockedPreview({
           <p className="max-w-sm font-semibold">{copy.message}</p>
 
           {copy.help && (
-            <p className="max-w-sm text-sm text-fg-secondary">{copy.help}</p>
+            <p className="max-w-sm text-sm text-fg-secondary">
+              {emphasize(copy.help)}
+            </p>
           )}
 
           <ButtonLink href={copy.href} variant="accent" size="lg">
@@ -168,16 +171,49 @@ function lockCopy(
         href: "/katil",
       };
 
-    case "not-reached":
+    case "not-reached": {
+      /*
+       * ⚠️ BU DAL ÖNCE YANLIŞTI ve gerçek bir kafa karışıklığına yol açtı.
+       * Koşulsuz olarak "bu haftanın notunu bıraktığında açılacak" diyordu;
+       * notunu çoktan yazmış kişi de bu mesajı görüyor ve yapacak bir şey
+       * arıyordu. Oysa borç yoksa yapılacak bir şey yok.
+       *
+       * Artık iki ayrı durum:
+       *   borç VAR  → yapılacak iş var, söyle
+       *   borç YOK  → yapılacak iş yok, bunu AÇIKÇA söyle ve mümkünse
+       *               ne zaman açılacağını göster
+       */
+      if (reason.owedWeek !== null) {
+        return {
+          message: "Bu haftaya henüz gelmedin.",
+          help:
+            `Şu an ${reason.entitledWeek}. haftadasın. Ayrıca ` +
+            `${reason.owedWeek}. hafta için ortak deftere not bırakman ` +
+            "gerekiyor — o not yazılmadan ara haftalar da açılmaz.",
+          cta: `${reason.owedWeek}. hafta için not bırak`,
+          href: `/kamplar/${campSlug}/notlar`,
+        };
+      }
+
+      const opening = reason.opening;
+
       return {
-        message: `Bu haftaya henüz gelmedin.`,
+        message: "Bu haftaya henüz gelmedin.",
         help:
-          `Şu an ${reason.entitledWeek}. haftadasın. Kamp ilerledikçe yeni ` +
-          "haftalar sırayla açılır — sıradaki hafta, bu haftanın notunu " +
-          "bıraktığında açılacak.",
-        cta: "Ortak notlara git",
+          `Şu an ${reason.entitledWeek}. haftadasın ve ` +
+          "**not borcun yok — senden beklenen bir şey kalmadı.** " +
+          (opening && opening.remaining
+            ? `Bu haftanın planlanan açılışı ${formatOpeningDate(opening.date)} ` +
+              `(yaklaşık ${opening.remaining} sonra). ` +
+              "Kulüp yöneticisi haftayı açtığında burada görünür olacak."
+            : opening
+              ? "Planlanan açılış tarihi geçti; kulüp yöneticisi haftayı " +
+                "açtığında burada görünür olacak."
+              : "Kamp bu haftaya geldiğinde kulüp yöneticisi açacak."),
+        cta: "Ortak notları oku",
         href: `/kamplar/${campSlug}/notlar`,
       };
+    }
 
     case "note-required":
       return {
@@ -191,6 +227,25 @@ function lockCopy(
         href: `/kamplar/${campSlug}/notlar`,
       };
   }
+}
+
+/**
+ * `**...**` ile işaretlenmiş kısımları kalın yapar.
+ *
+ * Markdown ayrıştırıcısı DEĞİL — yalnızca çift yıldızda bölüp React
+ * öğeleri üretir. Metin buradaki tek kaynaktan (lockCopy) geliyor,
+ * kullanıcıdan değil; yine de HTML üretmediğimiz için güvenli.
+ */
+function emphasize(text: string): React.ReactNode[] {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="text-fg">
+        {part}
+      </strong>
+    ) : (
+      <span key={index}>{part}</span>
+    ),
+  );
 }
 
 function LockIcon({size = 18}: {size?: number}) {

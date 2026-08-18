@@ -19,6 +19,7 @@ import {ProgressBoxes} from "@/components/ui/Progress";
 import {Container, EmptyState, Pill} from "@/components/ui/Card";
 import {getCampBySlug, getCurriculum, getProgressForViewer} from "@/lib/content/access";
 import {weekLock} from "@/lib/notes/progress";
+import {openingInfo} from "@/lib/notes/schedule";
 import {getViewer} from "@/lib/auth/guards";
 import {readProgress} from "@/lib/chain/client";
 import {t} from "@/lib/i18n";
@@ -163,7 +164,12 @@ export default async function CampPage({params}: Props) {
                     teaser={week.teaser}
                     isPublic={camp.publicWeekNumber === week.weekNumber}
                     owned={progress?.[week.weekNumber - 1] ?? false}
-                    lock={cardLock(campProgress, week.weekNumber)}
+                    lock={cardLock(
+                      campProgress,
+                      week.weekNumber,
+                      camp.startDate,
+                      week.publishDate,
+                    )}
                   />
                 ))}
               </div>
@@ -186,9 +192,11 @@ export default async function CampPage({params}: Props) {
 function cardLock(
   campProgress: Awaited<ReturnType<typeof getProgressForViewer>>,
   weekNumber: number,
+  campStartDate: Date | null,
+  weekPublishDate: Date | null,
 ):
   | {kind: "not-approved"}
-  | {kind: "not-reached"}
+  | {kind: "not-reached"; owedWeek: number | null; remaining: string | null}
   | {kind: "note-required"; blockingWeek: number}
   | undefined {
   const lock = weekLock(campProgress, weekNumber);
@@ -198,8 +206,14 @@ function cardLock(
       return undefined;
     case "not-approved":
       return {kind: "not-approved"};
-    case "not-reached":
-      return {kind: "not-reached"};
+    case "not-reached": {
+      const opening = openingInfo(campStartDate, weekPublishDate, weekNumber);
+      return {
+        kind: "not-reached",
+        owedWeek: campProgress.blockingWeek,
+        remaining: opening?.remaining ?? null,
+      };
+    }
     case "note-required":
       return {kind: "note-required", blockingWeek: lock.blockingWeek};
   }

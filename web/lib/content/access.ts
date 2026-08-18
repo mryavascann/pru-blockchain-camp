@@ -37,6 +37,7 @@
 import {db} from "@/lib/db";
 import {getViewer, type Viewer} from "@/lib/auth/guards";
 import {getCampProgress, weekLock, type CampProgress} from "@/lib/notes/progress";
+import {openingInfo, type OpeningInfo} from "@/lib/notes/schedule";
 
 /**
  * HERKESE AÇIK alanlar.
@@ -87,8 +88,24 @@ export type LockReason =
   | {kind: "no-nickname"}
   /** Onaylı başvurusu yok → "Başvurun inceleniyor / Kampa katıl" */
   | {kind: "not-approved"}
-  /** Bu haftaya henüz gelmedi → "Şu an N. haftadasın" */
-  | {kind: "not-reached"; entitledWeek: number}
+  /**
+   * Bu haftaya henüz gelmedi → "Şu an N. haftadasın".
+   *
+   * `opening`  → planlanan açılış tarihi ve kalan süre (varsa)
+   * `owedWeek` → kişinin hâlâ bekleyen not borcu (yoksa null)
+   *
+   * ⚠️ `owedWeek` OLMADAN BU EKRAN YANILTICI OLUYORDU: kilit mesajı,
+   * kişi notunu çoktan yazmış olsa bile "bu haftanın notunu bıraktığında
+   * açılacak" diyordu. Oysa borç yoksa yapılacak bir şey kalmamıştır —
+   * hafta, kulüp yöneticisi onu açtığında açılır. Kullanıcıya hiçbir şeyi
+   * değiştirmeyecek bir iş söylemek, tüm kilit mesajlarını güvenilmez yapar.
+   */
+  | {
+      kind: "not-reached";
+      entitledWeek: number;
+      opening: OpeningInfo | null;
+      owedWeek: number | null;
+    }
   /** Önceki hafta için not borcu var → "Önce N. haftanın notunu bırak" */
   | {kind: "note-required"; blockingWeek: number};
 
@@ -108,6 +125,8 @@ export type CampSummary = {
   weekCount: number;
   active: boolean;
   publicWeekNumber: number | null;
+  /** Kamp başlangıcı — hafta takvimini hesaplamak için (bkz. lib/notes/schedule.ts) */
+  startDate: Date | null;
 };
 
 /** Bir kampı slug ile bulur (herkese açık bilgi) */
@@ -122,6 +141,7 @@ export async function getCampBySlug(slug: string): Promise<CampSummary | null> {
       weekCount: true,
       active: true,
       publicWeekNumber: true,
+      startDate: true,
     },
   });
 }
@@ -138,6 +158,7 @@ export async function listCamps(): Promise<CampSummary[]> {
       weekCount: true,
       active: true,
       publicWeekNumber: true,
+      startDate: true,
     },
   });
 }
@@ -223,10 +244,10 @@ export async function getWeekForViewer(
 
   /* ---- 3 & 4. KİMLİK KAPISI ---- */
   if (!viewer.address) {
-    return lockedResult(camp.id, weekNumber, {kind: "no-session"});
+    return lockedResult(camp.id, weekNumber, {kind: "no-session"}, camp.startDate);
   }
   if (!viewer.hasNickname && !viewer.isAdmin) {
-    return lockedResult(camp.id, weekNumber, {kind: "no-nickname"});
+    return lockedResult(camp.id, weekNumber, {kind: "no-nickname"}, camp.startDate);
   }
 
   /* ---- 5. İLERLEME KAPISI ---- */
@@ -245,7 +266,19 @@ export async function getWeekForViewer(
      * İlerleme kilidi de kimlik kilidi kadar gerçek: metin tarayıcıya
      * ulaşmıyor, gizlenmiyor.
      */
-    return lockedResult(camp.id, weekNumber, lock);
+    return lockedResult(
+      camp.id,
+      weekNumber,
+      lock.kind === "not-reached"
+        ? {
+            kind: "not-reached",
+            entitledWeek: lock.entitledWeek,
+            opening: null, // lockedResult dolduruyor
+            owedWeek: progress.blockingWeek,
+          }
+        : lock,
+      camp.startDate,
+    );
   }
 
   /* ---- 6. Tam erişim ---- */
@@ -292,6 +325,7 @@ async function lockedResult(
   campId: number,
   weekNumber: number,
   reason: LockReason,
+  campStartDate: Date | null = null,
 ): Promise<WeekAccess | null> {
   const week = await db.week.findUnique({
     where: {campId_weekNumber: {campId, weekNumber}},
@@ -301,7 +335,25 @@ async function lockedResult(
 
   if (!week || week.status !== "PUBLISHED") return null;
 
-  return {level: "locked", week: stripStatus(week), reason, indexable: false};
+  /*
+   * "Henüz gelmedin" kilidine planlanan açılış bilgisini ekliyoruz.
+   * Kullanıcının sorusu "neden kapalı" değil, "ne zaman açılacak" —
+   * cevabı verebiliyorsak verelim.
+   */
+  const enriched: LockReason =
+    reason.kind === "not-reached"
+      ? {
+          ...reason,
+          opening: openingInfo(campStartDate, week.publishDate, weekNumber),
+        }
+      : reason;
+
+  return {
+    level: "locked",
+    week: stripStatus(week),
+    reason: enriched,
+    indexable: false,
+  };
 }
 
 /**
