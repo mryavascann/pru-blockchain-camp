@@ -39,7 +39,7 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur">
       <Container>
         <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
           <Link
@@ -60,10 +60,10 @@ export function Header() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={[
-                    "rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-colors",
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     active
-                      ? "bg-[color:var(--bg-subtle)] text-[color:var(--fg-primary)]"
-                      : "text-[color:var(--fg-secondary)] hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]",
+                      ? "bg-subtle text-fg"
+                      : "text-fg-secondary hover:bg-subtle hover:text-fg",
                   ].join(" ")}
                 >
                   {link.label}
@@ -81,7 +81,7 @@ export function Header() {
               onClick={() => setOpen((value) => !value)}
               aria-expanded={open}
               aria-label="Menü"
-              className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] text-[color:var(--fg-secondary)] transition-colors hover:bg-[color:var(--bg-subtle)] md:hidden"
+              className="grid h-9 w-9 place-items-center rounded-md text-fg-secondary transition-colors hover:bg-subtle md:hidden"
             >
               {open ? <CloseIcon /> : <MenuIcon />}
             </button>
@@ -91,7 +91,7 @@ export function Header() {
 
       {open && (
         <nav
-          className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] md:hidden"
+          className="border-t border-line bg-surface md:hidden"
           aria-label="Mobil menü"
         >
           <Container className="flex flex-col py-2">
@@ -99,7 +99,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium text-[color:var(--fg-secondary)] hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
+                className="rounded-md px-3 py-3 text-sm font-medium text-fg-secondary hover:bg-subtle hover:text-fg"
               >
                 {link.label}
               </Link>
@@ -127,7 +127,7 @@ function Logo() {
   if (failed) {
     return (
       <span
-        className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--accent)] text-sm font-extrabold text-[color:var(--accent-fg)]"
+        className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-extrabold text-accent-fg"
         aria-hidden="true"
       >
         P

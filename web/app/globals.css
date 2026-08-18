@@ -10,6 +10,53 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
+   TAILWIND KÖPRÜSÜ
+
+   ⚠️ KONUM ÖNEMLİ: `@theme` bloğu `@import "tailwindcss"` ile diğer
+   kuralların ARASINDA olmak zorunda. Dosyanın sonuna konduğunda Tailwind
+   bloğu sessizce yok sayıyor ve hiçbir token üretilmiyor (bu bir kez
+   yaşandı: yalnızca --color-white üretilmişti).
+
+   Token'lar buradan Tailwind sınıfına dönüşür: bg-surface, text-fg,
+   border-line, text-accent …
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--bg-subtle);
+
+  --color-fg: var(--fg-primary);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-inverse: var(--fg-inverse);
+
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+  --color-line-accent: var(--border-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-fg: var(--accent-fg);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-reward: var(--reward);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+
+/* ---------------------------------------------------------------------------
    1. HAM RENK ÖLÇEKLERİ  (brand.md §2.1)
    Bunlar doğrudan kullanılmaz; aşağıdaki semantik token'ları besler.
    --------------------------------------------------------------------------- */
@@ -220,53 +267,20 @@
   --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
 }
 
-/* ---------------------------------------------------------------------------
-   TAILWIND KÖPRÜSÜ
-   Token'ları Tailwind sınıfı olarak kullanılabilir hâle getirir:
-   bg-surface, text-primary, border-subtle …
-   --------------------------------------------------------------------------- */
-@theme inline {
-  --color-base: var(--bg-base);
-  --color-surface: var(--bg-surface);
-  --color-elevated: var(--bg-elevated);
-  --color-subtle: var(--bg-subtle);
-  --color-inverse: var(--bg-inverse);
-
-  --color-fg: var(--fg-primary);
-  --color-fg-secondary: var(--fg-secondary);
-  --color-fg-muted: var(--fg-muted);
-  --color-fg-inverse: var(--fg-inverse);
-
-  --color-line: var(--border-subtle);
-  --color-line-strong: var(--border-strong);
-  --color-line-accent: var(--border-accent);
-
-  --color-accent: var(--accent);
-  --color-accent-text: var(--accent-text);
-  --color-accent-fg: var(--accent-fg);
-  --color-primary: var(--primary);
-  --color-primary-fg: var(--primary-fg);
-  --color-reward: var(--reward);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
-
-  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, monospace;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-}
 
 /* ---------------------------------------------------------------------------
    TABAN STİLLER
+
+   ⚠️ `@layer base` İÇİNDE OLMAK ZORUNDA.
+   CSS'te KATMANSIZ kurallar, tüm `@layer`'lardaki kuralları yener — özellik
+   (specificity) farkı olmasa bile. Bu blok katmansız bırakıldığında
+   `* { border-color }` kuralı Tailwind'in `border-*` utility'lerini eziyordu
+   ve hiçbir kenarlık rengi uygulanmıyordu.
    --------------------------------------------------------------------------- */
-* {
-  border-color: var(--border-subtle);
-}
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
 
 html {
   /* Sticky header'ın içeriği kesmemesi için */
@@ -304,6 +318,7 @@ h4 {
   font-family: var(--font-mono-code), ui-monospace, SFMono-Regular, monospace;
   font-variant-ligatures: none;
 }
+} /* @layer base sonu */
 
 /* ---------------------------------------------------------------------------
    HAREKET  (brand.md §10)

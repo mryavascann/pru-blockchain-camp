@@ -2,9 +2,8 @@
  * /kamplar — Kamp listesi. HERKESE AÇIK, SEO'ya açık.
  */
 import type {Metadata} from "next";
-import Link from "next/link";
 
-import {Button} from "@/components/ui/Button";
+import {ButtonLink} from "@/components/ui/Button";
 import {Card, Container, EmptyState, Pill} from "@/components/ui/Card";
 import {listCamps} from "@/lib/content/access";
 import {t} from "@/lib/i18n";
@@ -25,7 +24,7 @@ export default async function CampsPage() {
       <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
         {t.nav.camps}
       </h1>
-      <p className="mt-2 max-w-2xl text-[color:var(--fg-secondary)]">
+      <p className="mt-2 max-w-2xl text-fg-secondary">
         Her kampın müfredatı herkese açıktır. Haftaların içeriğine erişmek için
         kampa katılman gerekir.
       </p>
@@ -49,27 +48,28 @@ export default async function CampsPage() {
               </div>
 
               {camp.description && (
-                <p className="mt-3 text-[color:var(--fg-secondary)]">
+                <p className="mt-3 text-fg-secondary">
                   {camp.description}
                 </p>
               )}
 
               {!camp.active && (
-                <p className="mt-3 text-sm text-[color:var(--warning)]">
+                <p className="mt-3 text-sm text-warning">
                   {t.camp.inactive}
                 </p>
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={`/kamplar/${camp.slug}`}>
-                  <Button variant="secondary">{t.camp.curriculum}</Button>
-                </Link>
+                <ButtonLink href={`/kamplar/${camp.slug}`} variant="secondary">
+                  {t.camp.curriculum}
+                </ButtonLink>
                 {camp.publicWeekNumber !== null && (
-                  <Link
+                  <ButtonLink
                     href={`/kamplar/${camp.slug}/hafta/${camp.publicWeekNumber}`}
+                    variant="ghost"
                   >
-                    <Button variant="ghost">🌐 {t.locked.sampleLink}</Button>
-                  </Link>
+                    🌐 {t.locked.sampleLink}
+                  </ButtonLink>
                 )}
               </div>
             </Card>

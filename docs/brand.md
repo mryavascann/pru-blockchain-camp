@@ -190,11 +190,34 @@ kontrast kontrol edilir.
 (#7B2CBF, ~7.5:1) kullan. Açık menekşe tonlarını light temada yalnızca
 zemin/kenarlık olarak, üstünde koyu metinle kullan.
 
-⚠️ **İkinci tuzak — Tailwind belirsizliği:** `text-[var(--x)]` yazma.
-Tailwind'de `text-*` hem yazı boyutu hem renk olabildiği için CSS değişkeni
-verildiğinde **yazı boyutu** sanılır ve renk hiç uygulanmaz; metin gövde
-rengini miras alır (koyu temada siyah, açık temada beyaz → görünmez).
-Doğrusu: `text-[color:var(--x)]`. Aynısı `border-*` ve `bg-*` için de geçerli.
+### ⚠️ Üç tuzak — hepsi yaşandı, hepsi buraya yazıldı
+
+**1. Arbitrary değer belirsizliği.** `text-[var(--x)]` yazma. Tailwind'de
+`text-*` hem yazı boyutu hem renk olabildiği için CSS değişkeni verildiğinde
+**yazı boyutu** sanılır ve renk hiç uygulanmaz; metin gövde rengini miras alır
+(koyu temada koyu, açık temada beyaz → görünmez).
+
+> **Kalıcı çözüm:** Renkleri arbitrary değerle değil, `@theme` köprüsündeki
+> **semantik sınıflarla** ver: `text-fg`, `bg-surface`, `border-line-strong`.
+> Bu sınıflarda belirsizlik yoktur ve okunması da kolaydır.
+
+**2. Katmansız CSS tüm `@layer`'ları yener.** `@import "tailwindcss"` sonrası
+yazılan kurallar katmansız kalır ve CSS cascade'inde **her `@layer`'dan
+önceliklidir** — özellik (specificity) farkı olmasa bile. `* { border-color }`
+kuralı bu yüzden Tailwind'in tüm `border-*` utility'lerini eziyordu.
+
+> **Kalıcı çözüm:** Taban stiller `@layer base { … }` içine alınır.
+
+**3. `@theme` bloğunun konumu.** `@theme`, `@import "tailwindcss"` ile
+diğer kuralların **arasında** olmalı. Dosyanın sonuna konduğunda sessizce
+yok sayılır ve hiçbir token üretilmez.
+
+**4. `<a>` içine `<button>` koyma.** Geçersiz HTML'dir ve gerçek bir hataya
+yol açtı: tarayıcı bağlantıya kendi ziyaret-edilmiş rengini uyguladı, buton
+metni koyu mora dönüp okunmaz hâle geldi.
+
+> **Kalıcı çözüm:** Bağlantı ise `<ButtonLink>` (→ `<a>`), eylem ise
+> `<Button>` (→ `<button>`). Ortak stiller `buttonClasses()` içinde.
 
 ### Doğrulanmış kontrast oranları
 

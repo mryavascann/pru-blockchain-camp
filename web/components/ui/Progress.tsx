@@ -40,10 +40,10 @@ export function ProgressBoxes({
             aria-hidden="true"
             className={[
               boxSize,
-              "rounded-[var(--radius-sm)] border transition-colors duration-150",
+              "rounded-sm border transition-colors duration-150",
               filled
-                ? "border-[color:var(--accent)] bg-[color:var(--accent)]"
-                : "border-[color:var(--border-subtle)] bg-[color:var(--bg-subtle)]",
+                ? "border-accent bg-accent"
+                : "border-line bg-subtle",
             ].join(" ")}
           />
         ))}
@@ -51,7 +51,7 @@ export function ProgressBoxes({
 
       {/* Görsel gösterge her zaman sayısal karşılığıyla birlikte (brand.md §9.6) */}
       {showCount && (
-        <span className="mono shrink-0 text-sm tabular-nums text-[color:var(--fg-secondary)]">
+        <span className="mono shrink-0 text-sm tabular-nums text-fg-secondary">
           {done} / {total}
         </span>
       )}

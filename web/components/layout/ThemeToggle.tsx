@@ -73,7 +73,7 @@ export function ThemeToggle() {
       onClick={() => apply(ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length])}
       title={`${t.common.theme}: ${label}`}
       aria-label={`${t.common.theme}: ${label}`}
-      className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] text-[color:var(--fg-secondary)] transition-colors hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
+      className="grid h-9 w-9 place-items-center rounded-md text-fg-secondary transition-colors hover:bg-subtle hover:text-fg"
     >
       {theme === "system" ? <MonitorIcon /> : theme === "light" ? <SunIcon /> : <MoonIcon />}
     </button>

@@ -20,7 +20,7 @@
  */
 import Link from "next/link";
 
-import {Button} from "@/components/ui/Button";
+import {ButtonLink} from "@/components/ui/Button";
 import {Pill} from "@/components/ui/Card";
 import type {LockReason, PublicWeek} from "@/lib/content/access";
 import {fmt, t} from "@/lib/i18n";
@@ -44,7 +44,7 @@ export function LockedPreview({
   return (
     <article
       aria-label={`${fmt(t.camp.weekLabel, {n: week.weekNumber})} — kilitli`}
-      className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]"
+      className="overflow-hidden rounded-lg border border-line bg-surface"
     >
       {/* ---- Gerçek, herkese açık kısım ---- */}
       <div className="p-6 md:p-8">
@@ -58,11 +58,11 @@ export function LockedPreview({
         </h1>
 
         {week.stage && (
-          <p className="mt-2 text-sm text-[color:var(--fg-muted)]">{week.stage}</p>
+          <p className="mt-2 text-sm text-fg-muted">{week.stage}</p>
         )}
 
         {week.teaser && (
-          <p className="mt-4 max-w-prose leading-relaxed text-[color:var(--fg-secondary)]">
+          <p className="mt-4 max-w-prose leading-relaxed text-fg-secondary">
             {week.teaser}
           </p>
         )}
@@ -99,31 +99,23 @@ export function LockedPreview({
 
         {/* Kilit paneli — gerçek metin, gerçek düğme, klavyeyle erişilebilir */}
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-6 pb-8 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-accent)] bg-[color:var(--bg-subtle)]">
+          <div className="grid h-12 w-12 place-items-center rounded-full border border-line-accent bg-subtle">
             <LockIcon size={22} />
           </div>
 
           <p className="max-w-sm font-semibold">{copy.message}</p>
 
-          {reason === "no-nickname" ? (
-            <Link href="/katil">
-              <Button variant="accent" size="lg">
-                {copy.cta}
-              </Button>
-            </Link>
-          ) : (
-            <Link href="/katil">
-              <Button variant="accent" size="lg">
-                {copy.cta}
-              </Button>
-            </Link>
-          )}
+          {/* İki kilit sebebi de aynı sayfaya yönlendiriyor; fark eden
+              yalnızca yukarıdaki mesaj ve düğme metni (brand.md §8.4). */}
+          <ButtonLink href="/katil" variant="accent" size="lg">
+            {copy.cta}
+          </ButtonLink>
 
           {publicWeekNumber !== null &&
             publicWeekNumber !== week.weekNumber && (
               <Link
                 href={`/kamplar/${campSlug}/hafta/${publicWeekNumber}`}
-                className="text-sm font-medium text-[color:var(--accent-text)] underline underline-offset-4"
+                className="text-sm font-medium text-accent-text underline underline-offset-4"
               >
                 {t.locked.sampleLink} →
               </Link>
@@ -145,7 +137,7 @@ function LockIcon({size = 18}: {size?: number}) {
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-[color:var(--accent-text)]"
+      className="text-accent-text"
       aria-hidden="true"
     >
       <rect width="18" height="11" x="3" y="11" rx="2" />

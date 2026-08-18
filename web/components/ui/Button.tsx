@@ -3,31 +3,50 @@
  *
  * Varyantlar ve ne zaman kullanılacağı:
  *   primary   → sayfadaki TEK ana eylem
- *   accent    → "Rozeti Al", "Cüzdanını Bağla" (turkuaz = doğrulanmış/aktif)
+ *   accent    → "Rozeti Al", "Cüzdanını Bağla" (menekşe = doğrulanmış/aktif)
  *   secondary → ikincil eylem
  *   ghost     → üçüncül, tablo içi
  *   danger    → Reddet, Burn, Pause
  *
- * YÜKLENME DURUMUNDA GENİŞLİK SABİT KALIR: metin görünmez yapılır ama
- * yerinde durur, spinner üstüne bindirilir. Aksi hâlde buton daralıp
- * genişler ve etrafındaki düzen zıplar (brand.md §7.1).
+ * ---------------------------------------------------------------------------
+ * NEDEN İKİ AYRI BİLEŞEN: `Button` VE `ButtonLink`
+ *
+ * Önce `<Link><Button/></Link>` yazmıştım — yani `<a>` içinde `<button>`.
+ * Bu GEÇERSİZ HTML'dir (etkileşimli öğe iç içe geçemez) ve gerçek bir hataya
+ * yol açtı: tarayıcı bağlantıya kendi ziyaret-edilmiş rengini uyguladı,
+ * buton metni koyu mora dönüp okunmaz hâle geldi.
+ *
+ * Doğrusu: bağlantı ise `<a>`, eylem ise `<button>` render etmek.
+ * Ortak stiller `buttonClasses()` içinde tek yerde duruyor.
+ * ---------------------------------------------------------------------------
+ *
+ * YÜKLENME DURUMUNDA GENİŞLİK SABİT KALIR: metin görünmez yapılır ama yerinde
+ * durur, spinner üstüne bindirilir. Aksi hâlde buton daralıp genişler ve
+ * etrafındaki düzen zıplar (brand.md §7.1).
  */
-import {forwardRef, type ButtonHTMLAttributes} from "react";
+import Link from "next/link";
+import {forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes} from "react";
 
 type Variant = "primary" | "accent" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
+/*
+ * Renkler artık @theme köprüsündeki SEMANTİK Tailwind sınıflarıyla veriliyor
+ * (bg-surface, text-fg, border-line-strong …), köşeli parantezli arbitrary
+ * değerlerle değil.
+ *
+ * Gerekçe: `text-[var(--x)]` Tailwind'de belirsizdir (yazı boyutu mu renk mi?)
+ * ve sessizce yanlış özelliğe uygulanabilir. Tema token'ı olarak tanımlanan
+ * sınıflarda böyle bir belirsizlik yoktur.
+ */
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-[color:var(--primary)] text-[color:var(--primary-fg)] hover:brightness-110 border border-transparent",
-  accent:
-    "bg-[color:var(--accent)] text-[color:var(--accent-fg)] hover:brightness-110 border border-transparent",
+  primary: "bg-primary text-primary-fg border border-transparent hover:brightness-110",
+  accent: "bg-accent text-accent-fg border border-transparent hover:brightness-110",
   secondary:
-    "bg-[color:var(--bg-surface)] text-[color:var(--fg-primary)] border border-[color:var(--border-strong)] hover:border-[color:var(--border-accent)]",
+    "bg-surface text-fg border border-line-strong hover:border-line-accent hover:bg-subtle",
   ghost:
-    "bg-transparent text-[color:var(--fg-secondary)] border border-transparent hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]",
-  danger:
-    "bg-[color:var(--danger)] text-white hover:brightness-110 border border-transparent",
+    "bg-transparent text-fg-secondary border border-transparent hover:bg-subtle hover:text-fg",
+  danger: "bg-danger text-white border border-transparent hover:brightness-110",
 };
 
 const SIZES: Record<Size, string> = {
@@ -36,6 +55,40 @@ const SIZES: Record<Size, string> = {
   lg: "h-12 px-6 text-base gap-2",
 };
 
+const BASE = [
+  "relative inline-flex items-center justify-center rounded-md",
+  "font-semibold whitespace-nowrap select-none no-underline",
+  "transition-[transform,filter,background-color,border-color,color] duration-150 ease-out",
+  "hover:-translate-y-px active:translate-y-0",
+].join(" ");
+
+/** Ortak stil üretici — `Button` ve `ButtonLink` ikisi de bunu kullanır */
+export function buttonClasses({
+  variant = "secondary",
+  size = "md",
+  fullWidth = false,
+  className = "",
+}: {
+  variant?: Variant;
+  size?: Size;
+  fullWidth?: boolean;
+  className?: string;
+} = {}): string {
+  return [
+    BASE,
+    VARIANTS[variant],
+    SIZES[size],
+    fullWidth ? "w-full" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          EYLEM BUTONU  (<button>)                          */
+/* -------------------------------------------------------------------------- */
+
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   size?: Size;
@@ -43,57 +96,90 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button(
-    {
-      variant = "secondary",
-      size = "md",
-      loading = false,
-      fullWidth = false,
-      disabled,
-      className = "",
-      children,
-      ...rest
-    },
-    ref,
-  ) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = "secondary",
+    size = "md",
+    loading = false,
+    fullWidth = false,
+    disabled,
+    className = "",
+    children,
+    ...rest
+  },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={[
+        buttonClasses({variant, size, fullWidth, className}),
+        "disabled:opacity-45 disabled:cursor-not-allowed",
+        "disabled:hover:translate-y-0 disabled:hover:brightness-100",
+      ].join(" ")}
+      {...rest}
+    >
+      <span className={`inline-flex items-center gap-2 ${loading ? "invisible" : ""}`}>
+        {children}
+      </span>
+
+      {loading && (
+        <span className="absolute inset-0 grid place-items-center">
+          <Spinner />
+        </span>
+      )}
+    </button>
+  );
+});
+
+/* -------------------------------------------------------------------------- */
+/*                        BAĞLANTI BUTONU  (<a>)                              */
+/* -------------------------------------------------------------------------- */
+
+export type ButtonLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
+  href: string;
+  variant?: Variant;
+  size?: Size;
+  fullWidth?: boolean;
+  /** Harici bağlantı — yeni sekmede açılır, rel güvenliği eklenir */
+  external?: boolean;
+};
+
+export function ButtonLink({
+  href,
+  variant = "secondary",
+  size = "md",
+  fullWidth = false,
+  external = false,
+  className = "",
+  children,
+  ...rest
+}: ButtonLinkProps) {
+  const classes = buttonClasses({variant, size, fullWidth, className});
+
+  if (external) {
     return (
-      <button
-        ref={ref}
-        disabled={disabled || loading}
-        aria-busy={loading || undefined}
-        className={[
-          "relative inline-flex items-center justify-center rounded-[var(--radius-md)]",
-          "font-semibold whitespace-nowrap select-none",
-          "transition-[transform,filter,background-color,border-color] duration-150 ease-out",
-          "hover:-translate-y-px active:translate-y-0",
-          "disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100",
-          VARIANTS[variant],
-          SIZES[size],
-          fullWidth ? "w-full" : "",
-          className,
-        ].join(" ")}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={classes}
         {...rest}
       >
-        {/* Genişliği koruyan görünmez metin */}
-        <span
-          className={[
-            "inline-flex items-center gap-2",
-            loading ? "invisible" : "",
-          ].join(" ")}
-        >
-          {children}
-        </span>
-
-        {loading && (
-          <span className="absolute inset-0 grid place-items-center">
-            <Spinner />
-          </span>
-        )}
-      </button>
+        <span className="inline-flex items-center gap-2">{children}</span>
+      </a>
     );
-  },
-);
+  }
+
+  // İç bağlantılarda `next/link` — istemci tarafı geçiş ve ön yükleme için
+  return (
+    <Link href={href} className={classes} {...rest}>
+      <span className="inline-flex items-center gap-2">{children}</span>
+    </Link>
+  );
+}
 
 /** Dönen yükleme göstergesi. `prefers-reduced-motion` altında globals.css durdurur. */
 export function Spinner({className = ""}: {className?: string}) {
@@ -104,14 +190,7 @@ export function Spinner({className = ""}: {className?: string}) {
       fill="none"
       aria-hidden="true"
     >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        opacity="0.25"
-      />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
       <path
         d="M21 12a9 9 0 0 0-9-9"
         stroke="currentColor"

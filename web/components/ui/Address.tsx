@@ -50,7 +50,7 @@ export function AddressChip({
         <span
           className={[
             "mono text-sm",
-            nickname ? "text-[color:var(--fg-muted)]" : "text-[color:var(--fg-primary)]",
+            nickname ? "text-fg-muted" : "text-fg",
           ].join(" ")}
         >
           {shortenAddress(address)}
@@ -62,7 +62,7 @@ export function AddressChip({
         onClick={copy}
         title={copied ? t.wallet.copied : t.wallet.copyAddress}
         aria-label={copied ? t.wallet.copied : t.wallet.copyAddress}
-        className="rounded-[var(--radius-sm)] p-1 text-[color:var(--fg-muted)] transition-colors hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
+        className="rounded-sm p-1 text-fg-muted transition-colors hover:bg-subtle hover:text-fg"
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
       </button>
@@ -74,7 +74,7 @@ export function AddressChip({
           rel="noopener noreferrer"
           title={t.wallet.viewOnExplorer}
           aria-label={t.wallet.viewOnExplorer}
-          className="rounded-[var(--radius-sm)] p-1 text-[color:var(--fg-muted)] transition-colors hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
+          className="rounded-sm p-1 text-fg-muted transition-colors hover:bg-subtle hover:text-fg"
         >
           <ExternalIcon />
         </a>
@@ -115,7 +115,7 @@ function CheckIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-[color:var(--success)]"
+      className="text-success"
       aria-hidden="true"
     >
       <path d="M20 6 9 17l-5-5" />

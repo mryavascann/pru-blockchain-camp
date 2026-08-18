@@ -16,7 +16,7 @@ export function TestnetBanner() {
   return (
     <div
       role="status"
-      className="border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-subtle)] px-4 py-2 text-center text-xs text-[color:var(--fg-secondary)]"
+      className="border-b border-line bg-subtle px-4 py-2 text-center text-xs text-fg-secondary"
     >
       <span aria-hidden="true">🧪 </span>
       {t.common.testnetWarning}

@@ -23,12 +23,12 @@ export function Card({
   return (
     <div
       className={[
-        "rounded-[var(--radius-lg)] border bg-[color:var(--bg-surface)]",
+        "rounded-lg border bg-surface",
         "p-4 md:p-6",
         "shadow-[var(--shadow-sm)]",
         accent
-          ? "border-[color:var(--border-accent)]"
-          : "border-[color:var(--border-subtle)]",
+          ? "border-line-accent"
+          : "border-line",
         interactive
           ? "transition-shadow duration-200 ease-out hover:shadow-[var(--shadow-md)]"
           : "",
@@ -44,14 +44,14 @@ type PillTone = "neutral" | "accent" | "reward" | "muted" | "danger";
 
 const PILL_TONES: Record<PillTone, string> = {
   neutral:
-    "bg-[color:var(--bg-subtle)] text-[color:var(--fg-secondary)] border-[color:var(--border-subtle)]",
+    "bg-subtle text-fg-secondary border-line",
   accent:
-    "bg-[color:var(--bg-subtle)] text-[color:var(--accent-text)] border-[color:var(--border-accent)]",
+    "bg-subtle text-accent-text border-line-accent",
   reward:
-    "bg-[color:var(--bg-subtle)] text-[color:var(--reward)] border-[color:var(--reward)]",
+    "bg-subtle text-reward border-reward",
   muted:
-    "bg-transparent text-[color:var(--fg-muted)] border-[color:var(--border-subtle)]",
-  danger: "bg-transparent text-[color:var(--danger)] border-[color:var(--danger)]",
+    "bg-transparent text-fg-muted border-line",
+  danger: "bg-transparent text-danger border-danger",
 };
 
 /** Küçük etiket: "HAFTA 3", "🌐 Herkese Açık", "Bekliyor" */
@@ -95,7 +95,7 @@ export function SectionHeading({
           {title}
         </h2>
         {description && (
-          <p className="mt-1 text-[color:var(--fg-secondary)]">{description}</p>
+          <p className="mt-1 text-fg-secondary">{description}</p>
         )}
       </div>
       {action}
@@ -140,11 +140,11 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-subtle)] px-6 py-12 text-center">
-      {icon && <div className="text-[color:var(--fg-muted)]">{icon}</div>}
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
+      {icon && <div className="text-fg-muted">{icon}</div>}
       <p className="font-semibold">{title}</p>
       {description && (
-        <p className="max-w-md text-sm text-[color:var(--fg-secondary)]">
+        <p className="max-w-md text-sm text-fg-secondary">
           {description}
         </p>
       )}

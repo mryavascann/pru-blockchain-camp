@@ -8,9 +8,8 @@
  * Sunucu bileşeni: veriyi doğrudan veritabanından okur, API'ye HTTP isteği
  * atmaz. Aynı süreç içinde olduğu için daha hızlı ve ek bir ağ turu yok.
  */
-import Link from "next/link";
 
-import {Button} from "@/components/ui/Button";
+import {ButtonLink} from "@/components/ui/Button";
 import {Card, Container, Pill} from "@/components/ui/Card";
 import {listCamps} from "@/lib/content/access";
 import {t} from "@/lib/i18n";
@@ -25,7 +24,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* HERO                                                             */}
       {/* ---------------------------------------------------------------- */}
-      <section className="relative overflow-hidden border-b border-[color:var(--border-subtle)]">
+      <section className="relative overflow-hidden border-b border-line">
         {/* Dekoratif zemin — içerikten bağımsız, ekran okuyucuya görünmez */}
         <div
           aria-hidden="true"
@@ -44,26 +43,22 @@ export default async function HomePage() {
               Kampı tamamla,
               <br />
               rozetin{" "}
-              <span className="text-[color:var(--accent-text)]">zincirde</span> kalsın.
+              <span className="text-accent-text">zincirde</span> kalsın.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[color:var(--fg-secondary)]">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-fg-secondary">
               {t.site.name} kamplarında her haftayı tamamladığında, o haftaya
               ait devredilemez bir rozet kazanırsın. Rozetler cüzdanında durur;
               satılamaz, devredilemez, kaybolmaz.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/kamplar">
-                <Button variant="accent" size="lg">
-                  {t.nav.camps} →
-                </Button>
-              </Link>
-              <Link href="/siralama">
-                <Button variant="secondary" size="lg">
-                  {t.nav.leaderboard}
-                </Button>
-              </Link>
+              <ButtonLink href="/kamplar" variant="accent" size="lg">
+            {t.nav.camps} →
+          </ButtonLink>
+              <ButtonLink href="/siralama" variant="secondary" size="lg">
+            {t.nav.leaderboard}
+          </ButtonLink>
             </div>
           </div>
         </Container>
@@ -76,7 +71,7 @@ export default async function HomePage() {
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
           Kamp Programları
         </h2>
-        <p className="mt-2 text-[color:var(--fg-secondary)]">
+        <p className="mt-2 text-fg-secondary">
           Müfredat herkese açık. İçeriğe erişmek için kampa katılman yeterli.
         </p>
 
@@ -91,25 +86,24 @@ export default async function HomePage() {
               </div>
 
               {camp.description && (
-                <p className="mt-3 text-[color:var(--fg-secondary)]">
+                <p className="mt-3 text-fg-secondary">
                   {camp.description}
                 </p>
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={`/kamplar/${camp.slug}`}>
-                  <Button variant="secondary">{t.camp.viewCamp}</Button>
-                </Link>
+                <ButtonLink href={`/kamplar/${camp.slug}`} variant="secondary">
+                  {t.camp.viewCamp}
+                </ButtonLink>
 
                 {/* Herkese açık örnek hafta — vitrin (Faz 0 şartı) */}
                 {camp.publicWeekNumber !== null && (
-                  <Link
+                  <ButtonLink
                     href={`/kamplar/${camp.slug}/hafta/${camp.publicWeekNumber}`}
+                    variant="ghost"
                   >
-                    <Button variant="ghost">
-                      🌐 {t.locked.sampleLink} →
-                    </Button>
-                  </Link>
+                    🌐 {t.locked.sampleLink} →
+                  </ButtonLink>
                 )}
               </div>
             </Card>
@@ -120,7 +114,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* NASIL ÇALIŞIR                                                    */}
       {/* ---------------------------------------------------------------- */}
-      <section className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]">
+      <section className="border-t border-line bg-surface">
         <Container className="py-16 md:py-24">
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
             Nasıl çalışıyor?
@@ -151,13 +145,13 @@ export default async function HomePage() {
             ].map((step) => (
               <li key={step.n}>
                 <span
-                  className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--accent)] font-bold text-[color:var(--accent-fg)]"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-accent font-bold text-accent-fg"
                   aria-hidden="true"
                 >
                   {step.n}
                 </span>
                 <h3 className="mt-4 font-semibold">{step.title}</h3>
-                <p className="mt-1 text-sm text-[color:var(--fg-secondary)]">
+                <p className="mt-1 text-sm text-fg-secondary">
                   {step.text}
                 </p>
               </li>
@@ -169,7 +163,7 @@ export default async function HomePage() {
             Sistem "trustless" değil; rozetlerin değeri kulübün itibarına
             dayanıyor. Bunu gizlemek yerine açıkça yazıyoruz.
           */}
-          <p className="mt-10 max-w-2xl text-sm text-[color:var(--fg-muted)]">
+          <p className="mt-10 max-w-2xl text-sm text-fg-muted">
             Rozetler PRU Blockchain Kulübü tarafından onaylanır ve Base ağında
             saklanır. Kulüp, hangi katılımcının hangi haftayı tamamladığını
             belirleyen taraftır; tüm yönetim işlemleri zincirde açıkça

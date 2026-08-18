@@ -31,7 +31,7 @@ export function WeekCard({
   return (
     <Link
       href={`/kamplar/${campSlug}/hafta/${weekNumber}`}
-      className="group block rounded-[var(--radius-lg)]"
+      className="group block rounded-lg"
     >
       <Card interactive accent={isPublic} className="h-full">
         <div className="flex items-start justify-between gap-3">
@@ -43,30 +43,30 @@ export function WeekCard({
             <Pill tone="accent">🌐 {t.camp.publicBadge}</Pill>
           ) : owned ? (
             <span
-              className="text-[color:var(--reward)]"
+              className="text-reward"
               title={t.profile.claimed}
               aria-label={t.profile.claimed}
             >
               <AwardIcon />
             </span>
           ) : (
-            <span className="text-[color:var(--fg-muted)]" aria-hidden="true">
+            <span className="text-fg-muted" aria-hidden="true">
               <LockIcon />
             </span>
           )}
         </div>
 
-        <h3 className="mt-3 font-semibold leading-snug transition-colors group-hover:text-[color:var(--accent-text)]">
+        <h3 className="mt-3 font-semibold leading-snug transition-colors group-hover:text-accent-text">
           {title}
         </h3>
 
         {teaser && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--fg-secondary)]">
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-fg-secondary">
             {teaser}
           </p>
         )}
 
-        <span className="mt-4 inline-block text-sm font-medium text-[color:var(--accent-text)]">
+        <span className="mt-4 inline-block text-sm font-medium text-accent-text">
           {isPublic ? t.camp.viewWeek : t.camp.continue} →
         </span>
       </Card>
