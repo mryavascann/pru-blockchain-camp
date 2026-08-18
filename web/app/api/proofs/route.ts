@@ -105,6 +105,8 @@ export async function GET(request: Request) {
       camp: {id: camp.id, slug: camp.slug, name: camp.name},
       /** Nick yoksa mint zincirde reddedilir — arayüz önce nick istemeli */
       requiresNickname: !viewer.hasNickname,
+      /** Nick durumu okunamadıysa "nick al" demek yanlış olur — bkz. guards.ts */
+      nicknameUnknown: viewer.nicknameUnknown,
       weeks: split.weeks,
       /** Tek işlemde alınabilecek haftalar (claimBatch için) */
       claimableWeekNumbers: split.readyWeekNumbers,
@@ -119,6 +121,9 @@ export async function GET(request: Request) {
         entryWeek: progress.entryWeek,
         visibleWeek: progress.visibleWeek,
         owedWeeks: progress.owedWeeks,
+        /* Rozet ekranındaki not formu "bu kişinin ilk notu mu?" diye
+           soruyor — tek seferlik yazma rehberi buna bakıyor. */
+        notedWeeks: progress.notedWeeks,
         blockingWeek: progress.blockingWeek,
       },
     });

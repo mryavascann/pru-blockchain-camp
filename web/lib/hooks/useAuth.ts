@@ -24,12 +24,15 @@ import {createSiweMessage} from "viem/siwe";
 
 import {activeChain} from "@/lib/chain/config";
 import {t} from "@/lib/i18n";
+import {isWalletBusyError} from "@/lib/hooks/useTransaction";
 import {useWallet} from "@/lib/wallet/WalletProvider";
 
 export type SessionInfo = {
   address: string | null;
   nickname: string;
   hasNickname: boolean;
+  /** Zincire ulaşılamadığı için nick durumu doğrulanamadı (bkz. lib/auth/guards.ts) */
+  nicknameUnknown: boolean;
   isAdmin: boolean;
 };
 
@@ -160,6 +163,8 @@ export function useAuth() {
         if (code === 4001 || message.includes("user rejected")) {
           throw new Error(t.auth.signInRejected);
         }
+        /* Cüzdanda cevaplanmamış bir istek var — bkz. isWalletBusyError */
+        if (isWalletBusyError(error)) throw new Error(t.errors.walletBusy);
         throw error;
       }
     },
@@ -199,6 +204,7 @@ export function useAuth() {
           address: null,
           nickname: "",
           hasNickname: false,
+          nicknameUnknown: false,
           isAdmin: false,
         } satisfies SessionInfo);
 
@@ -209,6 +215,7 @@ export function useAuth() {
         if (code === 4001 || message.includes("user rejected")) {
           throw new Error(t.auth.changeWalletRejected);
         }
+        if (isWalletBusyError(error)) throw new Error(t.errors.walletBusy);
         throw error;
       }
     },
@@ -223,6 +230,7 @@ export function useAuth() {
         address: null,
         nickname: "",
         hasNickname: false,
+        nicknameUnknown: false,
         isAdmin: false,
       } satisfies SessionInfo);
       queryClient.invalidateQueries();

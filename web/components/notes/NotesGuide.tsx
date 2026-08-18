@@ -11,13 +11,33 @@
  * İki yüzü var:
  *   variant="read"  → not defterini OKUYAN kişiye: bu sayfa ne işine yarar
  *   variant="write" → not YAZAN kişiye: iyi not nasıl olur, ne beklenmiyor
- * ============================================================================
+ *
+ * ---------------------------------------------------------------------------
+ * YAZMA REHBERİ ARTIK VARSAYILAN AÇIK DEĞİL
+ *
+ * Önceden bu kart formun hemen altında sürekli duruyordu ve içinde dört türü
+ * yeniden anlatıyordu — tür seçici, bu kart ve sağdaki okuma kartı aynı
+ * bilgiyi üç kez gösteriyordu. Şimdi form içinde bir bağlantının arkasında
+ * ("İyi not nasıl olur?") ve yalnızca kişinin İLK notunda kendiliğinden açık
+ * geliyor. Silinen bir şey yok; tekrar eden kopyalar kalktı.
+ *
+ * `kind` verilirse o türün uzun yönergesi en üstte gösterilir — form içinde
+ * artık tek cümle duruyor, ayrıntı burada.
+ * ---------------------------------------------------------------------------
  */
 import {Card} from "@/components/ui/Card";
-import {NOTE_KIND_LIST} from "@/lib/notes/rules";
+import {NOTE_KIND_INFO, NOTE_KIND_LIST, type NoteKind} from "@/lib/notes/rules";
+import {KIND_TEXT, NoteKindIcon, SparkleIcon} from "./kindVisuals";
 
-export function NotesGuide({variant}: {variant: "read" | "write"}) {
-  return variant === "read" ? <ReadingGuide /> : <WritingGuide />;
+export function NotesGuide({
+  variant,
+  kind,
+}: {
+  variant: "read" | "write";
+  /** Yalnızca variant="write" için — o an seçili tür */
+  kind?: NoteKind;
+}) {
+  return variant === "read" ? <ReadingGuide /> : <WritingGuide kind={kind} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -58,8 +78,9 @@ function ReadingGuide() {
         </div>
 
         <div className="rounded-lg border border-warning bg-subtle p-4">
-          <p className="font-semibold text-warning">
-            🤖 işaretli notlara dikkat
+          <p className="inline-flex items-center gap-1.5 font-semibold text-warning">
+            <SparkleIcon className="h-4 w-4" />
+            işaretli notlara dikkat
           </p>
           <p className="mt-1.5">
             Bu işaret, açıklamanın bir yapay zekâya sorularak alındığını
@@ -85,7 +106,9 @@ function ReadingGuide() {
 /*                                  YAZMA                                     */
 /* -------------------------------------------------------------------------- */
 
-function WritingGuide() {
+function WritingGuide({kind}: {kind?: NoteKind}) {
+  const selected = kind ? NOTE_KIND_INFO[kind] : null;
+
   return (
     <Card>
       <h2 className="text-xl font-bold tracking-tight">
@@ -93,6 +116,20 @@ function WritingGuide() {
       </h2>
 
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-fg-secondary">
+        {/* Seçili türün uzun yönergesi — formda yalnızca özeti duruyor */}
+        {selected && (
+          <div className="rounded-lg border border-line-accent bg-subtle p-4">
+            <p className="inline-flex items-center gap-1.5 font-semibold text-fg">
+              <NoteKindIcon
+                kind={selected.value}
+                className={`h-4 w-4 ${KIND_TEXT[selected.value]}`}
+              />
+              {selected.label}
+            </p>
+            <p className="mt-1.5">{selected.guidance}</p>
+          </div>
+        )}
+
         <p>
           Tek bir soruyla özetlenebilir:{" "}
           <strong className="text-fg">
@@ -128,17 +165,21 @@ function WritingGuide() {
         <div>
           <p className="font-semibold text-fg">Dört tür not var</p>
           <ul className="mt-2 flex flex-col gap-2">
-            {NOTE_KIND_LIST.map((kind) => (
+            {NOTE_KIND_LIST.map((item) => (
               <li
-                key={kind.value}
-                className="flex gap-2.5 rounded-md border border-line p-3"
+                key={item.value}
+                className={[
+                  "flex gap-2.5 rounded-md border p-3",
+                  item.value === kind ? "border-line-accent bg-subtle" : "border-line",
+                ].join(" ")}
               >
-                <span aria-hidden="true" className="text-base leading-none">
-                  {kind.icon}
-                </span>
+                <NoteKindIcon
+                  kind={item.value}
+                  className={`mt-0.5 h-4 w-4 ${KIND_TEXT[item.value]}`}
+                />
                 <span>
-                  <strong className="text-fg">{kind.label}</strong> —{" "}
-                  {kind.summary}
+                  <strong className="text-fg">{item.label}</strong> —{" "}
+                  {item.summary}
                 </span>
               </li>
             ))}

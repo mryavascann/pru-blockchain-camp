@@ -65,9 +65,73 @@ const CONTRACT_ERRORS: Record<string, string> = {
   ArrayLengthMismatch: "İstek bozuk görünüyor. Sayfayı yenileyip tekrar dene.",
 };
 
+/**
+ * ============================================================================
+ * "CÜZDANDA BEKLEYEN İSTEK VAR" — JSON-RPC -32002
+ *
+ * SEMPTOM: Kullanıcı ekranda şu İngilizce cümleyi görüyordu:
+ *   "Requested resource not available."
+ *
+ * Bu cümle bizim değil; viem'in `ResourceUnavailableRpcError` sınıfının
+ * `shortMessage`'ı (node_modules/viem/_esm/errors/rpc.js). Aşağıdaki
+ * eşleştirmelerin hiçbirine takılmadığı için ham hâliyle ekrana düşüyordu.
+ *
+ * SEBEBİ: EIP-1193'te -32002 = "resource unavailable". MetaMask bu kodu tek
+ * bir durumda döndürür: SİTE İÇİN AÇILMIŞ AMA CEVAPLANMAMIŞ BİR İSTEK ZATEN
+ * VAR. Cüzdan kuyruğunda bekleyen bir pencere varken ikincisini kabul etmez.
+ *
+ * Pratikte üç şekilde oluşuyor:
+ *   1. Cüzdan penceresi açıldı ama kullanıcı başka yere tıklayıp kapattı —
+ *      MetaMask isteği "bekliyor" saydığı için kuyrukta duruyor. Kullanıcı
+ *      butona tekrar basınca bu hata geliyor.
+ *   2. Pencere gerçekten açık ama tarayıcının arkasında / diğer ekranda.
+ *   3. Cüzdan kilitli; önce parola ekranı bekliyor.
+ *
+ * Bizim akışımızda en sık görüldüğü yer: SIWE imzası ile "Nicki Kaydet"
+ * işleminin arka arkaya gelmesi. İlk pencere cevaplanmadan ikinci istek
+ * gönderiliyor.
+ *
+ * ÇÖZÜM KULLANICI TARAFINDA: bekleyen pencereyi onaylamak ya da reddetmek.
+ * Bizim yapabileceğimiz, ne olduğunu ve ne yapılacağını söylemek — bu
+ * fonksiyon onu yapıyor.
+ * ============================================================================
+ */
+export function isWalletBusyError(error: unknown): boolean {
+  if (!error) return false;
+
+  /* Ham sağlayıcı hatası (connect / imza yolunda viem'e hiç girmeyebilir) */
+  if ((error as {code?: number}).code === -32002) return true;
+
+  /* viem sarmalamışsa kod, sebep zincirinin içinde kalır */
+  if (error instanceof BaseError) {
+    const found = error.walk(
+      (inner) => (inner as {code?: number}).code === -32002,
+    );
+    if (found) return true;
+  }
+
+  const message = (
+    error instanceof Error ? error.message : String(error)
+  ).toLowerCase();
+
+  return (
+    message.includes("requested resource not available") ||
+    message.includes("resource unavailable") ||
+    message.includes("already processing") ||
+    message.includes("already pending")
+  );
+}
+
 /** viem/cüzdan hatasını Türkçe, eyleme dönük bir cümleye çevirir */
 export function humanizeTxError(error: unknown): string {
   if (!error) return t.errors.unknown;
+
+  /*
+   * EN BAŞTA: cüzdanda bekleyen istek. Kontrat hatası değil, ağ hatası da
+   * değil — istek cüzdandan hiç çıkmadı. Aşağıdaki eşleştirmelerin hiçbiri
+   * bunu yakalayamaz, o yüzden sıranın başında.
+   */
+  if (isWalletBusyError(error)) return t.errors.walletBusy;
 
   if (error instanceof BaseError) {
     /* 1. Kontratın custom error'u var mı? */

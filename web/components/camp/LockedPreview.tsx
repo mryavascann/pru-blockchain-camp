@@ -168,6 +168,19 @@ function lockCopy(
         href: "/katil",
       };
 
+    /*
+     * Zincir okunamadı. Buraya "Nick Belirle" koymak yanlış olurdu: kişinin
+     * nicki olabilir ve ikinci kez almaya kalkarsa zincirde reddedilir.
+     * Yapılacak tek şey beklemek, düğme de onu söylüyor.
+     */
+    case "chain-unreachable":
+      return {
+        message: "Zincire şu an ulaşılamıyor.",
+        help: t.errors.chainUnreachable,
+        cta: "Tekrar Dene",
+        href: campSlug ? `/kamplar/${campSlug}` : "/",
+      };
+
     case "not-approved":
       return {
         message: "Bu kampta henüz onaylı bir haftan yok.",

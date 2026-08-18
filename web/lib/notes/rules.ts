@@ -84,7 +84,7 @@ export type NoteKindInfo = {
 export const NOTE_KIND_INFO: Record<NoteKind, NoteKindInfo> = {
   TERIM: {
     value: "TERIM",
-    label: "Terim / kavram",
+    label: "Terim / Kavram",
     icon: "🔍",
     summary: "Anlamadığın bir kelimeyi öğrendin — öğrendiğini buraya bırak.",
     guidance:
@@ -110,7 +110,7 @@ export const NOTE_KIND_INFO: Record<NoteKind, NoteKindInfo> = {
 
   OZET: {
     value: "OZET",
-    label: "Hafta özeti",
+    label: "Haftanın Özeti",
     icon: "📝",
     summary: "Haftayı kendi cümlelerinle anlat.",
     guidance:
@@ -134,7 +134,7 @@ export const NOTE_KIND_INFO: Record<NoteKind, NoteKindInfo> = {
 
   KAYNAK: {
     value: "KAYNAK",
-    label: "Faydalı kaynak",
+    label: "Faydalı Kaynak",
     icon: "🔗",
     summary: "İşine yarayan bir bağlantı — ve neden yaradığı.",
     guidance:
@@ -159,7 +159,7 @@ export const NOTE_KIND_INFO: Record<NoteKind, NoteKindInfo> = {
 
   TUZAK: {
     value: "TUZAK",
-    label: "Takıldığım yer",
+    label: "Takıldığım Yer",
     icon: "⚠️",
     summary: "Seni saatlerce uğraştıran şey — ve çözümü.",
     guidance:
@@ -315,7 +315,7 @@ export function validateNote(draft: NoteDraft): NoteValidation {
   if (info.requiresSource && !sourceUrl) {
     return {
       ok: false,
-      error: "\"Faydalı kaynak\" notunda bağlantı zorunlu — kaynağın kendisi eksik olmasın.",
+      error: "\"Faydalı Kaynak\" notunda bağlantı zorunlu — kaynağın kendisi eksik olmasın.",
     };
   }
 

@@ -20,6 +20,8 @@ export async function GET() {
       address: viewer.address,
       nickname: viewer.nickname,
       hasNickname: viewer.hasNickname,
+      /* Zincire ulaşılamadıysa "nick yok" değil, "bilinmiyor" — bkz. guards.ts */
+      nicknameUnknown: viewer.nicknameUnknown,
       isAdmin: viewer.isAdmin,
     });
   });

@@ -33,12 +33,14 @@ import {Button} from "@/components/ui/Button";
 import {Card, Pill} from "@/components/ui/Card";
 import {NoteComposer} from "@/components/notes/NoteComposer";
 import {NotesGuide} from "@/components/notes/NotesGuide";
+import {FirstNoteGuide, hasSeenNotesGuide} from "@/components/notes/FirstNoteGuide";
 import {ProgressBoxes, SkeletonLines} from "@/components/ui/Progress";
 import {TxStatus} from "@/components/wallet/TxStatus";
 import {pruCampBadgesAbi} from "@/lib/chain/abi";
 import {contractAddress} from "@/lib/chain/config";
 import {useTransaction} from "@/lib/hooks/useTransaction";
 import {fmt, t} from "@/lib/i18n";
+import type {NoteKind} from "@/lib/notes/rules";
 
 type ProofsResponse = {
   camp: {id: number; slug: string; name: string};
@@ -52,6 +54,8 @@ type ProofsResponse = {
   claimableWeekNumbers: number[];
   claimableProofs: `0x${string}`[][];
   pendingPublication: number[];
+  /** Nick durumu zincirden okunamadı — "nick al" demek yanlış olur */
+  nicknameUnknown: boolean;
   /** Rozeti almak için önce not yazılması gereken haftalar */
   needsNote: number[];
   progress: {
@@ -59,6 +63,8 @@ type ProofsResponse = {
     entryWeek: number;
     visibleWeek: number;
     owedWeeks: number[];
+    /** Not yazılmış haftalar — "bu kişinin ilk notu mu?" sorusunun cevabı */
+    notedWeeks: number[];
     blockingWeek: number | null;
   };
 };
@@ -81,6 +87,15 @@ export function CampBadges({
   const [justClaimed, setJustClaimed] = useState<number[]>([]);
   /** Not formu açık mı — hangi hafta için */
   const [writingFor, setWritingFor] = useState<number | null>(null);
+  /** Formda o an seçili tür — rehber paneli bunu izler */
+  const [noteKind, setNoteKind] = useState<NoteKind | undefined>(undefined);
+  /**
+   * Uzun yazma rehberi varsayılan KAPALI: bu kapının kendi metni zaten
+   * "neden yazıyorsun"u anlatıyor, rehber onu tekrar ediyordu. İsteyen açar.
+   */
+  const [showGuide, setShowGuide] = useState(false);
+  /** Tek seferlik karşılama ekranı onaylandı mı? (bkz. FirstNoteGuide) */
+  const [guideSeen, setGuideSeen] = useState(() => hasSeenNotesGuide(campSlug));
 
   const proofs = useQuery({
     queryKey: ["proofs", campSlug],
@@ -104,6 +119,8 @@ export function CampBadges({
   const claimable = data?.claimableWeekNumbers ?? [];
   const pending = data?.pendingPublication ?? [];
   const needsNote = data?.needsNote ?? [];
+  /* Karşılama ekranı: ilk not + henüz onaylanmamış */
+  const showIntro = (data?.progress.notedWeeks.length ?? 0) === 0 && !guideSeen;
   const owned = progress.filter(Boolean).length;
 
   function claimAll() {
@@ -190,10 +207,16 @@ export function CampBadges({
       <div className="mt-6 flex flex-col gap-3">
         {proofs.isLoading && <SkeletonLines count={2} />}
 
-        {data?.requiresNickname && (
-          <p className="rounded-lg border border-line-accent bg-subtle p-3 text-sm">
-            {t.errors.nicknameRequired}
+        {data?.nicknameUnknown ? (
+          <p className="rounded-lg border border-warning bg-subtle p-3 text-sm leading-relaxed text-fg-secondary">
+            {t.errors.chainUnreachable}
           </p>
+        ) : (
+          data?.requiresNickname && (
+            <p className="rounded-lg border border-line-accent bg-subtle p-3 text-sm">
+              {t.errors.nicknameRequired}
+            </p>
+          )
         )}
 
         {/* ---- NOT KAPISI: rozetten önce gelen adım ---- */}
@@ -228,7 +251,7 @@ export function CampBadges({
                   variant="accent"
                   onClick={() => setWritingFor(needsNote[0])}
                 >
-                  {needsNote[0]}. hafta için not bırak
+                  {needsNote[0]}. Hafta İçin Not Bırak
                 </Button>
                 <Link
                   href={`/kamplar/${campSlug}/notlar`}
@@ -239,25 +262,52 @@ export function CampBadges({
               </div>
             ) : (
               <div className="mt-4 rounded-lg border border-line bg-surface p-4">
-                <NoteComposer
-                  campSlug={campSlug}
-                  weekNumber={writingFor}
-                  onCancel={() => setWritingFor(null)}
-                  onSaved={() => {
-                    setWritingFor(null);
-                    /*
-                     * Not kaydedildi: artık bu haftanın proof'u yanıta
-                     * girecek. Listeyi tazeleyip "Rozeti Al" butonunu
-                     * açıyoruz.
-                     */
-                    proofs.refetch();
-                    router.refresh();
-                  }}
-                />
+                {showIntro ? (
+                  <FirstNoteGuide
+                    campSlug={campSlug}
+                    weekNumber={writingFor}
+                    onDone={() => setGuideSeen(true)}
+                    onCancel={() => setWritingFor(null)}
+                  />
+                ) : (
+                  <>
+                    <NoteComposer
+                      campSlug={campSlug}
+                      weekNumber={writingFor}
+                      firstNote={(data?.progress.notedWeeks.length ?? 0) === 0}
+                      onKindChange={setNoteKind}
+                      onCancel={() => setWritingFor(null)}
+                      onSaved={() => {
+                        setWritingFor(null);
+                        /*
+                         * Not kaydedildi: artık bu haftanın proof'u yanıta
+                         * girecek. Listeyi tazeleyip "Rozeti Al" butonunu
+                         * açıyoruz.
+                         */
+                        proofs.refetch();
+                        router.refresh();
+                      }}
+                    />
 
-                <div className="mt-6">
-                  <NotesGuide variant="write" />
-                </div>
+                    <div className="mt-5 border-t border-line pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowGuide((v) => !v)}
+                        className="text-sm font-semibold text-accent-text underline underline-offset-2"
+                      >
+                        {showGuide
+                          ? "Rehberi gizle"
+                          : "İyi not nasıl olur? Örnekler ve beklentiler →"}
+                      </button>
+
+                      {showGuide && (
+                        <div className="mt-3">
+                          <NotesGuide variant="write" kind={noteKind} />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

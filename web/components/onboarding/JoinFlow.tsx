@@ -64,6 +64,8 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
 
   const signedIn = Boolean(session?.address) && !needsSignIn;
   const hasNickname = Boolean(session?.hasNickname);
+  /* Zincir okunamadı: "nick yok" değil, "bilmiyoruz" (bkz. lib/auth/guards.ts) */
+  const nicknameUnknown = Boolean(session?.nicknameUnknown);
 
   /*
    * Profil (üniversite + siteyi nereden duydu) zincir dışı, KİŞİ BAZLI bir
@@ -124,6 +126,23 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
             {t.nickname.current}:{" "}
             <strong className="text-accent-text">{session?.nickname}</strong>
           </p>
+        ) : nicknameUnknown ? (
+          /*
+           * Form GÖSTERİLMİYOR. Kişinin nicki olabilir; ikinci kez almaya
+           * kalkarsa işlem zincirde reddedilir ve boşuna gas öder.
+           */
+          <div className="rounded-lg border border-warning bg-subtle p-3">
+            <p className="text-sm leading-relaxed text-fg-secondary">
+              {t.errors.chainUnreachable}
+            </p>
+            <button
+              type="button"
+              onClick={refresh}
+              className="mt-2 text-sm font-semibold text-accent-text underline underline-offset-2"
+            >
+              Tekrar dene
+            </button>
+          </div>
         ) : (
           <NicknameStep onDone={refresh} />
         )}

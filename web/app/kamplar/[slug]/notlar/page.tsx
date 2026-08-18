@@ -20,6 +20,7 @@ import {WalletGateButton} from "@/components/wallet/ConnectButton";
 import {NotesGuide} from "@/components/notes/NotesGuide";
 import {getCampBySlug, getProgressForViewer} from "@/lib/content/access";
 import {getViewer} from "@/lib/auth/guards";
+import {t} from "@/lib/i18n";
 import {listNotes} from "@/lib/notes/service";
 import {NotesBoard} from "./NotesBoard";
 
@@ -49,6 +50,24 @@ export default async function NotesPage({params, searchParams}: Props) {
   if (!camp) notFound();
 
   const viewer = await getViewer();
+
+  /*
+   * ---- Zincir kapısı ----
+   * Nick durumu okunamadıysa "nick belirle" DEME: kişinin nicki olabilir.
+   * Bu kapı geçici, aşağıdaki kimlik kapısı kalıcı bir eksikliği anlatıyor.
+   */
+  if (viewer.address && viewer.nicknameUnknown && !viewer.isAdmin) {
+    return (
+      <Container prose className="py-12 md:py-16">
+        <Breadcrumb campSlug={camp.slug} campName={camp.name} />
+        <EmptyState
+          icon={<span className="text-3xl">📓</span>}
+          title="Zincire şu an ulaşılamıyor"
+          description={t.errors.chainUnreachable}
+        />
+      </Container>
+    );
+  }
 
   /* ---- Kimlik kapısı ---- */
   if (!viewer.address || (!viewer.hasNickname && !viewer.isAdmin)) {
@@ -123,10 +142,14 @@ export default async function NotesPage({params, searchParams}: Props) {
         </p>
       </header>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/*
+        Izgara `NotesBoard` içinde: yazma paneli açıkken sağdaki rehber
+        gizleniyor ve ekran tek sütuna düşüyor. Bu kararı düzenin sahibi
+        veremez, yazma durumunu bilen bileşen verir.
+      */}
+      <div className="mt-8">
         <NotesBoard
           campSlug={camp.slug}
-          campName={camp.name}
           weekCount={camp.weekCount}
           initialNotes={notes.map((note) => ({
             ...note,
@@ -152,11 +175,8 @@ export default async function NotesPage({params, searchParams}: Props) {
             blockingWeek: progress.blockingWeek,
             nextWeekAt: progress.nextWeekAt?.toISOString() ?? null,
           }}
+          guide={<NotesGuide variant="read" />}
         />
-
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
-          <NotesGuide variant="read" />
-        </aside>
       </div>
     </Container>
   );

@@ -5,10 +5,26 @@
  *
  * Metin `NoteBody` ile basılır — o dosyada `dangerouslySetInnerHTML` yok,
  * olmamalı da (bkz. components/notes/NoteBody.tsx).
+ *
+ * ---------------------------------------------------------------------------
+ * UZUN NOTLAR KISALTILIR
+ *
+ * Gövde 4000 karaktere kadar çıkabiliyor. Tek bir uzun not, listeyi tarayan
+ * kişinin ekranını tamamen kaplıyor ve altındaki beş notu görünmez yapıyordu.
+ * Belirli bir uzunluğun üstündeki notlar kısaltılıp "Devamını Oku" ile
+ * açılıyor.
+ *
+ * Kısaltma SADECE GÖRSEL: metnin tamamı zaten sayfada (React düğümü olarak),
+ * yalnızca kapsayıcının yüksekliği sınırlı. Ctrl+F ile arayan biri kapalı
+ * nottaki kelimeyi de bulur.
+ * ---------------------------------------------------------------------------
  */
+import {useState} from "react";
+
 import {Card, Pill} from "@/components/ui/Card";
-import {noteKindIcon, noteKindLabel, safeUrl} from "@/lib/notes/rules";
+import {isNoteKind, noteKindLabel, safeUrl} from "@/lib/notes/rules";
 import {NoteBody} from "./NoteBody";
+import {KIND_PILL, LinkIcon, NoteKindIcon, SparkleIcon} from "./kindVisuals";
 
 export type NoteView = {
   id: string;
@@ -24,6 +40,14 @@ export type NoteView = {
   updatedAt: string;
 };
 
+/**
+ * Bu uzunluğun üstündeki notlar kısaltılır.
+ *
+ * 420 karakter, ekranda kabaca altı satır — bir notun "ne anlattığını"
+ * anlamaya yeter, listeyi ele geçirmeye yetmez.
+ */
+const CLAMP_ABOVE = 420;
+
 export function NoteCard({
   note,
   onEdit,
@@ -36,22 +60,28 @@ export function NoteCard({
   /* Kaynak bağlantısı ekranda İKİNCİ kez doğrulanıyor — bkz. NoteBody */
   const source = safeUrl(note.sourceUrl);
   const edited = note.updatedAt !== note.createdAt;
+  const kind = isNoteKind(note.kind) ? note.kind : null;
+
+  const long =
+    note.body.length > CLAMP_ABOVE || note.body.split("\n").length > 8;
+  const [expanded, setExpanded] = useState(false);
+  const clamped = long && !expanded;
 
   return (
     <Card className="!p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="accent">
-            <span aria-hidden="true">{noteKindIcon(note.kind)}</span>
+          <Pill tone="neutral" className={kind ? KIND_PILL[kind] : ""}>
+            {kind && <NoteKindIcon kind={kind} className="h-3.5 w-3.5" />}
             {noteKindLabel(note.kind)}
           </Pill>
 
-          {showWeek && <Pill tone="muted">{note.weekNumber}. hafta</Pill>}
+          {showWeek && <Pill tone="muted">{note.weekNumber}. Hafta</Pill>}
 
           {note.aiAssisted && (
             <Pill tone="neutral" className="!text-warning !border-warning">
-              <span aria-hidden="true">🤖</span>
-              yapay zekâ yardımıyla
+              <SparkleIcon className="h-3.5 w-3.5" />
+              Yapay Zekâ Yardımıyla
             </Pill>
           )}
         </div>
@@ -69,9 +99,33 @@ export function NoteCard({
 
       <h3 className="mt-3 font-bold leading-snug">{note.title}</h3>
 
-      <div className="mt-2">
+      <div
+        className={[
+          "mt-2",
+          clamped ? "relative max-h-40 overflow-hidden" : "",
+        ].join(" ")}
+      >
         <NoteBody text={note.body} />
+
+        {/* Kesme çizgisi yerine erime — metnin devamı olduğu hissi kalsın */}
+        {clamped && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-surface to-transparent"
+          />
+        )}
       </div>
+
+      {long && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="mt-2 text-sm font-semibold text-accent-text underline underline-offset-2"
+        >
+          {expanded ? "Kısalt" : "Devamını Oku"}
+        </button>
+      )}
 
       {source && (
         <a
@@ -80,7 +134,7 @@ export function NoteCard({
           rel="noopener noreferrer nofollow"
           className="mt-3 inline-flex max-w-full items-center gap-1.5 text-sm font-medium text-accent-text underline underline-offset-2"
         >
-          <span aria-hidden="true">🔗</span>
+          <LinkIcon className="h-4 w-4" />
           <span className="truncate">{source}</span>
         </a>
       )}
