@@ -19,10 +19,24 @@
  *
  * Yani koruma "geliştirici dikkat ederse" çalışan bir kural değil, sorgunun
  * kendisinde gömülü bir gerçek.
+ *
+ * ---------------------------------------------------------------------------
+ * ERİŞİM ARTIK İKİ AŞAMALI
+ *
+ * Eskiden tek soru vardı: "oturum + nick var mı?" Varsa TÜM haftalar açılırdı.
+ * Artık ikinci bir soru daha var: "bu kişi bu haftaya geldi mi?"
+ *
+ *   1. KİMLİK   → oturum açık mı, zincirde nicki var mı?   (bu dosya)
+ *   2. İLERLEME → bu haftaya hak kazandı mı, not borcu var mı?
+ *                 (lib/notes/progress.ts)
+ *
+ * İkisi de geçilmeden `contentHtml` sorguya girmez. Yani ilerleme kapısı da
+ * kimlik kapısı kadar gerçek — kilitli haftanın metni tarayıcıya ulaşmıyor.
  * ---------------------------------------------------------------------------
  */
 import {db} from "@/lib/db";
 import {getViewer, type Viewer} from "@/lib/auth/guards";
+import {getCampProgress, weekLock, type CampProgress} from "@/lib/notes/progress";
 
 /**
  * HERKESE AÇIK alanlar.
@@ -59,15 +73,27 @@ export type FullWeek = PublicWeek & {
   contentHtml: string | null;
 };
 
-/** Kilidin sebebi — arayüzde farklı çağrı gösterilir */
+/**
+ * Kilidin sebebi — arayüzde her biri FARKLI bir çağrı gösterir.
+ *
+ * Bu ayrım önemli: "cüzdanını bağla" ile "önce 3. haftanın notunu yaz"
+ * kullanıcıya bambaşka iki iş yaptırır. Tek bir "erişim yok" mesajı
+ * kullanıcıyı çıkmaza sokardı.
+ */
 export type LockReason =
   /** Cüzdan bağlı değil → "Cüzdanını Bağla" */
-  | "no-session"
+  | {kind: "no-session"}
   /** Cüzdan bağlı ama zincirde nicki yok → "Nick Belirle" */
-  | "no-nickname";
+  | {kind: "no-nickname"}
+  /** Onaylı başvurusu yok → "Başvurun inceleniyor / Kampa katıl" */
+  | {kind: "not-approved"}
+  /** Bu haftaya henüz gelmedi → "Şu an N. haftadasın" */
+  | {kind: "not-reached"; entitledWeek: number}
+  /** Önceki hafta için not borcu var → "Önce N. haftanın notunu bırak" */
+  | {kind: "note-required"; blockingWeek: number};
 
 export type WeekAccess =
-  /** Tam erişim: oturum doğrulandı ve nick var */
+  /** Tam erişim: kimlik ve ilerleme kapılarının ikisi de geçildi */
   | {level: "full"; week: FullWeek; indexable: false}
   /** Herkese açık örnek hafta: cüzdan gerekmez, SEO'ya açık */
   | {level: "public-sample"; week: FullWeek; indexable: true}
@@ -121,6 +147,10 @@ export async function listCamps(): Promise<CampSummary[]> {
  *
  * Yalnızca hafta başlıkları, özetler ve aşama bilgisi. Gerçek içerik yok.
  * Bu liste arama motorlarına da açıktır: yeni üye çekmenin vitrini.
+ *
+ * ⚠️ İLERLEME KAPISI BURAYA UYGULANMAZ ve bu doğru: hafta BAŞLIKLARI zaten
+ * herkese açıktı, kilit ders İÇERİĞİNİN üstünde. Müfredatı gizleseydik
+ * kampın ne öğrettiğini kimse göremez, kimse başvurmazdı.
  */
 export async function getCurriculum(campId: number): Promise<PublicWeek[]> {
   const weeks = await db.week.findMany({
@@ -133,6 +163,26 @@ export async function getCurriculum(campId: number): Promise<PublicWeek[]> {
 }
 
 /**
+ * Ziyaretçinin bir kamptaki ilerleme durumunu döner.
+ *
+ * Müfredat sayfası bunu kullanarak hangi haftanın kilitli göründüğünü
+ * çizer. Kilit BİLGİSİ herkese açıktır (hangi haftada olduğun sır değil);
+ * kilitlenen şey haftanın İÇERİĞİ.
+ */
+export async function getProgressForViewer(
+  camp: CampSummary,
+  viewerOverride?: Viewer,
+): Promise<CampProgress> {
+  const viewer = viewerOverride ?? (await getViewer());
+  return getCampProgress(
+    viewer.address,
+    camp.id,
+    camp.weekCount,
+    viewer.isAdmin,
+  );
+}
+
+/**
  * Bir haftayı ZİYARETÇİYE GÖRE getirir.
  *
  * Karar sırası:
@@ -140,7 +190,8 @@ export async function getCurriculum(campId: number): Promise<PublicWeek[]> {
  *   2. Bu hafta public örnek mi?    → evetse herkese tam içerik + SEO
  *   3. Oturum var mı?               → yoksa kilitli ("no-session")
  *   4. Zincirde nick var mı?        → yoksa kilitli ("no-nickname")
- *   5. Hepsi tamamsa                → tam içerik
+ *   5. Bu haftaya geldi mi?         → gelmediyse kilitli (üç sebepten biri)
+ *   6. Hepsi tamamsa                → tam içerik
  *
  * @returns Erişim sonucu, ya da hafta yoksa/yayında değilse `null`
  */
@@ -153,9 +204,7 @@ export async function getWeekForViewer(
   if (!camp) return null;
 
   /* ---- 2. Herkese açık örnek hafta ---- */
-  const isPublicSample = camp.publicWeekNumber === weekNumber;
-
-  if (isPublicSample) {
+  if (camp.publicWeekNumber === weekNumber) {
     const week = await db.week.findUnique({
       where: {campId_weekNumber: {campId: camp.id, weekNumber}},
       select: FULL_FIELDS,
@@ -172,28 +221,34 @@ export async function getWeekForViewer(
 
   const viewer = viewerOverride ?? (await getViewer());
 
-  /* ---- 3 & 4. Yetki yoksa: SORGUYA `contentHtml` HİÇ GİRMEZ ---- */
-  const isAuthorized = Boolean(viewer.address) && viewer.hasNickname;
-
-  if (!isAuthorized) {
-    const week = await db.week.findUnique({
-      where: {campId_weekNumber: {campId: camp.id, weekNumber}},
-      // ⚠️ PUBLIC_FIELDS — `contentHtml` burada YOK.
-      //    Gerçek içerik veritabanından hiç okunmuyor.
-      select: PUBLIC_FIELDS,
-    });
-
-    if (!week || week.status !== "PUBLISHED") return null;
-
-    return {
-      level: "locked",
-      week: stripStatus(week),
-      reason: viewer.address ? "no-nickname" : "no-session",
-      indexable: false,
-    };
+  /* ---- 3 & 4. KİMLİK KAPISI ---- */
+  if (!viewer.address) {
+    return lockedResult(camp.id, weekNumber, {kind: "no-session"});
+  }
+  if (!viewer.hasNickname && !viewer.isAdmin) {
+    return lockedResult(camp.id, weekNumber, {kind: "no-nickname"});
   }
 
-  /* ---- 5. Tam erişim ---- */
+  /* ---- 5. İLERLEME KAPISI ---- */
+  const progress = await getCampProgress(
+    viewer.address,
+    camp.id,
+    camp.weekCount,
+    viewer.isAdmin,
+  );
+
+  const lock = weekLock(progress, weekNumber);
+
+  if (lock.kind !== "open") {
+    /*
+     * ⚠️ Buraya düşen istekte `contentHtml` SORGUYA GİRMİYOR.
+     * İlerleme kilidi de kimlik kilidi kadar gerçek: metin tarayıcıya
+     * ulaşmıyor, gizlenmiyor.
+     */
+    return lockedResult(camp.id, weekNumber, lock);
+  }
+
+  /* ---- 6. Tam erişim ---- */
   const week = await db.week.findUnique({
     where: {campId_weekNumber: {campId: camp.id, weekNumber}},
     select: FULL_FIELDS,
@@ -225,6 +280,29 @@ export async function getPublicSampleWeek(
 /* -------------------------------------------------------------------------- */
 /*                                 YARDIMCI                                   */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Kilitli sonucu üretir.
+ *
+ * Tek bir yerde toplandı çünkü burada yapılacak bir hata (yanlışlıkla
+ * `FULL_FIELDS` kullanmak) doğrudan içerik sızıntısıdır. Beş ayrı çağrı
+ * yerine tek fonksiyon → gözden kaçma ihtimali beşte bir.
+ */
+async function lockedResult(
+  campId: number,
+  weekNumber: number,
+  reason: LockReason,
+): Promise<WeekAccess | null> {
+  const week = await db.week.findUnique({
+    where: {campId_weekNumber: {campId, weekNumber}},
+    // ⚠️ PUBLIC_FIELDS — `contentHtml` burada YOK.
+    select: PUBLIC_FIELDS,
+  });
+
+  if (!week || week.status !== "PUBLISHED") return null;
+
+  return {level: "locked", week: stripStatus(week), reason, indexable: false};
+}
 
 /**
  * `status` alanını dışarı sızdırmıyoruz — iç durum bilgisi, ziyaretçiyi

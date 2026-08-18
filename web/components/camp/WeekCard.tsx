@@ -1,12 +1,17 @@
 /**
- * Hafta kartı — brand.md §7.3, üç durum
+ * Hafta kartı — brand.md §7.3
  *
- *   public   → herkese açık örnek hafta, turkuaz kenarlık, "🌐 Herkese Açık"
- *   owned    → rozeti alınmış, amber onay işareti
- *   locked   → kilit ikonu (varsayılan)
+ *   public       → herkese açık örnek hafta, turkuaz kenarlık
+ *   owned        → rozeti alınmış, amber onay işareti
+ *   açık         → kişi bu haftaya gelmiş, içerik okunabilir
+ *   notNeeded    → önceki haftanın notu yazılmadığı için kapalı
+ *   notReached   → henüz bu haftaya gelinmedi
  *
  * Kilitli kartta da başlık ve özet GÖRÜNÜR — bunlar zaten herkese açık
  * bilgi. Gizlenen tek şey ders içeriğidir.
+ *
+ * KİLİT SEBEBİNİ KARTTA GÖSTERİYORUZ: "kilitli" demek kullanıcıya ne
+ * yapacağını söylemez. "3. haftanın notunu bırak" söyler.
  */
 import Link from "next/link";
 
@@ -20,6 +25,7 @@ export function WeekCard({
   teaser,
   isPublic = false,
   owned = false,
+  lock,
 }: {
   campSlug: string;
   weekNumber: number;
@@ -27,13 +33,28 @@ export function WeekCard({
   teaser?: string;
   isPublic?: boolean;
   owned?: boolean;
+  /** Kapalıysa sebebi. Yoksa hafta açık demektir. */
+  lock?:
+    | {kind: "not-approved"}
+    | {kind: "not-reached"}
+    | {kind: "note-required"; blockingWeek: number};
 }) {
+  const closed = Boolean(lock) && !isPublic;
+
   return (
     <Link
-      href={`/kamplar/${campSlug}/hafta/${weekNumber}`}
+      href={
+        closed && lock?.kind === "note-required"
+          ? `/kamplar/${campSlug}/notlar`
+          : `/kamplar/${campSlug}/hafta/${weekNumber}`
+      }
       className="group block rounded-lg"
     >
-      <Card interactive accent={isPublic} className="h-full">
+      <Card
+        interactive
+        accent={isPublic}
+        className={["h-full", closed ? "opacity-75" : ""].join(" ")}
+      >
         <div className="flex items-start justify-between gap-3">
           <Pill tone={isPublic ? "accent" : "neutral"}>
             {fmt(t.camp.weekLabel, {n: weekNumber}).toUpperCase()}
@@ -66,8 +87,33 @@ export function WeekCard({
           </p>
         )}
 
+        {lock?.kind === "note-required" && (
+          <p className="mt-3 rounded-md border border-line-accent bg-subtle px-2.5 py-1.5 text-xs font-medium text-accent-text">
+            📓 Açmak için {lock.blockingWeek}. haftanın notunu bırak
+          </p>
+        )}
+
+        {lock?.kind === "not-reached" && (
+          <p className="mt-3 text-xs text-fg-muted">
+            Bu haftaya henüz gelmedin.
+          </p>
+        )}
+
+        {lock?.kind === "not-approved" && (
+          <p className="mt-3 text-xs text-fg-muted">
+            Başvurun onaylandığında açılır.
+          </p>
+        )}
+
         <span className="mt-4 inline-block text-sm font-medium text-accent-text">
-          {isPublic ? t.camp.viewWeek : t.camp.continue} →
+          {isPublic
+            ? t.camp.viewWeek
+            : lock?.kind === "note-required"
+              ? "Not bırak"
+              : lock
+                ? "Müfredatı gör"
+                : t.camp.continue}{" "}
+          →
         </span>
       </Card>
     </Link>

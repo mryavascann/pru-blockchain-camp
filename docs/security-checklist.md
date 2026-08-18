@@ -259,8 +259,77 @@ npm run build                                 # derleme başarılı
 npm run verify:merkle                         # TS ↔ Solidity uyumu
 npm run e2e                                   # backend akışı
 npm run e2e:full                              # zincirin ucuna kadar
+npm run test:participant                      # katılımcı profili (14 test)
+npm run test:notes                            # ortak not defteri (53 test)
 npm run notion:probe                          # Notion erişimi
 ```
+
+---
+
+## BÖLÜM 9 — Ortak not defteri (kullanıcı üretimi içerik)
+
+Not defteri, sitedeki **tek** kullanıcı üretimi içerik alanı. Hafta içeriği
+Notion'dan gelir ve denetimli bir dönüştürücüden geçer; buradaki metni ise
+doğrudan bir katılımcı yazar. Yeni saldırı yüzeyi budur.
+
+### XSS
+
+- [x] `WeekNote.body` ve `title` **düz metin** saklanır; HTML'e çevrilmez.
+- [x] Ekrana `components/notes/NoteBody.tsx` ile basılır. O dosyada
+      `dangerouslySetInnerHTML` **yok** — metin React metin düğümü olarak
+      basılır, React kaçış karakterlerini kendi uygular.
+- [x] Bağlantılar HTML olarak ayrıştırılmaz: metin düzenli ifadeyle bölünür
+      ve URL parçaları için React `<a>` **öğesi** üretilir. "HTML metni"
+      hiçbir aşamada oluşmaz.
+- [x] Protokol beyaz listesi (`safeUrl`) **iki kez** uygulanır: kayıt anında
+      sunucuda, render anında ekranda. `javascript:` ve `data:` reddedilir.
+- [x] Dış bağlantılarda `rel="noopener noreferrer nofollow"`.
+- [x] Test: `npm run test:notes` → `javascript:`/`data:` reddi ve
+      `<script>` içeren notun metin olarak saklandığı doğrulanıyor.
+
+⚠️ **Kural:** `lib/notes/service.ts` çıktısı asla `dangerouslySetInnerHTML`
+içine konmayacak. Bu dosyaya dokunan herkes bunu bilmeli.
+
+### Erişim
+
+- [x] Notlar hafta içeriğiyle **aynı** kilide tabi. Sınır (`visibleWeek`)
+      Prisma sorgusunun `where` koşulunda — arayüz filtresinde değil.
+      İleri haftaların notları sunucudan hiç çıkmaz.
+- [x] Yazarın cüzdan adresi arayüze **gönderilmez**; yalnızca nick görünür.
+      (Yönetim panelinde adres görünür — denetim için gerekli.)
+- [x] Kendi notunu düzenleme, sahiplik kontrolü `where` koşulunda yapılır;
+      "oku, karşılaştır, yaz" yarışı yok.
+- [x] Silme yok — not bir rozeti ve sonraki haftayı açtığı için,
+      silinebilseydi zorunluluk anlamsızlaşırdı.
+
+### Not zorunluluğunun sınırı — DÜRÜST DEĞERLENDİRME
+
+Not şartı `/api/proofs` uç noktasında uygulanır: borçlu haftanın merkle
+proof'u yanıta **hiç yazılmaz** (`splitByNoteDebt`). Proof olmadan işlem
+kurulamaz; kontrat `InvalidMerkleProof` ile geri çevirir. Arayüzdeki
+`disabled` bir koruma değildir, kapı proof'un kendisidir.
+
+**Ama bu kriptografik bir kilit değil, katılım kuralıdır:**
+
+- Kontrat "not yazıldı mı" diye soramaz — notlar zincir dışıdır.
+- O haftanın hak eden **tüm** adreslerini bilen biri merkle ağacını yeniden
+  kurup kendi proof'unu üretebilir. Hak ediş listesi yayınlanmıyor (ağaç
+  yalnızca veritabanında), ama teorik olarak mümkün.
+
+Yani kural, kuralı çiğnemek için uğraşmayı göze alan birini durdurmaz;
+kampı normal takip eden herkes için gerçektir. Bu kabul edilen bir risk:
+alternatifi (not hash'ini zincire yazmak) hem gas maliyeti getirir hem de
+notun *kalitesini* zaten doğrulayamaz.
+
+### Denetim
+
+- [x] Yönetim notu **gizleyebilir**, silemez (`/admin/notlar`).
+- [x] Gizlemek, yazarın not borcunu **kapatmaya devam eder** — açılmış hafta
+      geri kapanmaz, alınmış rozet geri alınmaz. Yaptırım sessiz bir yan etki
+      olarak uygulanmaz; yönetim kişiyle konuşur.
+- [x] Kişi başına hafta başına en fazla 6 not (spam sınırı).
+- [x] Yönetim özetinde "hiç notu olmayan hafta" sayacı var — Notion'daki
+      önceki defterin sessizce boş kalması bu yüzden fark edilmemişti.
 
 ---
 

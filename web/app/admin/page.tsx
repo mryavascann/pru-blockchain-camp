@@ -34,6 +34,9 @@ export default async function AdminOverviewPage() {
     referralGroups,
     universityGroups,
     participantCount,
+    noteCount,
+    publishedWeeks,
+    notedPairs,
   ] = await Promise.all([
     db.application.count({where: {status: "PENDING"}}),
     db.week.count({where: {syncStatus: "FAILED"}}),
@@ -58,7 +61,33 @@ export default async function AdminOverviewPage() {
       where: {university: {not: null}},
     }),
     db.participant.count(),
+    db.weekNote.count({where: {status: "VISIBLE"}}),
+    /*
+     * Yayındaki haftalar ve not bırakılmış (kamp, hafta) çiftleri.
+     *
+     * NEDEN İKİ SORGU + KODDA KARŞILAŞTIRMA:
+     * `WeekNote` ile `Week` arasında Prisma ilişkisi YOK — not, (kamp, hafta)
+     * çiftine bağlı, `Week` satırına değil. Bu bilinçli: bir hafta Notion'dan
+     * yeniden oluşturulsa bile notlar yerinde kalır. Bedeli, "notu olmayan
+     * hafta" sayısının burada elle hesaplanması. İki sorgu da küçük
+     * (hafta sayısı onlarca).
+     */
+    db.week.findMany({
+      where: {status: "PUBLISHED"},
+      select: {campId: true, weekNumber: true},
+    }),
+    db.weekNote.groupBy({
+      by: ["campId", "weekNumber"],
+      where: {status: "VISIBLE"},
+    }),
   ]);
+
+  const weeksWithNotes = new Set(
+    notedPairs.map((row) => `${row.campId}:${row.weekNumber}`),
+  );
+  const weeksWithoutNotes = publishedWeeks.filter(
+    (week) => !weeksWithNotes.has(`${week.campId}:${week.weekNumber}`),
+  ).length;
 
   /* Zincir durumu — RPC düşerse panel yine açılsın */
   const onChain = await readAllCamps().catch(() => null);
@@ -144,6 +173,16 @@ export default async function AdminOverviewPage() {
           highlight={failedWeeks > 0}
         />
         <Stat label="Kamp" value={camps.length} href="/admin/merkle" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Stat label="Ortak not" value={noteCount} href="/admin/notlar" />
+        <Stat
+          label="Hiç notu olmayan hafta"
+          value={weeksWithoutNotes}
+          href="/admin/notlar"
+          highlight={weeksWithoutNotes > 0 && noteCount > 0}
+        />
       </div>
 
       {/* ---------------- Senkron durumu ---------------- */}

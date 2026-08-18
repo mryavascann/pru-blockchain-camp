@@ -45,7 +45,9 @@
     "publicBadge": "Herkese Açık",
     "inactive": "Bu kamp şu anda yeni rozet almaya kapalı.",
     "progressOf": "{done} / {total}",
-    "noWeeksYet": "Bu kampın içeriği henüz yayınlanmadı."
+    "noWeeksYet": "Bu kampın içeriği henüz yayınlanmadı.",
+    "notesLink": "Ortak notlar",
+    "notesPromo": "Her haftanın bir ortak not defteri var; takıldığın yerde diğer katılımcıların notlarından yardım alabilirsin."
   },
   "locked": {
     "title": "Kamp katılımcılarına özel",
@@ -57,7 +59,19 @@
       "message": "Son bir adım: kendine bir nick seç.",
       "cta": "Nick Belirle"
     },
-    "sampleLink": "Örnek haftayı incele"
+    "sampleLink": "Örnek haftayı incele",
+    "notApproved": {
+      "message": "Bu kampta henüz onaylı bir haftan yok.",
+      "cta": "Kampa Katıl"
+    },
+    "notReached": {
+      "message": "Bu haftaya henüz gelmedin.",
+      "cta": "Ortak notlara git"
+    },
+    "noteRequired": {
+      "message": "Önce {n}. hafta için notunu bırak.",
+      "cta": "Not bırak"
+    }
   },
   "onboarding": {
     "title": "Kampa Katıl",
@@ -182,7 +196,10 @@
     "referral": "Nereden duydu",
     "referralBreakdown": "Siteyi nereden duydular",
     "universityBreakdown": "Üniversite dağılımı",
-    "noProfile": "profil bilgisi yok"
+    "noProfile": "profil bilgisi yok",
+    "notes": "Notlar",
+    "noteModeration": "Not denetimi",
+    "progress": "İlerleme"
   },
   "common": {
     "loading": "Yükleniyor…",
@@ -198,5 +215,20 @@
     "themeDark": "Koyu",
     "themeSystem": "Sistem",
     "testnetWarning": "Bu site test ağında (Base Sepolia) çalışıyor. Rozetler gerçek değer taşımaz."
+  },
+  "notes": {
+    "title": "Ortak Ders Notları",
+    "subtitle": "Katılımcıların birbirine bıraktığı notlar",
+    "addNote": "Not bırak",
+    "editNote": "Notu düzenle",
+    "saveNote": "Notu bırak",
+    "updateNote": "Notu güncelle",
+    "empty": "Bu defter henüz boş",
+    "emptyHelp": "İlk notu sen bırakabilirsin.",
+    "aiAssisted": "yapay zekâ yardımıyla",
+    "aiWarning": "Yapay zekâ yanılabilir; kritik bir şeyde hocaya doğrulat.",
+    "lockedFuture": "İleri haftaların notları sen o haftaya geldiğinde açılır.",
+    "owedTitle": "{n}. hafta için notunu bekliyoruz",
+    "owedHelp": "Bu haftanın rozetini alabilmen ve sıradaki haftanın açılması için bir not bırakman gerekiyor."
   }
 }

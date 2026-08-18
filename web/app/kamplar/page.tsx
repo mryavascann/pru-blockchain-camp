@@ -29,6 +29,23 @@ export default async function CampsPage() {
         kampa katılman gerekir.
       </p>
 
+      {/*
+        Ortak notların TANITIMI burada yapılıyor çünkü bu sayfa, kampa
+        bakmaya gelen kişinin ilk durağı. "Yalnız yürümeyeceksin" bilgisi,
+        katılma kararını etkileyen bir şey — müfredat kadar önemli.
+      */}
+      <div className="mt-6 max-w-2xl rounded-lg border border-line-accent bg-subtle p-4">
+        <p className="text-sm leading-relaxed text-fg-secondary">
+          <span aria-hidden="true">📓</span>{" "}
+          <strong className="text-fg">Takıldığın yerde yalnız değilsin.</strong>{" "}
+          Her haftanın bir ortak not defteri var: katılımcılar anlamadıkları
+          terimlerin açıklamalarını, takıldıkları yerleri ve işlerine yarayan
+          kaynakları oraya yazıyor. Dersi çalışırken defteri yan sekmede açık
+          tutabilir, senden önce aynı yerde tıkanmış birinin çözümünü
+          okuyabilirsin.
+        </p>
+      </div>
+
       {camps.length === 0 ? (
         <div className="mt-10">
           <EmptyState
@@ -71,6 +88,12 @@ export default async function CampsPage() {
                     🌐 {t.locked.sampleLink}
                   </ButtonLink>
                 )}
+                <ButtonLink
+                  href={`/kamplar/${camp.slug}/notlar`}
+                  variant="ghost"
+                >
+                  📓 {t.camp.notesLink}
+                </ButtonLink>
               </div>
             </Card>
           ))}

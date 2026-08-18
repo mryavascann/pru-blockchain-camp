@@ -24,6 +24,7 @@ import {notFound} from "next/navigation";
 import {LockedPreview} from "@/components/camp/LockedPreview";
 import {Container, Pill} from "@/components/ui/Card";
 import {getCampBySlug, getWeekForViewer} from "@/lib/content/access";
+import {countNotesByWeek} from "@/lib/notes/service";
 import {fmt, t} from "@/lib/i18n";
 
 type Props = {params: Promise<{slug: string; week: string}>};
@@ -96,6 +97,11 @@ export default async function WeekPage({params}: Props) {
   /* ---- AÇIK (public örnek hafta veya tam erişim) ---- */
   const isSample = access.level === "public-sample";
 
+  /* Not sayısı yalnızca tam erişimde okunuyor — örnek haftada gereksiz sorgu */
+  const noteCount = isSample
+    ? 0
+    : (await countNotesByWeek(camp.id, weekNumber)).get(weekNumber) ?? 0;
+
   return (
     <Container prose className="py-10 md:py-14">
       <Breadcrumb campSlug={camp.slug} campName={camp.name} />
@@ -143,8 +149,66 @@ export default async function WeekPage({params}: Props) {
         <p className="text-fg-muted">{t.camp.noWeeksYet}</p>
       )}
 
+      {/*
+        Ortak notlara köprü. Yalnızca TAM ERİŞİMDE gösteriliyor: herkese açık
+        örnek haftayı gezen ziyaretçinin not defterine erişimi yok, oraya
+        yönlendirmek onu kilitli bir ekrana düşürürdü.
+      */}
+      {!isSample && (
+        <WeekNotesLink
+          campSlug={camp.slug}
+          weekNumber={weekNumber}
+          count={noteCount}
+        />
+      )}
+
       <WeekNav campSlug={camp.slug} weekNumber={weekNumber} weekCount={camp.weekCount} />
     </Container>
+  );
+}
+
+/**
+ * "Bu haftanın ortak notları" kutusu.
+ *
+ * Ders sayfasının ALTINDA duruyor, üstünde değil: önce içerik okunsun,
+ * takılınca nota bakılsın. Üste koysaydık defter bir "cevap anahtarı" gibi
+ * kullanılırdı.
+ */
+function WeekNotesLink({
+  campSlug,
+  weekNumber,
+  count,
+}: {
+  campSlug: string;
+  weekNumber: number;
+  count: number;
+}) {
+  return (
+    <aside className="mt-12 rounded-lg border border-line-accent bg-subtle p-5">
+      <p className="font-bold">
+        <span aria-hidden="true">📓</span> Bu haftanın ortak notları
+        {count > 0 && (
+          <span className="ml-2 text-fg-secondary">({count})</span>
+        )}
+      </p>
+
+      <p className="mt-1.5 text-sm leading-relaxed text-fg-secondary">
+        {count > 0
+          ? "Bu haftayı çalışan diğer katılımcılar takıldıkları yerleri, " +
+            "öğrendikleri terimleri ve işlerine yarayan kaynakları buraya " +
+            "yazdı. Bir yerde tıkandığında önce buraya bak."
+          : "Bu hafta için henüz not yok. İlkini sen bırakabilirsin — " +
+            "anlamadığın bir terimi araştırıp öğrendiysen, öğrendiğini " +
+            "yazman senden sonra gelene zaman kazandırır."}
+      </p>
+
+      <Link
+        href={`/kamplar/${campSlug}/notlar?hafta=${weekNumber}`}
+        className="mt-3 inline-block text-sm font-semibold text-accent-text underline underline-offset-4"
+      >
+        {count > 0 ? "Notları oku" : "İlk notu bırak"} →
+      </Link>
+    </aside>
   );
 }
 

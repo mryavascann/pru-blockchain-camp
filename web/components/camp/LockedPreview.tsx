@@ -37,9 +37,14 @@ export function LockedPreview({
   /** Varsa "örnek haftayı incele" bağlantısı gösterilir */
   publicWeekNumber: number | null;
 }) {
-  /* İki kilit sebebi, iki farklı çağrı — brand.md §8.4 */
-  const copy =
-    reason === "no-nickname" ? t.locked.noNickname : t.locked.noSession;
+  /*
+   * Her kilit sebebi FARKLI bir çağrı gösterir — brand.md §8.4.
+   *
+   * Tek bir "erişimin yok" mesajı kullanıcıyı çıkmaza sokardı: cüzdanını
+   * bağlaması gerekenle, 3. haftanın notunu yazması gereken kişi bambaşka
+   * iki iş yapmalı.
+   */
+  const copy = lockCopy(reason, campSlug);
 
   return (
     <article
@@ -105,9 +110,11 @@ export function LockedPreview({
 
           <p className="max-w-sm font-semibold">{copy.message}</p>
 
-          {/* İki kilit sebebi de aynı sayfaya yönlendiriyor; fark eden
-              yalnızca yukarıdaki mesaj ve düğme metni (brand.md §8.4). */}
-          <ButtonLink href="/katil" variant="accent" size="lg">
+          {copy.help && (
+            <p className="max-w-sm text-sm text-fg-secondary">{copy.help}</p>
+          )}
+
+          <ButtonLink href={copy.href} variant="accent" size="lg">
             {copy.cta}
           </ButtonLink>
 
@@ -124,6 +131,66 @@ export function LockedPreview({
       </div>
     </article>
   );
+}
+
+/**
+ * Kilit sebebini ekrandaki üç parçaya çevirir: mesaj, açıklama, düğme.
+ *
+ * Ayrı bir fonksiyon çünkü aynı eşleme müfredat kartlarında da lazım —
+ * kural tek yerde dursun.
+ */
+function lockCopy(
+  reason: LockReason,
+  campSlug: string,
+): {message: string; help?: string; cta: string; href: string} {
+  switch (reason.kind) {
+    case "no-session":
+      return {
+        message: t.locked.noSession.message,
+        cta: t.locked.noSession.cta,
+        href: "/katil",
+      };
+
+    case "no-nickname":
+      return {
+        message: t.locked.noNickname.message,
+        cta: t.locked.noNickname.cta,
+        href: "/katil",
+      };
+
+    case "not-approved":
+      return {
+        message: "Bu kampta henüz onaylı bir haftan yok.",
+        help:
+          "Kaçıncı haftada olduğunu bildir; kulüp yöneticisi onayladığında " +
+          "o haftaya kadarki tüm içerik ve ortak notlar açılır.",
+        cta: "Kampa Katıl",
+        href: "/katil",
+      };
+
+    case "not-reached":
+      return {
+        message: `Bu haftaya henüz gelmedin.`,
+        help:
+          `Şu an ${reason.entitledWeek}. haftadasın. Kamp ilerledikçe yeni ` +
+          "haftalar sırayla açılır — sıradaki hafta, bu haftanın notunu " +
+          "bıraktığında açılacak.",
+        cta: "Ortak notlara git",
+        href: `/kamplar/${campSlug}/notlar`,
+      };
+
+    case "note-required":
+      return {
+        message: `Önce ${reason.blockingWeek}. hafta için notunu bırak.`,
+        help:
+          `${reason.blockingWeek}. haftayı tamamladın ama ortak deftere henüz ` +
+          "not eklemedin. Bir not bıraktığında bu hafta açılır ve " +
+          `${reason.blockingWeek}. haftanın rozetini alabilirsin. Öğrendiğin, ` +
+          "takıldığın ya da birine anlatmak isteyeceğin ne varsa yeter.",
+        cta: `${reason.blockingWeek}. hafta için not bırak`,
+        href: `/kamplar/${campSlug}/notlar`,
+      };
+  }
 }
 
 function LockIcon({size = 18}: {size?: number}) {

@@ -12,7 +12,9 @@ const TABS: Tab[] = [
   // "Özet" sekmesi her zaman aktif görünürdü.
   {href: "/admin", label: "Özet", exact: true},
   {href: "/admin/basvurular", label: t.admin.applications},
+  {href: "/admin/ilerleme", label: t.admin.progress},
   {href: "/admin/icerik", label: t.admin.content},
+  {href: "/admin/notlar", label: t.admin.notes},
   {href: "/admin/merkle", label: t.admin.merkle},
 ];
 

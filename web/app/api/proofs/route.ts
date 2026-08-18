@@ -5,10 +5,13 @@
  * Arayüz bunu alıp "Rozeti Al" butonlarını oluşturur.
  *
  * ---------------------------------------------------------------------------
- * HER HAFTA ÜÇ DURUMDAN BİRİNDE OLUR:
+ * HER HAFTA DÖRT DURUMDAN BİRİNDE OLUR:
  *
  *   claimable          → proof hazır, kök zincirde, rozet henüz alınmamış
  *                        → "Rozeti Al" butonu aktif
+ *
+ *   needsNote          → her şey hazır AMA bu hafta için not yazılmamış
+ *                        → "Önce notunu bırak" — proof GÖNDERİLMEZ
  *
  *   alreadyClaimed     → rozet zaten cüzdanda
  *                        → yeşil onay işareti, buton yok
@@ -16,16 +19,36 @@
  *   pendingPublication → hak edildi ama kök henüz zincire yazılmadı
  *                        → "Liste yayınlanmayı bekliyor" bilgisi
  *
- * ÜÇÜNCÜ DURUM NEDEN ÖNEMLİ: Kök yazılmadan kullanıcıya "Rozeti Al" butonu
+ * DÖRDÜNCÜ DURUM NEDEN ÖNEMLİ: Kök yazılmadan kullanıcıya "Rozeti Al" butonu
  * gösterseydik, kullanıcı butona basar, cüzdanını onaylar, GAS ÖDER ve işlem
  * `InvalidMerkleProof` ile geri dönerdi. Başarısız bir işlem için para
  * harcatmak kabul edilemez — bu yüzden zincirdeki kökü ÖNCEDEN kontrol
  * ediyoruz.
+ *
+ * ---------------------------------------------------------------------------
+ * NOT ZORUNLULUĞU NEDEN TAM BURADA UYGULANIYOR
+ *
+ * Not şartı arayüzde bir `disabled` özniteliği olarak durursa gerçek değildir:
+ * tarayıcı konsolundan `claimBatch` çağıran biri onu atlar.
+ *
+ * Asıl kapı PROOF'un kendisidir. Proof olmadan işlem oluşturulamaz, çünkü
+ * kontrat `verify(proof, root, leaf)` çalıştırır ve geçersiz proof'u
+ * `InvalidMerkleProof` ile geri çevirir. Bu uç nokta not borcu olan haftanın
+ * proof'unu yanıta HİÇ KOYMAZ.
+ *
+ * ⚠️ DÜRÜST SINIR: Bu kriptografik bir kilit DEĞİL, katılım kuralıdır.
+ * Merkle ağacı, o haftanın hak eden TÜM adreslerini bilen biri tarafından
+ * yeniden kurulabilir ve proof kendi başına üretilebilir. O liste
+ * yayınlanmıyor (ağaç yalnızca veritabanında duruyor), ama teorik olarak
+ * mümkün. Kontrat "not yazıldı mı" diye soramaz — notlar zincir dışıdır.
+ * Yani bu kural, kuralı çiğnemek için uğraşmayı göze alan birini durdurmaz;
+ * kampı normal takip eden herkes için gerçektir.
  * ---------------------------------------------------------------------------
  */
 import {requireViewer} from "@/lib/auth/guards";
 import {getCampBySlug} from "@/lib/content/access";
 import {getProofsForAddress} from "@/lib/merkle/service";
+import {getCampProgress, splitByNoteDebt} from "@/lib/notes/progress";
 import {readBalancesForPairs} from "@/lib/chain/client";
 import {encodeTokenId} from "@/lib/chain/tokenId";
 import {fail, handle, ok} from "@/lib/api";
@@ -46,7 +69,10 @@ export async function GET(request: Request) {
       return fail("Böyle bir kamp bulunamadı.", 404, "CAMP_NOT_FOUND");
     }
 
-    const bundle = await getProofsForAddress(viewer.address!, camp.id);
+    const [bundle, progress] = await Promise.all([
+      getProofsForAddress(viewer.address!, camp.id),
+      getCampProgress(viewer.address, camp.id, camp.weekCount, false),
+    ]);
 
     /* ---- Hangileri zaten alınmış? Tek RPC çağrısında öğreniyoruz ---- */
     const claimableWeeks = bundle.claimable.map((c) => c.weekNumber);
@@ -61,24 +87,40 @@ export async function GET(request: Request) {
           )
         : [];
 
-    const weeks = bundle.claimable.map((entry, index) => ({
-      weekNumber: entry.weekNumber,
-      proof: entry.proof,
-      alreadyClaimed: owned[index] ?? false,
-    }));
-
-    const readyToClaim = weeks.filter((w) => !w.alreadyClaimed);
+    /*
+     * Not borçlu haftaların proof'u burada SAKLANIYOR.
+     * Kural saf bir fonksiyonda duruyor ki doğrudan test edilebilsin —
+     * bkz. lib/notes/progress.ts → splitByNoteDebt.
+     */
+    const split = splitByNoteDebt(
+      bundle.claimable.map((entry, index) => ({
+        weekNumber: entry.weekNumber,
+        proof: entry.proof,
+        alreadyClaimed: owned[index] ?? false,
+      })),
+      progress.owedWeeks,
+    );
 
     return ok({
       camp: {id: camp.id, slug: camp.slug, name: camp.name},
       /** Nick yoksa mint zincirde reddedilir — arayüz önce nick istemeli */
       requiresNickname: !viewer.hasNickname,
-      weeks,
+      weeks: split.weeks,
       /** Tek işlemde alınabilecek haftalar (claimBatch için) */
-      claimableWeekNumbers: readyToClaim.map((w) => w.weekNumber),
-      claimableProofs: readyToClaim.map((w) => w.proof),
+      claimableWeekNumbers: split.readyWeekNumbers,
+      claimableProofs: split.readyProofs,
       /** Hak edildi ama kökü henüz yayınlanmadı */
       pendingPublication: bundle.pendingPublication,
+      /** Rozeti almak için önce not yazılması gereken haftalar */
+      needsNote: split.needsNote,
+      /** İlerleme durumu — arayüz "sıradaki hafta ne zaman açılır"ı gösterir */
+      progress: {
+        entitledWeek: progress.entitledWeek,
+        entryWeek: progress.entryWeek,
+        visibleWeek: progress.visibleWeek,
+        owedWeeks: progress.owedWeeks,
+        blockingWeek: progress.blockingWeek,
+      },
     });
   });
 }

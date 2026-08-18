@@ -76,6 +76,7 @@ model Camp {
   applications Application[]
   completions  WeeklyCompletion[]
   merkleTrees  MerkleTree[]
+  notes        WeekNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -409,4 +410,95 @@ model Participant {
 
   @@index([referralSource])
   @@index([university])
+}
+
+// ============================================================================
+//                        ORTAK DERS NOTLARI (NOT DEFTERİ)
+// ============================================================================
+
+/// Bir notun türü.
+///
+/// NEDEN SERBEST DEĞİL DE DÖRT TÜR:
+/// Notion'daki not defteri boş kaldı çünkü katkı verecek kişi boş bir sayfayla
+/// karşılaşıyordu — "ne yazacağım?" sorusunun cevabı yoktu. Tür seçmek bu
+/// soruyu ortadan kaldırır: her türün kendi yönergesi ve örneği var.
+enum NoteKind {
+  /// Anlamadığın bir terim/kavram ve öğrendiğin açıklaması
+  TERIM
+
+  /// Haftanın kendi cümlelerinle özeti
+  OZET
+
+  /// İşine yarayan bir kaynak (video, makale, dokümantasyon) ve NEDEN yaradığı
+  KAYNAK
+
+  /// Takıldığın nokta ve oradan nasıl çıktığın
+  TUZAK
+}
+
+enum NoteStatus {
+  /// Not defterinde görünür
+  VISIBLE
+
+  /// Yönetim gizledi (spam, yanlış bilgi). SİLİNMEZ — denetim izi kalsın.
+  HIDDEN
+}
+
+/// Bir katılımcının bir hafta için bıraktığı ortak not.
+///
+/// ⚠️ BU TABLO KULLANICI ÜRETİMİ İÇERİK TUTAR — projedeki TEK yer.
+/// `body` DÜZ METİNDİR, HTML DEĞİL. Ekranda React metin düğümü olarak basılır,
+/// `dangerouslySetInnerHTML` ile ASLA. Bağlantılar render sırasında ayrı
+/// `<a>` öğelerine dönüştürülür ve yalnızca http/https protokolüne izin verilir.
+/// Bu ayrımı bozmak, siteyi XSS'e açar.
+///
+/// Hafta içeriği (`Week.contentHtml`) Notion'dan gelir ve denetimli bir
+/// dönüştürücüden geçer; burası öyle değil — kaynağı doğrudan kullanıcıdır.
+model WeekNote {
+  id String @id @default(cuid())
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  weekNumber Int
+
+  /// Yazarın cüzdan adresi — KÜÇÜK HARF (bkz. Application.address)
+  address String
+
+  /// Yazarın nicki, YAZDIĞI ANDAKİ hâliyle.
+  ///
+  /// Neden zincirden okunmuyor: not defteri sayfası onlarca not gösterir;
+  /// her not için zincire gitmek sayfayı saniyelerce bekletirdi. Nick
+  /// değiştirilebildiği için bu bir anlık görüntüdür — kullanıcı notunu her
+  /// güncellediğinde tazelenir.
+  authorNickname String
+
+  kind NoteKind
+
+  /// Kısa başlık: "reentrancy tam olarak ne demek?"
+  title String
+
+  /// Notun kendisi. DÜZ METİN (yukarıdaki uyarıya bak).
+  body String
+
+  /// İsteğe bağlı kaynak bağlantısı. Yalnızca http/https kabul edilir.
+  sourceUrl String?
+
+  /// "Bu açıklamayı bir yapay zekâya sordum" işareti.
+  ///
+  /// Neden ayrı bir alan: kamp katılımcısı yapay zekâdan aldığı cevabı
+  /// buraya yapıştırdığında, okuyan kişi bunun bir insanın deneyimi mi yoksa
+  /// bir modelin açıklaması mı olduğunu bilmeli. İkisi de değerli ama aynı
+  /// şey değil — model yanılabilir.
+  aiAssisted Boolean @default(false)
+
+  status NoteStatus @default(VISIBLE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Not defteri sayfasının ana sorgusu
+  @@index([campId, weekNumber, status, createdAt])
+  /// "Bu kişi bu hafta için not yazmış mı?" — mint kapısının sorgusu
+  @@index([address, campId, weekNumber])
 }

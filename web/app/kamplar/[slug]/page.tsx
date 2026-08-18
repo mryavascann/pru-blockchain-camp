@@ -11,12 +11,14 @@
  * ZİNCİRDEN okunur, veritabanından değil.
  */
 import type {Metadata} from "next";
+import Link from "next/link";
 import {notFound} from "next/navigation";
 
 import {WeekCard} from "@/components/camp/WeekCard";
 import {ProgressBoxes} from "@/components/ui/Progress";
 import {Container, EmptyState, Pill} from "@/components/ui/Card";
-import {getCampBySlug, getCurriculum} from "@/lib/content/access";
+import {getCampBySlug, getCurriculum, getProgressForViewer} from "@/lib/content/access";
+import {weekLock} from "@/lib/notes/progress";
 import {getViewer} from "@/lib/auth/guards";
 import {readProgress} from "@/lib/chain/client";
 import {t} from "@/lib/i18n";
@@ -63,6 +65,15 @@ export default async function CampPage({params}: Props) {
     ).catch(() => null);
   }
 
+  /*
+   * İlerleme kapısı: hangi haftalar açık?
+   *
+   * Bu bilgi kartlarda KİLİT SEBEBİ olarak gösteriliyor — hafta başlıkları
+   * zaten herkese açık, gizlenen ders içeriği. "Kilitli" demek yerine
+   * "3. haftanın notunu bırak" demek kullanıcıya ne yapacağını söylüyor.
+   */
+  const campProgress = await getProgressForViewer(camp, viewer);
+
   /* Haftaları aşamalara göre grupla (Notion'daki "1. AŞAMA" / "1. AY") */
   const groups = new Map<string, typeof weeks>();
   for (const week of weeks) {
@@ -98,6 +109,33 @@ export default async function CampPage({params}: Props) {
         )}
       </header>
 
+      {/*
+        Ortak notlar tanıtımı. Müfredatın ÜSTÜNDE duruyor çünkü kampı
+        inceleyen kişinin bilmesi gereken bir şey: burada yalnız değilsin.
+      */}
+      <section className="mt-8 rounded-lg border border-line-accent bg-subtle p-5 md:p-6">
+        <h2 className="text-lg font-bold tracking-tight">
+          <span aria-hidden="true">📓</span> Bu kampta yalnız değilsin
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fg-secondary">
+          Her haftanın bir <strong className="text-fg">ortak not defteri</strong>{" "}
+          var. Katılımcılar takıldıkları yerleri, anlamadıkları terimlerin
+          açıklamalarını ve işlerine yarayan kaynakları oraya yazıyor. Dersi
+          çalışırken defteri yan sekmede açık tutabilir, bir yerde tıkandığında
+          senden önce aynı yerde tıkanmış birinin çözümünü okuyabilirsin.
+        </p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fg-secondary">
+          Defter böyle büyüyor: haftanın rozetini alırken sen de bir not
+          bırakıyorsun, o not bir sonraki haftayı açıyor.
+        </p>
+        <Link
+          href={`/kamplar/${camp.slug}/notlar`}
+          className="mt-3 inline-block text-sm font-semibold text-accent-text underline underline-offset-4"
+        >
+          Ortak notlara git →
+        </Link>
+      </section>
+
       {weeks.length === 0 ? (
         <div className="mt-12">
           <EmptyState
@@ -125,6 +163,7 @@ export default async function CampPage({params}: Props) {
                     teaser={week.teaser}
                     isPublic={camp.publicWeekNumber === week.weekNumber}
                     owned={progress?.[week.weekNumber - 1] ?? false}
+                    lock={cardLock(campProgress, week.weekNumber)}
                   />
                 ))}
               </div>
@@ -134,4 +173,34 @@ export default async function CampPage({params}: Props) {
       )}
     </Container>
   );
+}
+
+/**
+ * `CampProgress` → hafta kartının kilit rozeti.
+ *
+ * `weekLock` beş durum döner; kart yalnızca üçünü çizer. Kimlik sebepleri
+ * ("cüzdan yok", "nick yok") burada ilgisiz: müfredat sayfası zaten herkese
+ * açık ve o kişiler için hiçbir hafta "kilitli" gösterilmemeli — henüz
+ * kampta değiller.
+ */
+function cardLock(
+  campProgress: Awaited<ReturnType<typeof getProgressForViewer>>,
+  weekNumber: number,
+):
+  | {kind: "not-approved"}
+  | {kind: "not-reached"}
+  | {kind: "note-required"; blockingWeek: number}
+  | undefined {
+  const lock = weekLock(campProgress, weekNumber);
+
+  switch (lock.kind) {
+    case "open":
+      return undefined;
+    case "not-approved":
+      return {kind: "not-approved"};
+    case "not-reached":
+      return {kind: "not-reached"};
+    case "note-required":
+      return {kind: "note-required", blockingWeek: lock.blockingWeek};
+  }
 }
