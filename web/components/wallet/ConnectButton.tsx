@@ -1,62 +1,48 @@
 "use client";
 
 /**
- * ============================================================================
- * Cüzdan bağlantı düğmesi — beş durum
+ * Tek tıklamalı cüzdan girişi.
  *
- *   1. Cüzdan yok           → "MetaMask'i Kur" yönlendirmesi
- *   2. Bağlı değil          → "Cüzdanını Bağla"
- *   3. Yanlış ağ            → "Base Sepolia'ya geç"  (brand.md §9.4)
- *   4. Bağlı, imza yok      → "Giriş İçin İmzala"
- *   5. Giriş yapılmış       → nick + adres + menü
- *
- * brand.md §9.4: "Yanlış ağ engel değil, tek tık." Kullanıcıyı kilitlemek
- * yerine tek düğmeyle çözüm sunuyoruz.
- * ============================================================================
+ * Düğme, useAuth içindeki birleşik akışı başlatır:
+ * cüzdanı bağla → gerekiyorsa ağı değiştir → SIWE mesajını imzala.
+ * Kullanıcı cüzdanında gerekli güvenlik onaylarını görür ama sitede ayrıca
+ * "Giriş İçin İmzala" düğmesine basmaz.
  */
 import {useEffect, useRef, useState} from "react";
 import Link from "next/link";
-import {useConnect, useDisconnect, useSwitchChain} from "wagmi";
+import {useRouter} from "next/navigation";
 
-import {Button, Spinner} from "@/components/ui/Button";
+import {Button, type ButtonProps} from "@/components/ui/Button";
 import {shortenAddress} from "@/components/ui/Address";
+import {activeChain} from "@/lib/chain/config";
 import {useAuth} from "@/lib/hooks/useAuth";
-import {expectedChain} from "@/lib/wagmi";
 import {fmt, t} from "@/lib/i18n";
 
 export function ConnectButton() {
   const {
     isConnected,
-    walletAddress,
     session,
     isLoadingSession,
+    isWalletReady,
+    hasWallet,
     needsSignIn,
     wrongNetwork,
-    signIn,
+    authenticate,
     signOut,
+    disconnect,
   } = useAuth();
 
-  const {connect, connectors, isPending: isConnecting} = useConnect();
-  const {disconnect} = useDisconnect();
-  const {switchChain, isPending: isSwitching} = useSwitchChain();
-
   const [menuOpen, setMenuOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  /* Dışarı tıklayınca menüleri kapat */
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
       if (!wrapperRef.current?.contains(event.target as Node)) {
         setMenuOpen(false);
-        setPickerOpen(false);
       }
     }
     function onEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-        setPickerOpen(false);
-      }
+      if (event.key === "Escape") setMenuOpen(false);
     }
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onEscape);
@@ -66,46 +52,34 @@ export function ConnectButton() {
     };
   }, []);
 
-  /* Sunucudan oturum bilgisi gelene kadar düzen zıplamasın */
-  if (isLoadingSession && !isConnected) {
+  if ((isLoadingSession && !isConnected) || !isWalletReady) {
     return <div className="h-10 w-36 animate-pulse rounded-md bg-subtle" />;
   }
 
-  /* ---- 3. Yanlış ağ ---- */
-  if (isConnected && wrongNetwork) {
+  /* Aktif cüzdanla oturum uyuşmuyorsa veya ağ yanlışsa aynı birleşik akış. */
+  if (needsSignIn || (isConnected && wrongNetwork)) {
     return (
-      <Button
-        variant="danger"
-        loading={isSwitching}
-        onClick={() => switchChain({chainId: expectedChain.id})}
-      >
-        {isSwitching
-          ? t.wallet.switching
-          : fmt(t.wallet.switchNetwork, {network: expectedChain.name})}
-      </Button>
-    );
-  }
-
-  /* ---- 4. Bağlı ama imza atılmamış ---- */
-  if (isConnected && needsSignIn) {
-    return (
-      <div ref={wrapperRef} className="flex items-center gap-2">
+      <div ref={wrapperRef} className="relative flex items-center gap-2">
         <Button
-          variant="accent"
-          loading={signIn.isPending}
-          onClick={() => signIn.mutate()}
+          variant={wrongNetwork ? "danger" : "accent"}
+          loading={authenticate.isPending}
+          onClick={() => authenticate.mutate()}
           title={t.wallet.signInHint}
         >
-          {signIn.isPending ? t.wallet.signingIn : t.wallet.signIn}
+          {authenticate.isPending
+            ? t.wallet.signingIn
+            : wrongNetwork
+              ? fmt(t.wallet.switchNetwork, {network: activeChain.name})
+              : t.wallet.connect}
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => disconnect()}>
+        <Button variant="ghost" size="sm" onClick={disconnect}>
           {t.wallet.disconnect}
         </Button>
+        <AuthError error={authenticate.error} />
       </div>
     );
   }
 
-  /* ---- 5. Giriş yapılmış ---- */
   if (session?.address) {
     return (
       <div ref={wrapperRef} className="relative">
@@ -185,94 +159,98 @@ export function ConnectButton() {
     );
   }
 
-  /* ---- 1 & 2. Bağlı değil ---- */
-  const injectedConnector = connectors.find((c) => c.id === "injected");
-  const hasInjectedWallet =
-    typeof window !== "undefined" && "ethereum" in window;
+  if (!hasWallet) {
+    return (
+      <a
+        href="https://metamask.io/download/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex h-10 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-fg"
+        title={t.wallet.noWalletHelp}
+      >
+        {t.wallet.installMetamask}
+      </a>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="relative">
       <Button
         variant="accent"
-        loading={isConnecting}
-        onClick={() => {
-          // Tek cüzdan varsa seçim ekranı göstermeye gerek yok
-          if (hasInjectedWallet && injectedConnector && connectors.length <= 2) {
-            connect({connector: injectedConnector});
-          } else {
-            setPickerOpen((open) => !open);
-          }
-        }}
+        loading={authenticate.isPending}
+        onClick={() => authenticate.mutate()}
       >
-        {isConnecting ? t.wallet.connecting : t.wallet.connect}
+        {authenticate.isPending ? t.wallet.signingIn : t.wallet.connect}
       </Button>
-
-      {pickerOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-lg border border-line bg-elevated shadow-[var(--shadow-lg)]">
-          {!hasInjectedWallet && (
-            <div className="border-b border-line px-4 py-3">
-              <p className="text-sm font-semibold">{t.wallet.noWallet}</p>
-              <p className="mt-1 text-xs text-fg-secondary">
-                {t.wallet.noWalletHelp}
-              </p>
-              <a
-                href="https://metamask.io/download/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-block text-xs font-semibold text-accent-text underline underline-offset-2"
-              >
-                {t.wallet.installMetamask} →
-              </a>
-            </div>
-          )}
-
-          {connectors.map((connector) => (
-            <button
-              key={connector.uid}
-              type="button"
-              onClick={() => {
-                connect({connector});
-                setPickerOpen(false);
-              }}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-subtle"
-            >
-              {connector.icon && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={connector.icon} alt="" width={20} height={20} />
-              )}
-              <span>{connector.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <AuthError error={authenticate.error} />
     </div>
   );
 }
 
-/** İmza sürecini gösteren küçük yardımcı — form içi kullanım için */
-export function SignInPrompt() {
-  const {signIn, needsSignIn} = useAuth();
-  if (!needsSignIn) return null;
+/**
+ * Sunucuda kilitli gösterilen bir sayfadaki CTA. Önce bağlantı ve imzayı
+ * tamamlar, sonra bilgi formuna/geçiş hedefine götürür. Böylece /katil
+ * sayfasında kullanıcıya ikinci kez "Cüzdanını Bağla" denmez.
+ */
+export function WalletGateButton({
+  continueTo,
+  children,
+  variant = "accent",
+  size = "lg",
+  ...buttonProps
+}: {
+  continueTo: string;
+  children: React.ReactNode;
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+} & Omit<ButtonProps, "children" | "onClick" | "loading">) {
+  const router = useRouter();
+  const {session, needsSignIn, authenticate} = useAuth();
+
+  async function continueAfterAuthentication() {
+    try {
+      if (!session?.address || needsSignIn) {
+        await authenticate.mutateAsync();
+      }
+      router.push(continueTo);
+      router.refresh();
+    } catch {
+      // Mutation hatayı CTA'nın hemen altında gösterir; yönlendirme yapılmaz.
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-line-accent bg-subtle p-4">
-      <p className="text-sm">{t.wallet.signInHint}</p>
+    <div className="relative inline-flex flex-col items-center">
       <Button
-        variant="accent"
-        loading={signIn.isPending}
-        onClick={() => signIn.mutate()}
+        {...buttonProps}
+        variant={variant}
+        size={size}
+        loading={authenticate.isPending}
+        onClick={() => void continueAfterAuthentication()}
       >
-        {signIn.isPending ? (
-          <>
-            <Spinner /> {t.wallet.signingIn}
-          </>
-        ) : (
-          t.wallet.signIn
-        )}
+        {authenticate.isPending ? t.wallet.signingIn : children}
       </Button>
-      {signIn.isError && (
-        <p className="text-sm text-danger">{signIn.error.message}</p>
-      )}
+      <AuthError error={authenticate.error} centered />
     </div>
+  );
+}
+
+function AuthError({
+  error,
+  centered = false,
+}: {
+  error: Error | null;
+  centered?: boolean;
+}) {
+  if (!error) return null;
+  return (
+    <p
+      role="alert"
+      className={`absolute top-full z-50 mt-2 w-72 rounded-md border border-danger bg-elevated p-2 text-xs text-danger shadow-[var(--shadow-lg)] ${
+        centered ? "left-1/2 -translate-x-1/2 text-center" : "right-0"
+      }`}
+    >
+      {error.message}
+    </p>
   );
 }

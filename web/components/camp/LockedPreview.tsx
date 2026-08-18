@@ -22,6 +22,7 @@ import Link from "next/link";
 
 import {ButtonLink} from "@/components/ui/Button";
 import {Pill} from "@/components/ui/Card";
+import {WalletGateButton} from "@/components/wallet/ConnectButton";
 import type {LockReason, PublicWeek} from "@/lib/content/access";
 import {formatOpeningDate} from "@/lib/notes/schedule";
 import {fmt, t} from "@/lib/i18n";
@@ -117,9 +118,15 @@ export function LockedPreview({
             </p>
           )}
 
-          <ButtonLink href={copy.href} variant="accent" size="lg">
-            {copy.cta}
-          </ButtonLink>
+          {reason.kind === "no-session" ? (
+            <WalletGateButton continueTo="/katil">
+              {copy.cta}
+            </WalletGateButton>
+          ) : (
+            <ButtonLink href={copy.href} variant="accent" size="lg">
+              {copy.cta}
+            </ButtonLink>
+          )}
 
           {publicWeekNumber !== null &&
             publicWeekNumber !== week.weekNumber && (

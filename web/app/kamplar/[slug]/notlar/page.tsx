@@ -16,6 +16,7 @@ import {notFound} from "next/navigation";
 
 import {ButtonLink} from "@/components/ui/Button";
 import {Container, EmptyState} from "@/components/ui/Card";
+import {WalletGateButton} from "@/components/wallet/ConnectButton";
 import {NotesGuide} from "@/components/notes/NotesGuide";
 import {getCampBySlug, getProgressForViewer} from "@/lib/content/access";
 import {getViewer} from "@/lib/auth/guards";
@@ -63,9 +64,15 @@ export default async function NotesPage({params, searchParams}: Props) {
               : "Bu kampın katılımcıları burada birbirine not bırakıyor. Görmek için cüzdanını bağla."
           }
           action={
-            <ButtonLink href="/katil" variant="accent" size="lg">
-              {viewer.address ? "Nick Belirle" : "Cüzdanını Bağla"}
-            </ButtonLink>
+            viewer.address ? (
+              <ButtonLink href="/katil" variant="accent" size="lg">
+                Nick Belirle
+              </ButtonLink>
+            ) : (
+              <WalletGateButton continueTo="/katil">
+                Cüzdanını Bağla
+              </WalletGateButton>
+            )
           }
         />
       </Container>

@@ -50,22 +50,16 @@ export default async function CampPage({params}: Props) {
   const camp = await getCampBySlug(slug);
   if (!camp) notFound();
 
-  const weeks = await getCurriculum(camp.id);
-  const viewer = await getViewer();
+  /* Birbirinden bağımsız DB ve oturum okumalarını aynı anda başlat. */
+  const [weeks, viewer] = await Promise.all([
+    getCurriculum(camp.id),
+    getViewer(),
+  ]);
 
   /*
    * Kullanıcının ilerlemesi ZİNCİRDEN okunur.
    * RPC düşerse sayfa çalışmaya devam etsin — ilerleme gösterilmez, o kadar.
    */
-  let progress: boolean[] | null = null;
-  if (viewer.address) {
-    progress = await readProgress(
-      viewer.address as `0x${string}`,
-      camp.id,
-      camp.weekCount,
-    ).catch(() => null);
-  }
-
   /*
    * İlerleme kapısı: hangi haftalar açık?
    *
@@ -73,7 +67,16 @@ export default async function CampPage({params}: Props) {
    * zaten herkese açık, gizlenen ders içeriği. "Kilitli" demek yerine
    * "3. haftanın notunu bırak" demek kullanıcıya ne yapacağını söylüyor.
    */
-  const campProgress = await getProgressForViewer(camp, viewer);
+  const [progress, campProgress] = await Promise.all([
+    viewer.address
+      ? readProgress(
+          viewer.address as `0x${string}`,
+          camp.id,
+          camp.weekCount,
+        ).catch(() => null)
+      : Promise.resolve(null),
+    getProgressForViewer(camp, viewer),
+  ]);
 
   /* Haftaları aşamalara göre grupla (Notion'daki "1. AŞAMA" / "1. AY") */
   const groups = new Map<string, typeof weeks>();

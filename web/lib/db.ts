@@ -32,9 +32,10 @@ function createClient(): PrismaClient {
     // Sunucusuz (serverless) ortamda her istek ayrı bir örnek başlatabilir.
     // Havuzu küçük tutmak, Neon'un bağlantı limitine çarpmayı engeller.
     max: 5,
-    // Boşta duran bağlantıyı 10 sn sonra bırak — Neon'un otomatik uyku
-    // moduyla uyumlu çalışır.
-    idleTimeoutMillis: 10_000,
+    // Geliştirmede bağlantıyı biraz daha uzun tut: her sayfa incelemesinde
+    // yeniden TLS/Neon bağlantısı kurmak yerelde 1-2 saniye ekliyordu.
+    // Sunucusuz production örneklerinde bağlantı limitini korumak için kısa.
+    idleTimeoutMillis: process.env.NODE_ENV === "development" ? 60_000 : 10_000,
   });
 
   return new PrismaClient({

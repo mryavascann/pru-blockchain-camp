@@ -6,7 +6,7 @@
  *
  * İKİ AYRI DURUM VAR VE KARIŞTIRILMAMALI:
  *
- *   1. CÜZDAN BAĞLI  (wagmi)
+ *   1. CÜZDAN BAĞLI  (doğrudan viem)
  *      Tarayıcı cüzdanla konuşabiliyor. Bu tek başına HİÇBİR ŞEY KANITLAMAZ —
  *      adres herkese açık bilgi, sunucu buna güvenemez.
  *
@@ -14,18 +14,17 @@
  *      Kullanıcı bir mesaj imzaladı, sunucu imzayı doğruladı. Ancak bundan
  *      sonra kilitli içerik açılır.
  *
- * Arayüz bu iki durumu ayrı gösterir: cüzdan bağlıyken ama imza atılmamışken
- * kullanıcıya "Giriş İçin İmzala" denir, "bir sorun var" denmez.
+ * Kullanıcı tek kez "Cüzdanını Bağla"ya basar. Bağlantı tamamlanınca SIWE
+ * imzası otomatik istenir; arada ikinci bir site düğmesi gösterilmez.
  * ============================================================================
  */
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useCallback} from "react";
-import {useAccount, useSignMessage} from "wagmi";
 import {createSiweMessage} from "viem/siwe";
 
-import {expectedChain} from "@/lib/wagmi";
-import {publicEnv} from "@/lib/env";
+import {activeChain} from "@/lib/chain/config";
 import {t} from "@/lib/i18n";
+import {useWallet} from "@/lib/wallet/WalletProvider";
 
 export type SessionInfo = {
   address: string | null;
@@ -45,8 +44,17 @@ async function fetchSession(): Promise<SessionInfo> {
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const {address, isConnected, chainId} = useAccount();
-  const {signMessageAsync} = useSignMessage();
+  const {
+    address,
+    isConnected,
+    chainId,
+    isReady: isWalletReady,
+    hasWallet,
+    connect,
+    disconnect,
+    switchToExpectedChain,
+    signMessage,
+  } = useWallet();
 
   const sessionQuery = useQuery({
     queryKey: SESSION_KEY,
@@ -74,50 +82,91 @@ export function useAuth() {
     isConnected && address && (!session?.address || addressMismatch),
   );
 
-  const wrongNetwork = Boolean(isConnected && chainId !== expectedChain.id);
+  const wrongNetwork = Boolean(isConnected && chainId !== activeChain.id);
 
-  const signIn = useMutation({
+  /*
+   * TEK KULLANICI EYLEMİ:
+   *   bağlantı → doğru ağ → SIWE imzası → sunucu oturumu
+   *
+   * Cüzdan her güvenlik adımı için kendi onay penceresini gösterebilir, fakat
+   * kullanıcı sitede ikinci kez bir düğmeye basmaz.
+   */
+  const authenticate = useMutation({
     mutationFn: async () => {
-      if (!address) throw new Error(t.wallet.connect);
+      try {
+        let signingAddress = address;
+        let connectedChainId = chainId;
 
-      /* 1. Sunucudan tek kullanımlık nonce al */
-      const nonceResponse = await fetch("/api/auth/nonce", {cache: "no-store"});
-      const nonceJson = await nonceResponse.json();
-      if (!nonceJson.ok) throw new Error(nonceJson.error ?? t.auth.signInFailed);
+        if (!signingAddress) {
+          const connected = await connect();
+          signingAddress = connected.address;
+          connectedChainId = connected.chainId;
+        }
 
-      /* 2. EIP-4361 mesajını kur */
-      const message = createSiweMessage({
-        address,
-        chainId: expectedChain.id,
-        domain: window.location.host,
-        nonce: nonceJson.data.nonce,
-        uri: window.location.origin,
-        version: "1",
-        statement: `${publicEnv.NEXT_PUBLIC_APP_URL} sitesine giriş yapıyorsun. Bu imza ücretsizdir; zincire işlem gönderilmez.`,
-        issuedAt: new Date(),
-      });
+        if (connectedChainId !== activeChain.id) {
+          await switchToExpectedChain();
+        }
 
-      /* 3. Cüzdana imzalat (gas yok, zincire gitmez) */
-      const signature = await signMessageAsync({message});
+        const currentSession =
+          queryClient.getQueryData<SessionInfo>(SESSION_KEY) ?? session;
+        if (
+          currentSession?.address?.toLowerCase() === signingAddress.toLowerCase()
+        ) {
+          return currentSession;
+        }
 
-      /* 4. Sunucuda doğrulat */
-      const verifyResponse = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message, signature}),
-      });
-      const verifyJson = await verifyResponse.json();
-      if (!verifyJson.ok) {
-        throw new Error(verifyJson.error ?? t.auth.signInFailed);
+        /* 1. Sunucudan tek kullanımlık nonce al */
+        const nonceResponse = await fetch("/api/auth/nonce", {cache: "no-store"});
+        const nonceJson = await nonceResponse.json();
+        if (!nonceJson.ok) {
+          throw new Error(nonceJson.error ?? t.auth.signInFailed);
+        }
+
+        /* 2. EIP-4361 mesajını kur — cüzdanda görünen açıklama İngilizce. */
+        const message = createSiweMessage({
+          address: signingAddress,
+          chainId: activeChain.id,
+          domain: window.location.host,
+          nonce: nonceJson.data.nonce,
+          uri: window.location.origin,
+          version: "1",
+          statement:
+            "Sign in to PRU Blockchain Club. This signature is free and does not send a transaction or cost gas.",
+          issuedAt: new Date(),
+        });
+
+        /* 3. Cüzdana imzalat (gas yok, zincire gitmez) */
+        const signature = await signMessage(message, signingAddress);
+
+        /* 4. Sunucuda doğrulat */
+        const verifyResponse = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({message, signature}),
+        });
+        const verifyJson = await verifyResponse.json();
+        if (!verifyJson.ok) {
+          throw new Error(verifyJson.error ?? t.auth.signInFailed);
+        }
+
+        /* isAdmin dahil tam oturum biçimini tek kaynaktan al. */
+        return await fetchSession();
+      } catch (error) {
+        const code = (error as {code?: number}).code;
+        const message = error instanceof Error ? error.message.toLowerCase() : "";
+        if (code === 4001 || message.includes("user rejected")) {
+          throw new Error(t.auth.signInRejected);
+        }
+        throw error;
       }
-
-      return verifyJson.data as SessionInfo;
     },
 
     onSuccess: (data) => {
       queryClient.setQueryData(SESSION_KEY, data);
       // Oturum değişti: içeriğe bağlı her şey yeniden çekilsin
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== SESSION_KEY[0],
+      });
     },
   });
 
@@ -148,13 +197,16 @@ export function useAuth() {
     /** Sunucuda doğrulanmış oturum */
     session,
     isLoadingSession: sessionQuery.isLoading,
+    isWalletReady,
+    hasWallet,
     /** İmza atması gerekiyor mu */
     needsSignIn,
     /** Cüzdan başka bir hesaba geçmiş */
     addressMismatch,
     /** Yanlış ağda mı */
     wrongNetwork,
-    signIn,
+    authenticate,
+    disconnect,
     signOut,
     refresh,
   };

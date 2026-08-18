@@ -21,6 +21,7 @@
 import {db} from "@/lib/db";
 import {readBalancesForPairs, readNicknames} from "@/lib/chain/client";
 import {encodeTokenId} from "@/lib/chain/tokenId";
+import {unstable_cache} from "next/cache";
 
 export type LeaderboardRow = {
   address: string;
@@ -34,7 +35,7 @@ export type LeaderboardRow = {
 
 const MAX_ROWS = 200;
 
-export async function computeLeaderboard(): Promise<{
+async function computeLeaderboardUncached(): Promise<{
   rows: LeaderboardRow[];
   updatedAt: string;
 }> {
@@ -71,7 +72,12 @@ export async function computeLeaderboard(): Promise<{
     }
   }
 
-  const balances = await readBalancesForPairs(pairs);
+  /* Bakiye ve nick okumaları birbirinden bağımsız; aynı RPC beklemesine sokma. */
+  const uniqueAddresses = [...new Set(participants.map((p) => p.address))];
+  const [balances, nicknames] = await Promise.all([
+    readBalancesForPairs(pairs),
+    readNicknames(uniqueAddresses as `0x${string}`[]),
+  ]);
 
   /* Satırları kur */
   const rowMap = new Map<string, LeaderboardRow>();
@@ -103,9 +109,7 @@ export async function computeLeaderboard(): Promise<{
     }
   }
 
-  /* Nickleri zincirden oku */
-  const uniqueAddresses = [...new Set(participants.map((p) => p.address))];
-  const nicknames = await readNicknames(uniqueAddresses as `0x${string}`[]);
+  /* Paralel okunan nickleri satırlara yerleştir. */
   for (const row of rowMap.values()) {
     row.nickname = nicknames.get(row.address) ?? "";
   }
@@ -126,3 +130,10 @@ export async function computeLeaderboard(): Promise<{
 
   return {rows, updatedAt};
 }
+
+/** Zincir okumaları pahalı; sayfanın ilan ettiği 60 sn ömrü veri katmanında da uygula. */
+export const computeLeaderboard = unstable_cache(
+  computeLeaderboardUncached,
+  ["leaderboard-v1"],
+  {revalidate: 60, tags: ["leaderboard"]},
+);
