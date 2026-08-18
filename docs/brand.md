@@ -4,21 +4,31 @@
 > buradaki token'lara birebir uyar. Buraya yazılmamış bir renk, boşluk veya font
 > ölçüsü koda girmez.
 >
-> **Durum:** Taslak v1 — PRU'nun resmî kurumsal renkleri doğrulanmadı (bkz. §12).
+> **Durum:** v2 (18 Ağustos 2026) — Palet kulüp logosundan türetildi ve
+> `web/app/globals.css` içinde uygulandı.
 
 ---
 
 ## 1. Marka konsepti
 
-**"Derinlik ve Sinyal"**
+**"Derinlik ve Işık"**
 
-Piri Reis Üniversitesi bir denizcilik üniversitesi; kimliği denizin derin laciverdi
-üzerine kurulu. Blockchain ise sinyal, doğrulama ve iz sürme demek. Tasarım dili bu
-ikisinin kesişiminde duruyor:
+> **v2 — 18 Ağustos 2026:** Palet, kulüp logosu geldikten sonra yeniden
+> türetildi. Önceki taslak lacivert + turkuaz üzerineydi; logo mor/menekşe
+> olduğu için tüm sistem ona göre değiştirildi.
 
-- **Derin lacivert zemin** → kurumsal ciddiyet, denizcilik mirası
-- **Turkuaz sinyal** → aktiflik, doğrulanmışlık, "bu rozet gerçek"
-- **Fener amber** → başarı, tamamlanma, ödül anları
+Kulüp logosu derin mor bir zemin üzerine neon menekşe çizgilerle çizilmiş bir
+çapa ve blok zinciri. Denizcilik (çapa) ile blokzincir (küpler, devre yolları)
+tek görselde birleşiyor. Tasarım dili bunu izliyor:
+
+- **Derin mor zemin** → logonun kendi zemini; gece, derinlik, ciddiyet
+- **Neon menekşe** → logonun parıltısı; aktiflik, doğrulanmışlık, "bu rozet gerçek"
+- **Altın amber** → başarı, tamamlanma, ödül anları
+
+Amber neden korundu: logo tek renkli (monokrom mor). Ödül anları için ayırt
+edici bir renk gerekiyor ve mor üzerinde en güçlü kontrastı altın sarısı
+veriyor. Ayrıca ödül renginin markanın ana renginden farklı olması, "kazandın"
+anının gerçekten öne çıkmasını sağlıyor.
 
 **Ton:** Ciddi ama soğuk değil. Akademik ama bürokratik değil. Bu bir öğrenci
 kulübü — kurumsal bir bankanın arayüzü gibi durmamalı, ama bir memecoin sitesi
@@ -37,31 +47,31 @@ her zaman semantik token kullanılır.
 
 ### 2.1 Marka ölçekleri (tema-bağımsız ham değerler)
 
-**Lacivert — "Derinlik" (primary)**
+**Mor — "Derinlik" (primary)** · logonun zemini
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `--navy-950` | `#050D1A` | Dark tema en derin zemin |
-| `--navy-900` | `#0A1729` | Dark tema sayfa zemini · rozet arka planı |
-| `--navy-800` | `#0F2440` | Dark tema yüzey (kart) |
-| `--navy-700` | `#143156` | Dark tema kenarlık |
-| `--navy-600` | `#1B4074` | Vurgu, hover |
-| `--navy-500` | `#245695` | **Ana marka rengi** — light temada primary buton |
-| `--navy-400` | `#3B76BC` | Link, hover |
-| `--navy-300` | `#6B9BD4` | Dark temada link |
-| `--navy-200` | `#A3C1E5` | Pasif ikon |
-| `--navy-100` | `#CFDFF2` | Light temada seçili satır zemini |
-| `--navy-50`  | `#EDF3FB` | Light temada bilgi kutusu zemini |
+| `--violet-950` | `#0D0118` | Dark tema en derin zemin |
+| `--violet-900` | `#16032A` | Dark tema sayfa zemini · rozet arka planı |
+| `--violet-800` | `#22063F` | Dark tema yüzey (kart) |
+| `--violet-700` | `#310A57` | Dark tema kenarlık |
+| `--violet-600` | `#451073` | Vurgu, hover |
+| `--violet-500` | `#5E1A96` | **Ana marka rengi** — light temada primary buton |
+| `--violet-400` | `#7C2FBE` | Link, hover |
+| `--violet-300` | `#A067DA` | Dark temada link |
+| `--violet-200` | `#C6A2EC` | Pasif ikon |
+| `--violet-100` | `#E3CDF7` | Light temada seçili satır zemini |
+| `--violet-50`  | `#F5ECFD` | Light temada bilgi kutusu zemini |
 
-**Turkuaz — "Fener" (accent / doğrulanmış)**
+**Neon menekşe — "Işık" (accent / doğrulanmış)** · logonun parıltısı
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `--teal-700` | `#0A7C72` | Light temada accent metin (kontrast için) |
-| `--teal-600` | `#0E9C8F` | Accent buton hover |
-| `--teal-500` | `#12BFAE` | **Accent** — kazanılmış rozet çerçevesi, aktif durum |
-| `--teal-400` | `#3ED9C8` | Dark temada accent metin |
-| `--teal-300` | `#7BE9DC` | Parıltı, focus halkası |
+| `--neon-700` | `#7B2CBF` | Light temada accent metin (kontrast için) |
+| `--neon-600` | `#9333EA` | **Accent** — light temada buton zemini |
+| `--neon-500` | `#A855F7` | Dark temada accent, kazanılmış rozet çerçevesi |
+| `--neon-400` | `#C77DFF` | Dark temada accent metin |
+| `--neon-300` | `#DFB8FF` | Parıltı, focus halkası |
 
 **Amber — "Başarı" (ödül anları)**
 
@@ -75,16 +85,16 @@ her zaman semantik token kullanılır.
 > kazanıldığında, leaderboard'da ilk üçte. Menüde, butonlarda, dekorasyonda amber
 > kullanılmaz. Nadir olduğu için değerli.
 
-**Nötr — mavi tonlu gri**
+**Nötr — mor tonlu gri**
 
 | Token | Hex | | Token | Hex |
 |---|---|---|---|---|
-| `--gray-0`   | `#FFFFFF` | | `--gray-500` | `#6B7889` |
-| `--gray-50`  | `#F7F9FC` | | `--gray-600` | `#4C5768` |
-| `--gray-100` | `#EEF2F7` | | `--gray-700` | `#37404E` |
-| `--gray-200` | `#DFE5EE` | | `--gray-800` | `#232B36` |
-| `--gray-300` | `#C5CEDC` | | `--gray-900` | `#151B24` |
-| `--gray-400` | `#97A3B6` | | `--gray-950` | `#0B0F16` |
+| `--gray-0`   | `#FFFFFF` | | `--gray-500` | `#756B83` |
+| `--gray-50`  | `#FAF8FC` | | `--gray-600` | `#574E64` |
+| `--gray-100` | `#F3EFF7` | | `--gray-700` | `#3F384B` |
+| `--gray-200` | `#E6E0EC` | | `--gray-800` | `#292332` |
+| `--gray-300` | `#CDC5D8` | | `--gray-900` | `#191320` |
+| `--gray-400` | `#A096AE` | | `--gray-950` | `#0D0813` |
 
 **Semantik**
 
@@ -93,7 +103,7 @@ her zaman semantik token kullanılır.
 | Başarılı | `#16A34A` | `#4ADE80` |
 | Uyarı | `#B45309` | `#FBBF24` |
 | Hata | `#DC2626` | `#F87171` |
-| Bilgi | `--navy-500` | `--navy-300` |
+| Bilgi | `--violet-500` | `--violet-300` |
 
 ### 2.2 Semantik token'lar (component'ler sadece bunları kullanır)
 
@@ -104,25 +114,25 @@ her zaman semantik token kullanılır.
   --bg-surface:     var(--gray-0);     /* kart, panel */
   --bg-elevated:    var(--gray-0);     /* modal, dropdown */
   --bg-subtle:      var(--gray-100);   /* tablo başlığı, kod bloğu */
-  --bg-inverse:     var(--navy-900);   /* koyu şerit, footer */
+  --bg-inverse:     var(--violet-900);   /* koyu şerit, footer */
 
   --fg-primary:     var(--gray-900);   /* ana metin */
   --fg-secondary:   var(--gray-600);   /* açıklama, meta */
   --fg-muted:       var(--gray-400);   /* placeholder, pasif */
   --fg-inverse:     var(--gray-0);     /* koyu zemin üstü metin */
-  --fg-link:        var(--navy-500);
+  --fg-link:        var(--violet-500);
 
   --border-subtle:  var(--gray-200);   /* kart kenarı */
   --border-strong:  var(--gray-300);   /* input kenarı */
-  --border-accent:  var(--teal-500);   /* aktif/seçili */
+  --border-accent:  var(--neon-500);   /* aktif/seçili */
 
-  --accent:         var(--teal-600);   /* light'ta kontrast için 600 */
+  --accent:         var(--neon-600);   /* light'ta kontrast için 600 */
   --accent-fg:      var(--gray-0);
-  --primary:        var(--navy-500);
+  --primary:        var(--violet-500);
   --primary-fg:     var(--gray-0);
   --reward:         var(--amber-600);
 
-  --focus-ring:     var(--teal-500);
+  --focus-ring:     var(--neon-500);
 }
 
 /* Sistem tercihi karanlıksa VE kullanıcı açıkça light seçmediyse */
@@ -132,29 +142,29 @@ her zaman semantik token kullanılır.
 
 /* Kullanıcı açıkça dark seçtiyse — her iki yönde de kazanır */
 :root[data-theme="dark"] {
-  --bg-base:        var(--navy-950);
-  --bg-surface:     var(--navy-900);
-  --bg-elevated:    var(--navy-800);
-  --bg-subtle:      var(--navy-800);
+  --bg-base:        var(--violet-950);
+  --bg-surface:     var(--violet-900);
+  --bg-elevated:    var(--violet-800);
+  --bg-subtle:      var(--violet-800);
   --bg-inverse:     var(--gray-0);
 
   --fg-primary:     var(--gray-50);
   --fg-secondary:   var(--gray-300);
   --fg-muted:       var(--gray-500);
   --fg-inverse:     var(--gray-900);
-  --fg-link:        var(--navy-300);
+  --fg-link:        var(--violet-300);
 
-  --border-subtle:  var(--navy-700);
-  --border-strong:  var(--navy-600);
-  --border-accent:  var(--teal-400);
+  --border-subtle:  var(--violet-700);
+  --border-strong:  var(--violet-600);
+  --border-accent:  var(--neon-400);
 
-  --accent:         var(--teal-500);
-  --accent-fg:      var(--navy-950);
-  --primary:        var(--navy-400);
-  --primary-fg:     var(--navy-950);
+  --accent:         var(--neon-500);
+  --accent-fg:      var(--violet-950);
+  --primary:        var(--violet-400);
+  --primary-fg:     var(--violet-950);
   --reward:         var(--amber-400);
 
-  --focus-ring:     var(--teal-300);
+  --focus-ring:     var(--neon-300);
 }
 ```
 
@@ -168,9 +178,16 @@ Her metin/zemin çifti **WCAG AA** karşılamalı: normal metin ≥ 4.5:1, büy�
 (≥18.66px bold veya ≥24px) ≥ 3:1. Yeni bir renk kombinasyonu eklenmeden önce
 kontrast kontrol edilir.
 
-⚠️ **Bilinen tuzak:** `--teal-500` (#12BFAE) beyaz zeminde 2.1:1 — **metin olarak
-kullanılamaz.** Light temada accent metin için `--teal-700` kullan. Turkuazı light
-temada yalnızca zemin/kenarlık olarak, üstünde koyu metinle kullan.
+⚠️ **Bilinen tuzak:** `--neon-500` (#A855F7) beyaz zeminde ~3.1:1 — normal boyutlu
+**metin olarak kullanılamaz.** Light temada accent metin için `--neon-700`
+(#7B2CBF, ~7.5:1) kullan. Açık menekşe tonlarını light temada yalnızca
+zemin/kenarlık olarak, üstünde koyu metinle kullan.
+
+⚠️ **İkinci tuzak — Tailwind belirsizliği:** `text-[var(--x)]` yazma.
+Tailwind'de `text-*` hem yazı boyutu hem renk olabildiği için CSS değişkeni
+verildiğinde **yazı boyutu** sanılır ve renk hiç uygulanmaz; metin gövde
+rengini miras alır (koyu temada siyah, açık temada beyaz → görünmez).
+Doğrusu: `text-[color:var(--x)]`. Aynısı `border-*` ve `bg-*` için de geçerli.
 
 ---
 
@@ -579,11 +596,11 @@ ve rozet animasyonu tamamen kapanır. Bu bir seçenek değil, uygulama şartı.
 
 Bu doküman v1 taslağı. Aşağıdakiler onaylandığında v2'ye geçilecek:
 
-- [ ] **PRU'nun resmî kurumsal renkleri.** Buradaki lacivert, denizcilik
-      kimliğinden türetilmiş bir varsayım. Üniversitenin marka kılavuzu varsa
-      `--navy-*` ölçeği ona göre yeniden üretilecek.
-- [ ] **Kulüp logosu** — SVG (tercih) veya en az 1000px şeffaf PNG, light ve dark
-      varyantlarıyla.
+- [x] **Kulüp logosu alındı** (18 Ağustos 2026) ve palet ona göre yeniden
+      türetildi. Üniversitenin ayrı bir kurumsal marka kılavuzu varsa yine de
+      kontrol edilmeli.
+- [ ] **Logonun SVG hâli** — şu an PNG var (`web/public/logo.png`). SVG,
+      her ölçekte net kalır ve dosya boyutu çok daha küçüktür.
 - [ ] **Font onayı** — Plus Jakarta Sans + Inter kombinasyonu. Üniversitenin
       zorunlu bir kurumsal fontu varsa değişir.
 - [ ] **Varsayılan tema dark olsun mu?**

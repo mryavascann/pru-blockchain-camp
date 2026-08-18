@@ -25,7 +25,7 @@ export default async function CampsPage() {
       <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
         {t.nav.camps}
       </h1>
-      <p className="mt-2 max-w-2xl text-[var(--fg-secondary)]">
+      <p className="mt-2 max-w-2xl text-[color:var(--fg-secondary)]">
         Her kampın müfredatı herkese açıktır. Haftaların içeriğine erişmek için
         kampa katılman gerekir.
       </p>
@@ -49,13 +49,13 @@ export default async function CampsPage() {
               </div>
 
               {camp.description && (
-                <p className="mt-3 text-[var(--fg-secondary)]">
+                <p className="mt-3 text-[color:var(--fg-secondary)]">
                   {camp.description}
                 </p>
               )}
 
               {!camp.active && (
-                <p className="mt-3 text-sm text-[var(--warning)]">
+                <p className="mt-3 text-sm text-[color:var(--warning)]">
                   {t.camp.inactive}
                 </p>
               )}

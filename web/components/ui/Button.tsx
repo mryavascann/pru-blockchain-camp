@@ -19,15 +19,15 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-[var(--primary)] text-[var(--primary-fg)] hover:brightness-110 border border-transparent",
+    "bg-[color:var(--primary)] text-[color:var(--primary-fg)] hover:brightness-110 border border-transparent",
   accent:
-    "bg-[var(--accent)] text-[var(--accent-fg)] hover:brightness-110 border border-transparent",
+    "bg-[color:var(--accent)] text-[color:var(--accent-fg)] hover:brightness-110 border border-transparent",
   secondary:
-    "bg-[var(--bg-surface)] text-[var(--fg-primary)] border border-[var(--border-strong)] hover:border-[var(--border-accent)]",
+    "bg-[color:var(--bg-surface)] text-[color:var(--fg-primary)] border border-[color:var(--border-strong)] hover:border-[color:var(--border-accent)]",
   ghost:
-    "bg-transparent text-[var(--fg-secondary)] border border-transparent hover:bg-[var(--bg-subtle)] hover:text-[var(--fg-primary)]",
+    "bg-transparent text-[color:var(--fg-secondary)] border border-transparent hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]",
   danger:
-    "bg-[var(--danger)] text-white hover:brightness-110 border border-transparent",
+    "bg-[color:var(--danger)] text-white hover:brightness-110 border border-transparent",
 };
 
 const SIZES: Record<Size, string> = {

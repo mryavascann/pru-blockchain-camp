@@ -43,30 +43,30 @@ export function WeekCard({
             <Pill tone="accent">🌐 {t.camp.publicBadge}</Pill>
           ) : owned ? (
             <span
-              className="text-[var(--reward)]"
+              className="text-[color:var(--reward)]"
               title={t.profile.claimed}
               aria-label={t.profile.claimed}
             >
               <AwardIcon />
             </span>
           ) : (
-            <span className="text-[var(--fg-muted)]" aria-hidden="true">
+            <span className="text-[color:var(--fg-muted)]" aria-hidden="true">
               <LockIcon />
             </span>
           )}
         </div>
 
-        <h3 className="mt-3 font-semibold leading-snug transition-colors group-hover:text-[var(--accent-text)]">
+        <h3 className="mt-3 font-semibold leading-snug transition-colors group-hover:text-[color:var(--accent-text)]">
           {title}
         </h3>
 
         {teaser && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--fg-secondary)]">
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--fg-secondary)]">
             {teaser}
           </p>
         )}
 
-        <span className="mt-4 inline-block text-sm font-medium text-[var(--accent-text)]">
+        <span className="mt-4 inline-block text-sm font-medium text-[color:var(--accent-text)]">
           {isPublic ? t.camp.viewWeek : t.camp.continue} →
         </span>
       </Card>

@@ -25,7 +25,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* HERO                                                             */}
       {/* ---------------------------------------------------------------- */}
-      <section className="relative overflow-hidden border-b border-[var(--border-subtle)]">
+      <section className="relative overflow-hidden border-b border-[color:var(--border-subtle)]">
         {/* Dekoratif zemin — içerikten bağımsız, ekran okuyucuya görünmez */}
         <div
           aria-hidden="true"
@@ -44,10 +44,10 @@ export default async function HomePage() {
               Kampı tamamla,
               <br />
               rozetin{" "}
-              <span className="text-[var(--accent-text)]">zincirde</span> kalsın.
+              <span className="text-[color:var(--accent-text)]">zincirde</span> kalsın.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--fg-secondary)]">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[color:var(--fg-secondary)]">
               {t.site.name} kamplarında her haftayı tamamladığında, o haftaya
               ait devredilemez bir rozet kazanırsın. Rozetler cüzdanında durur;
               satılamaz, devredilemez, kaybolmaz.
@@ -76,7 +76,7 @@ export default async function HomePage() {
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
           Kamp Programları
         </h2>
-        <p className="mt-2 text-[var(--fg-secondary)]">
+        <p className="mt-2 text-[color:var(--fg-secondary)]">
           Müfredat herkese açık. İçeriğe erişmek için kampa katılman yeterli.
         </p>
 
@@ -91,7 +91,7 @@ export default async function HomePage() {
               </div>
 
               {camp.description && (
-                <p className="mt-3 text-[var(--fg-secondary)]">
+                <p className="mt-3 text-[color:var(--fg-secondary)]">
                   {camp.description}
                 </p>
               )}
@@ -120,7 +120,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* NASIL ÇALIŞIR                                                    */}
       {/* ---------------------------------------------------------------- */}
-      <section className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+      <section className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]">
         <Container className="py-16 md:py-24">
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
             Nasıl çalışıyor?
@@ -151,13 +151,13 @@ export default async function HomePage() {
             ].map((step) => (
               <li key={step.n}>
                 <span
-                  className="grid h-9 w-9 place-items-center rounded-full bg-[var(--accent)] font-bold text-[var(--accent-fg)]"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--accent)] font-bold text-[color:var(--accent-fg)]"
                   aria-hidden="true"
                 >
                   {step.n}
                 </span>
                 <h3 className="mt-4 font-semibold">{step.title}</h3>
-                <p className="mt-1 text-sm text-[var(--fg-secondary)]">
+                <p className="mt-1 text-sm text-[color:var(--fg-secondary)]">
                   {step.text}
                 </p>
               </li>
@@ -169,7 +169,7 @@ export default async function HomePage() {
             Sistem "trustless" değil; rozetlerin değeri kulübün itibarına
             dayanıyor. Bunu gizlemek yerine açıkça yazıyoruz.
           */}
-          <p className="mt-10 max-w-2xl text-sm text-[var(--fg-muted)]">
+          <p className="mt-10 max-w-2xl text-sm text-[color:var(--fg-muted)]">
             Rozetler PRU Blockchain Kulübü tarafından onaylanır ve Base ağında
             saklanır. Kulüp, hangi katılımcının hangi haftayı tamamladığını
             belirleyen taraftır; tüm yönetim işlemleri zincirde açıkça

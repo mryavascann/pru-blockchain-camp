@@ -39,7 +39,7 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]/85 backdrop-blur">
       <Container>
         <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
           <Link
@@ -62,8 +62,8 @@ export function Header() {
                   className={[
                     "rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-colors",
                     active
-                      ? "bg-[var(--bg-subtle)] text-[var(--fg-primary)]"
-                      : "text-[var(--fg-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--fg-primary)]",
+                      ? "bg-[color:var(--bg-subtle)] text-[color:var(--fg-primary)]"
+                      : "text-[color:var(--fg-secondary)] hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]",
                   ].join(" ")}
                 >
                   {link.label}
@@ -81,7 +81,7 @@ export function Header() {
               onClick={() => setOpen((value) => !value)}
               aria-expanded={open}
               aria-label="Menü"
-              className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] text-[var(--fg-secondary)] transition-colors hover:bg-[var(--bg-subtle)] md:hidden"
+              className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] text-[color:var(--fg-secondary)] transition-colors hover:bg-[color:var(--bg-subtle)] md:hidden"
             >
               {open ? <CloseIcon /> : <MenuIcon />}
             </button>
@@ -91,7 +91,7 @@ export function Header() {
 
       {open && (
         <nav
-          className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] md:hidden"
+          className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] md:hidden"
           aria-label="Mobil menü"
         >
           <Container className="flex flex-col py-2">
@@ -99,7 +99,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium text-[var(--fg-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--fg-primary)]"
+                className="rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium text-[color:var(--fg-secondary)] hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
               >
                 {link.label}
               </Link>
@@ -111,15 +111,40 @@ export function Header() {
   );
 }
 
-/** Geçici logo — kulüp logosu geldiğinde değişecek (brand.md §12) */
+/**
+ * Kulüp logosu.
+ *
+ * `public/logo.png` dosyası varsa onu gösterir; yoksa (henüz eklenmediyse
+ * veya yüklenemezse) mor kare içinde "P" yer tutucusuna düşer.
+ *
+ * NEDEN `next/image` DEĞİL: `next/image` olmayan bir dosyada çalışma anında
+ * hata verir ve sayfayı bozar. Düz `<img>` + `onError` ile logo eksikken de
+ * site sorunsuz açılır — dosya eklendiği an kendiliğinden görünür.
+ */
 function Logo() {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <span
+        className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--accent)] text-sm font-extrabold text-[color:var(--accent-fg)]"
+        aria-hidden="true"
+      >
+        P
+      </span>
+    );
+  }
+
   return (
-    <span
-      className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)] text-sm font-extrabold text-[var(--accent-fg)]"
-      aria-hidden="true"
-    >
-      P
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo.png"
+      alt=""
+      width={36}
+      height={36}
+      onError={() => setFailed(true)}
+      className="h-9 w-9 rounded-full"
+    />
   );
 }
 

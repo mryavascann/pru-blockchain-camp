@@ -23,12 +23,12 @@ export function Card({
   return (
     <div
       className={[
-        "rounded-[var(--radius-lg)] border bg-[var(--bg-surface)]",
+        "rounded-[var(--radius-lg)] border bg-[color:var(--bg-surface)]",
         "p-4 md:p-6",
         "shadow-[var(--shadow-sm)]",
         accent
-          ? "border-[var(--border-accent)]"
-          : "border-[var(--border-subtle)]",
+          ? "border-[color:var(--border-accent)]"
+          : "border-[color:var(--border-subtle)]",
         interactive
           ? "transition-shadow duration-200 ease-out hover:shadow-[var(--shadow-md)]"
           : "",
@@ -44,14 +44,14 @@ type PillTone = "neutral" | "accent" | "reward" | "muted" | "danger";
 
 const PILL_TONES: Record<PillTone, string> = {
   neutral:
-    "bg-[var(--bg-subtle)] text-[var(--fg-secondary)] border-[var(--border-subtle)]",
+    "bg-[color:var(--bg-subtle)] text-[color:var(--fg-secondary)] border-[color:var(--border-subtle)]",
   accent:
-    "bg-[var(--bg-subtle)] text-[var(--accent-text)] border-[var(--border-accent)]",
+    "bg-[color:var(--bg-subtle)] text-[color:var(--accent-text)] border-[color:var(--border-accent)]",
   reward:
-    "bg-[var(--bg-subtle)] text-[var(--reward)] border-[var(--reward)]",
+    "bg-[color:var(--bg-subtle)] text-[color:var(--reward)] border-[color:var(--reward)]",
   muted:
-    "bg-transparent text-[var(--fg-muted)] border-[var(--border-subtle)]",
-  danger: "bg-transparent text-[var(--danger)] border-[var(--danger)]",
+    "bg-transparent text-[color:var(--fg-muted)] border-[color:var(--border-subtle)]",
+  danger: "bg-transparent text-[color:var(--danger)] border-[color:var(--danger)]",
 };
 
 /** Küçük etiket: "HAFTA 3", "🌐 Herkese Açık", "Bekliyor" */
@@ -95,7 +95,7 @@ export function SectionHeading({
           {title}
         </h2>
         {description && (
-          <p className="mt-1 text-[var(--fg-secondary)]">{description}</p>
+          <p className="mt-1 text-[color:var(--fg-secondary)]">{description}</p>
         )}
       </div>
       {action}
@@ -140,11 +140,11 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--border-subtle)] px-6 py-12 text-center">
-      {icon && <div className="text-[var(--fg-muted)]">{icon}</div>}
+    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-subtle)] px-6 py-12 text-center">
+      {icon && <div className="text-[color:var(--fg-muted)]">{icon}</div>}
       <p className="font-semibold">{title}</p>
       {description && (
-        <p className="max-w-md text-sm text-[var(--fg-secondary)]">
+        <p className="max-w-md text-sm text-[color:var(--fg-secondary)]">
           {description}
         </p>
       )}

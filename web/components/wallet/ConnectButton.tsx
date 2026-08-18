@@ -68,7 +68,7 @@ export function ConnectButton() {
 
   /* Sunucudan oturum bilgisi gelene kadar düzen zıplamasın */
   if (isLoadingSession && !isConnected) {
-    return <div className="h-10 w-36 animate-pulse rounded-[var(--radius-md)] bg-[var(--bg-subtle)]" />;
+    return <div className="h-10 w-36 animate-pulse rounded-[var(--radius-md)] bg-[color:var(--bg-subtle)]" />;
   }
 
   /* ---- 3. Yanlış ağ ---- */
@@ -114,14 +114,14 @@ export function ConnectButton() {
           onClick={() => setMenuOpen((open) => !open)}
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className="flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg-surface)] px-3 transition-colors hover:border-[var(--border-accent)]"
+          className="flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-strong)] bg-[color:var(--bg-surface)] px-3 transition-colors hover:border-[color:var(--border-accent)]"
         >
-          <span className="h-2 w-2 rounded-full bg-[var(--accent)]" aria-hidden="true" />
+          <span className="h-2 w-2 rounded-full bg-[color:var(--accent)]" aria-hidden="true" />
           <span className="flex flex-col items-start leading-none">
             {session.nickname ? (
               <>
                 <span className="text-sm font-semibold">{session.nickname}</span>
-                <span className="mono text-[11px] text-[var(--fg-muted)]">
+                <span className="mono text-[11px] text-[color:var(--fg-muted)]">
                   {shortenAddress(session.address)}
                 </span>
               </>
@@ -134,14 +134,14 @@ export function ConnectButton() {
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-[var(--shadow-lg)]"
+            className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[var(--shadow-lg)]"
           >
             {!session.hasNickname && (
               <Link
                 href="/katil"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="block border-b border-[var(--border-subtle)] px-4 py-3 text-sm font-semibold text-[var(--accent-text)] hover:bg-[var(--bg-subtle)]"
+                className="block border-b border-[color:var(--border-subtle)] px-4 py-3 text-sm font-semibold text-[color:var(--accent-text)] hover:bg-[color:var(--bg-subtle)]"
               >
                 {t.locked.noNickname.cta}
               </Link>
@@ -151,7 +151,7 @@ export function ConnectButton() {
               href="/profil"
               role="menuitem"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 text-sm hover:bg-[var(--bg-subtle)]"
+              className="block px-4 py-3 text-sm hover:bg-[color:var(--bg-subtle)]"
             >
               {t.nav.profile}
             </Link>
@@ -161,7 +161,7 @@ export function ConnectButton() {
                 href="/admin"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-3 text-sm hover:bg-[var(--bg-subtle)]"
+                className="block px-4 py-3 text-sm hover:bg-[color:var(--bg-subtle)]"
               >
                 {t.nav.admin}
               </Link>
@@ -175,7 +175,7 @@ export function ConnectButton() {
                 signOut.mutate();
                 disconnect();
               }}
-              className="block w-full border-t border-[var(--border-subtle)] px-4 py-3 text-left text-sm text-[var(--fg-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--fg-primary)]"
+              className="block w-full border-t border-[color:var(--border-subtle)] px-4 py-3 text-left text-sm text-[color:var(--fg-secondary)] hover:bg-[color:var(--bg-subtle)] hover:text-[color:var(--fg-primary)]"
             >
               {t.wallet.disconnect}
             </button>
@@ -208,18 +208,18 @@ export function ConnectButton() {
       </Button>
 
       {pickerOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-[var(--shadow-lg)]">
+        <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[var(--shadow-lg)]">
           {!hasInjectedWallet && (
-            <div className="border-b border-[var(--border-subtle)] px-4 py-3">
+            <div className="border-b border-[color:var(--border-subtle)] px-4 py-3">
               <p className="text-sm font-semibold">{t.wallet.noWallet}</p>
-              <p className="mt-1 text-xs text-[var(--fg-secondary)]">
+              <p className="mt-1 text-xs text-[color:var(--fg-secondary)]">
                 {t.wallet.noWalletHelp}
               </p>
               <a
                 href="https://metamask.io/download/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-block text-xs font-semibold text-[var(--accent-text)] underline underline-offset-2"
+                className="mt-2 inline-block text-xs font-semibold text-[color:var(--accent-text)] underline underline-offset-2"
               >
                 {t.wallet.installMetamask} →
               </a>
@@ -234,7 +234,7 @@ export function ConnectButton() {
                 connect({connector});
                 setPickerOpen(false);
               }}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-[var(--bg-subtle)]"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-[color:var(--bg-subtle)]"
             >
               {connector.icon && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -255,7 +255,7 @@ export function SignInPrompt() {
   if (!needsSignIn) return null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border-accent)] bg-[var(--bg-subtle)] p-4">
+    <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[color:var(--border-accent)] bg-[color:var(--bg-subtle)] p-4">
       <p className="text-sm">{t.wallet.signInHint}</p>
       <Button
         variant="accent"
@@ -271,7 +271,7 @@ export function SignInPrompt() {
         )}
       </Button>
       {signIn.isError && (
-        <p className="text-sm text-[var(--danger)]">{signIn.error.message}</p>
+        <p className="text-sm text-[color:var(--danger)]">{signIn.error.message}</p>
       )}
     </div>
   );

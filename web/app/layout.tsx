@@ -58,9 +58,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Mobil tarayıcıların adres çubuğu rengi — palet logodan türetildi
   themeColor: [
-    {media: "(prefers-color-scheme: light)", color: "#f7f9fc"},
-    {media: "(prefers-color-scheme: dark)", color: "#050d1a"},
+    {media: "(prefers-color-scheme: light)", color: "#faf8fc"},
+    {media: "(prefers-color-scheme: dark)", color: "#0d0118"},
   ],
 };
 

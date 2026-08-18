@@ -22,13 +22,13 @@ import {NextResponse} from "next/server";
 import {db} from "@/lib/db";
 import {decodeTokenId, parseTokenIdParam} from "@/lib/chain/tokenId";
 
-/* brand.md renk paletinden */
-const NAVY_950 = "#050D1A";
-const NAVY_800 = "#0F2440";
-const TEAL_500 = "#12BFAE";
-const TEAL_300 = "#7BE9DC";
-const GRAY_50 = "#F7F9FC";
-const GRAY_400 = "#97A3B6";
+/* brand.md renk paletinden — kulüp logosundan türetildi */
+const VIOLET_950 = "#0D0118";
+const VIOLET_800 = "#22063F";
+const NEON_500 = "#A855F7";
+const NEON_300 = "#DFB8FF";
+const GRAY_50 = "#FAF8FC";
+const GRAY_400 = "#A096AE";
 
 /** XML özel karakterlerini kaçırır */
 function esc(text: string): string {
@@ -69,12 +69,12 @@ export async function GET(
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-label="${esc(campName)} Hafta ${week}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${NAVY_800}"/>
-      <stop offset="100%" stop-color="${NAVY_950}"/>
+      <stop offset="0%" stop-color="${VIOLET_800}"/>
+      <stop offset="100%" stop-color="${VIOLET_950}"/>
     </linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="${TEAL_500}"/>
-      <stop offset="100%" stop-color="${TEAL_300}"/>
+      <stop offset="0%" stop-color="${NEON_500}"/>
+      <stop offset="100%" stop-color="${NEON_300}"/>
     </linearGradient>
   </defs>
 
@@ -82,7 +82,7 @@ export async function GET(
 
   <!-- Güvenli alan sınırını gösteren ince çerçeve (128px içeride) -->
   <rect x="128" y="128" width="1344" height="1344" rx="48"
-        fill="none" stroke="${TEAL_500}" stroke-opacity="0.25" stroke-width="3"/>
+        fill="none" stroke="${NEON_500}" stroke-opacity="0.25" stroke-width="3"/>
 
   <!-- Kamp kısaltması -->
   <text x="800" y="470" text-anchor="middle"
@@ -111,7 +111,7 @@ export async function GET(
 
   <text x="800" y="1420" text-anchor="middle"
         font-family="'Segoe UI', system-ui, sans-serif" font-size="30"
-        letter-spacing="6" fill="${TEAL_500}" opacity="0.7">DEVREDİLEMEZ</text>
+        letter-spacing="6" fill="${NEON_500}" opacity="0.7">DEVREDİLEMEZ</text>
 </svg>`;
 
   return new NextResponse(svg, {

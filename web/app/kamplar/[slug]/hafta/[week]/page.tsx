@@ -113,13 +113,13 @@ export default async function WeekPage({params}: Props) {
         </h1>
 
         {access.week.stage && (
-          <p className="mt-2 text-sm text-[var(--fg-muted)]">
+          <p className="mt-2 text-sm text-[color:var(--fg-muted)]">
             {access.week.stage}
           </p>
         )}
 
         {access.week.teaser && (
-          <p className="mt-4 text-lg leading-relaxed text-[var(--fg-secondary)]">
+          <p className="mt-4 text-lg leading-relaxed text-[color:var(--fg-secondary)]">
             {access.week.teaser}
           </p>
         )}
@@ -140,7 +140,7 @@ export default async function WeekPage({params}: Props) {
           dangerouslySetInnerHTML={{__html: access.week.contentHtml}}
         />
       ) : (
-        <p className="text-[var(--fg-muted)]">{t.camp.noWeeksYet}</p>
+        <p className="text-[color:var(--fg-muted)]">{t.camp.noWeeksYet}</p>
       )}
 
       <WeekNav campSlug={camp.slug} weekNumber={weekNumber} weekCount={camp.weekCount} />
@@ -159,7 +159,7 @@ function Breadcrumb({
     <nav className="mb-6 text-sm" aria-label="Sayfa yolu">
       <Link
         href={`/kamplar/${campSlug}`}
-        className="text-[var(--fg-secondary)] hover:text-[var(--fg-primary)]"
+        className="text-[color:var(--fg-secondary)] hover:text-[color:var(--fg-primary)]"
       >
         ← {campName}
       </Link>
@@ -181,13 +181,13 @@ function WeekNav({
 
   return (
     <nav
-      className="mt-16 flex justify-between gap-4 border-t border-[var(--border-subtle)] pt-6 text-sm"
+      className="mt-16 flex justify-between gap-4 border-t border-[color:var(--border-subtle)] pt-6 text-sm"
       aria-label="Hafta gezinmesi"
     >
       {previous ? (
         <Link
           href={`/kamplar/${campSlug}/hafta/${previous}`}
-          className="text-[var(--fg-secondary)] hover:text-[var(--fg-primary)]"
+          className="text-[color:var(--fg-secondary)] hover:text-[color:var(--fg-primary)]"
         >
           ← {fmt(t.camp.weekLabel, {n: previous})}
         </Link>
@@ -198,7 +198,7 @@ function WeekNav({
       {next && (
         <Link
           href={`/kamplar/${campSlug}/hafta/${next}`}
-          className="text-[var(--fg-secondary)] hover:text-[var(--fg-primary)]"
+          className="text-[color:var(--fg-secondary)] hover:text-[color:var(--fg-primary)]"
         >
           {fmt(t.camp.weekLabel, {n: next})} →
         </Link>

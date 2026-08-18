@@ -85,7 +85,7 @@ export default async function CampPage({params}: Props) {
         </div>
 
         {camp.description && (
-          <p className="mt-4 text-lg leading-relaxed text-[var(--fg-secondary)]">
+          <p className="mt-4 text-lg leading-relaxed text-[color:var(--fg-secondary)]">
             {camp.description}
           </p>
         )}
@@ -110,7 +110,7 @@ export default async function CampPage({params}: Props) {
           {[...groups.entries()].map(([stage, stageWeeks]) => (
             <section key={stage || "default"}>
               {stage && (
-                <h2 className="mb-4 text-lg font-bold tracking-tight text-[var(--fg-secondary)]">
+                <h2 className="mb-4 text-lg font-bold tracking-tight text-[color:var(--fg-secondary)]">
                   {stage}
                 </h2>
               )}

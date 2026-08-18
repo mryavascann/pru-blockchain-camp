@@ -44,7 +44,7 @@ export function LockedPreview({
   return (
     <article
       aria-label={`${fmt(t.camp.weekLabel, {n: week.weekNumber})} — kilitli`}
-      className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)]"
+      className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]"
     >
       {/* ---- Gerçek, herkese açık kısım ---- */}
       <div className="p-6 md:p-8">
@@ -58,11 +58,11 @@ export function LockedPreview({
         </h1>
 
         {week.stage && (
-          <p className="mt-2 text-sm text-[var(--fg-muted)]">{week.stage}</p>
+          <p className="mt-2 text-sm text-[color:var(--fg-muted)]">{week.stage}</p>
         )}
 
         {week.teaser && (
-          <p className="mt-4 max-w-prose leading-relaxed text-[var(--fg-secondary)]">
+          <p className="mt-4 max-w-prose leading-relaxed text-[color:var(--fg-secondary)]">
             {week.teaser}
           </p>
         )}
@@ -99,7 +99,7 @@ export function LockedPreview({
 
         {/* Kilit paneli — gerçek metin, gerçek düğme, klavyeyle erişilebilir */}
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-6 pb-8 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full border border-[var(--border-accent)] bg-[var(--bg-subtle)]">
+          <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-accent)] bg-[color:var(--bg-subtle)]">
             <LockIcon size={22} />
           </div>
 
@@ -123,7 +123,7 @@ export function LockedPreview({
             publicWeekNumber !== week.weekNumber && (
               <Link
                 href={`/kamplar/${campSlug}/hafta/${publicWeekNumber}`}
-                className="text-sm font-medium text-[var(--accent-text)] underline underline-offset-4"
+                className="text-sm font-medium text-[color:var(--accent-text)] underline underline-offset-4"
               >
                 {t.locked.sampleLink} →
               </Link>
@@ -145,7 +145,7 @@ function LockIcon({size = 18}: {size?: number}) {
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-[var(--accent-text)]"
+      className="text-[color:var(--accent-text)]"
       aria-hidden="true"
     >
       <rect width="18" height="11" x="3" y="11" rx="2" />
