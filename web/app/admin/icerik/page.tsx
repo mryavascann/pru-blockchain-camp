@@ -27,9 +27,11 @@ export default async function ContentPage() {
           lastError: true,
           syncedAt: true,
           stage: true,
-          // `contentHtml` KASITLI OLARAK YOK: admin panelinde ders içeriğini
-          // düzenlemiyoruz (o Notion'da). Gereksiz veriyi tarayıcıya
-          // taşımanın anlamı yok.
+          notionBlockId: true,
+          contentHtml: true,
+          // `contentHtml` admin panelinde SALT OKUNUR önizleme olarak
+          // gösteriliyor — düzenleme Notion'da yapılıyor. Yönetici zaten
+          // içeriği görme yetkisine sahip, sızıntı söz konusu değil.
         },
       },
     },
@@ -43,6 +45,7 @@ export default async function ContentPage() {
         name: camp.name,
         weekCount: camp.weekCount,
         publicWeekNumber: camp.publicWeekNumber,
+        notionSourceId: camp.notionSourceId,
         weeks: camp.weeks.map((week) => ({
           ...week,
           syncedAt: week.syncedAt?.toISOString() ?? null,

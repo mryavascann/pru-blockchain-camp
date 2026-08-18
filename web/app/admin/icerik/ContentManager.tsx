@@ -38,6 +38,8 @@ type Week = {
   lastError: string | null;
   syncedAt: string | null;
   stage: string | null;
+  notionBlockId: string | null;
+  contentHtml: string | null;
 };
 
 type Camp = {
@@ -46,6 +48,7 @@ type Camp = {
   name: string;
   weekCount: number;
   publicWeekNumber: number | null;
+  notionSourceId: string | null;
   weeks: Week[];
 };
 
@@ -147,6 +150,7 @@ export function ContentManager({camps}: {camps: Camp[]}) {
           <WeekEditor
             key={week.weekNumber}
             campSlug={camp.slug}
+            campId={camp.id}
             week={week}
             onDone={() => router.refresh()}
           />
@@ -245,10 +249,12 @@ function PublicWeekPicker({camp, onDone}: {camp: Camp; onDone: () => void}) {
 
 function WeekEditor({
   campSlug,
+  campId,
   week,
   onDone,
 }: {
   campSlug: string;
+  campId: number;
   week: Week;
   onDone: () => void;
 }) {
@@ -257,6 +263,37 @@ function WeekEditor({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const [showContent, setShowContent] = useState(false);
+
+  /*
+   * Notion derin bağlantısı. Blok kimliğinden tireleri kaldırınca Notion
+   * doğrudan o bloğa gidip vurgular — admin tam düzenleyeceği yere düşer.
+   */
+  const notionUrl = week.notionBlockId
+    ? `https://www.notion.so/${week.notionBlockId.replace(/-/g, "")}`
+    : null;
+
+  /** Yalnızca bu haftayı Notion'dan tazeler (~birkaç saniye) */
+  async function refreshWeek() {
+    setRefreshing(true);
+    setRefreshMessage(null);
+    try {
+      const response = await fetch("/api/admin/sync", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({campId, weekNumber: week.weekNumber}),
+      });
+      const json = await response.json();
+      setRefreshMessage(json.ok ? json.data.message : (json.error ?? t.errors.unknown));
+      if (json.ok && json.data.changed) onDone();
+    } catch {
+      setRefreshMessage(t.errors.network);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const dirty = teaser !== week.teaser;
   const suggestionIsContent = week.teaserSource === "paragraph";
@@ -369,6 +406,84 @@ function WeekEditor({
               </button>
             </div>
           )}
+
+          {/* ------- DERS İÇERİĞİ: Notion'da düzenlenir ------- */}
+          <div className="rounded-md border border-line bg-subtle p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold">Ders içeriği</p>
+                <p className="mt-0.5 text-xs text-fg-muted">
+                  {week.contentHtml
+                    ? `${week.contentHtml.length.toLocaleString("tr-TR")} karakter · ` +
+                      `${(week.contentHtml.match(/<a /g) ?? []).length} bağlantı · ` +
+                      `${(week.contentHtml.match(/nx-todo"/g) ?? []).length} görev`
+                    : "içerik yok"}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {week.contentHtml && (
+                  <button
+                    type="button"
+                    onClick={() => setShowContent((v) => !v)}
+                    className="rounded-md border border-line-strong px-2.5 py-1 text-xs font-medium hover:border-line-accent"
+                  >
+                    {showContent ? "Önizlemeyi gizle" : "Önizle"}
+                  </button>
+                )}
+
+                {notionUrl && (
+                  <a
+                    href={notionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-line-accent px-2.5 py-1 text-xs font-semibold text-accent-text hover:bg-surface"
+                  >
+                    Notion&apos;da düzenle ↗
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={refreshWeek}
+                  disabled={refreshing}
+                  className="rounded-md border border-line-strong px-2.5 py-1 text-xs font-medium hover:border-line-accent disabled:opacity-50"
+                >
+                  {refreshing ? "Tazeleniyor…" : "Bu haftayı tazele"}
+                </button>
+              </div>
+            </div>
+
+            {/*
+              Görev açıklamaları ve linkler NOTION'DA düzenlenir, burada değil.
+              Gerekçe: Notion zengin bir editör sunuyor ve tek doğruluk kaynağı
+              orası. Panelde ayrı bir metin kutusu açsaydık aynı içerik iki
+              yerde yaşar, senkron hangisinin kazanacağını bilemezdi.
+
+              Akış: "Notion'da düzenle" → değiştir → "Bu haftayı tazele" →
+              birkaç saniyede sitede.
+            */}
+            <p className="mt-2 text-xs text-fg-muted">
+              Görev açıklamaları ve bağlantılar Notion&apos;da düzenlenir.
+              Değişiklikten sonra <strong>Bu haftayı tazele</strong>&apos;ye bas —
+              tam senkronu beklemeye gerek yok.
+            </p>
+
+            {refreshMessage && (
+              <p className="mt-2 text-xs font-medium text-accent-text">
+                {refreshMessage}
+              </p>
+            )}
+
+            {showContent && week.contentHtml && (
+              <div className="mt-3 max-h-96 overflow-y-auto rounded-md border border-line bg-surface p-3">
+                <div
+                  className="nx-content text-sm"
+                  dangerouslySetInnerHTML={{__html: week.contentHtml}}
+                />
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button

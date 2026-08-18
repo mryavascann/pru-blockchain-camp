@@ -384,3 +384,99 @@ function safeRevalidate(tag: string): void {
     /* istek bağlamı yok — script'ten çalıştırılıyor, sorun değil */
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                            TEK HAFTA SENKRONU                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Yalnızca BİR haftanın içeriğini Notion'dan tazeler.
+ *
+ * NEDEN AYRI BİR YOL:
+ * Tam senkron kampın tüm sayfasını gezer ve 27 hafta için ~100 saniye sürer.
+ * Ama admin Notion'da tek bir haftayı düzenleyip sonucu hemen görmek istiyor.
+ * Bu fonksiyon o haftanın blok kimliğini kullanıp doğrudan onun altına iner —
+ * ~110 istek yerine 3-5 istek, birkaç saniye.
+ *
+ * Tam senkronun dört güvenlik kuralı burada da geçerli: başarısızlıkta içerik
+ * silinmez, adminin yazdığı özet ezilmez.
+ */
+export async function syncWeek(
+  campId: number,
+  weekNumber: number,
+): Promise<{ok: boolean; changed: boolean; error?: string}> {
+  const week = await db.week.findUnique({
+    where: {campId_weekNumber: {campId, weekNumber}},
+    include: {camp: {select: {slug: true, notionSourceId: true}}},
+  });
+
+  if (!week) return {ok: false, changed: false, error: "Hafta bulunamadı."};
+  if (!week.camp.notionSourceId) {
+    return {ok: false, changed: false, error: "Kampın Notion kaynağı tanımlı değil."};
+  }
+
+  try {
+    /*
+     * Tüm kamp sayfası taranır ama YALNIZCA bu haftanın alt ağacı çekilir.
+     * Tarama şart: bir haftanın içeriği kardeş bloklarda olabiliyor ve
+     * kardeşleri görmek için üst listeye bakmak gerekiyor.
+     */
+    const parsed = await parseCampPage(week.camp.notionSourceId, {
+      onlyWeek: weekNumber,
+    });
+    const target = parsed.weeks.find((w) => w.weekNumber === weekNumber);
+
+    if (!target) {
+      return {
+        ok: false,
+        changed: false,
+        error: `Hafta ${weekNumber} Notion'da bulunamadı. Başlığı "Hafta ${weekNumber}" kalıbına uyuyor mu?`,
+      };
+    }
+
+    const {html, hash} = renderWeekContent(target.blocks);
+
+    if (hash === week.contentHash) {
+      return {ok: true, changed: false};
+    }
+
+    await db.week.update({
+      where: {campId_weekNumber: {campId, weekNumber}},
+      data: {
+        contentHtml: html,
+        rawBlocks: target.blocks as unknown as object,
+        contentHash: hash,
+        title: target.title,
+        stage: target.stage,
+        teaserSuggestion: target.suggestedTeaser || null,
+        teaserSource: target.teaserSource,
+        syncStatus: "OK",
+        syncedAt: new Date(),
+        lastAttemptAt: new Date(),
+        lastError: null,
+        // `teaser`, `title` ve `status` KASITLI OLARAK YOK — bunlar admin
+        // panelinden yönetiliyor ve tek hafta tazelemesi onları ezmemeli.
+      },
+    });
+
+    safeRevalidate(weekCacheTag(week.camp.slug, weekNumber));
+    safeRevalidate(campCacheTag(week.camp.slug));
+
+    return {ok: true, changed: true};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    await db.week
+      .update({
+        where: {campId_weekNumber: {campId, weekNumber}},
+        data: {
+          syncStatus: "FAILED",
+          lastError: message.slice(0, 500),
+          lastAttemptAt: new Date(),
+        },
+      })
+      .catch(() => {});
+
+    return {ok: false, changed: false, error: message};
+  }
+}

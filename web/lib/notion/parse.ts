@@ -8,17 +8,25 @@
  *
  *   PRU Blockchain Developers               ← kamp sayfası
  *   ├── quote          "💡 Vizyon: ..."
- *   ├── toggle         "🔵 1. AŞAMA: Temeller ve Güçlü JavaScript (7 Hafta)"
- *   │   ├── toggle     "📅 Hafta 1: Blockchain Nedir? ..."     ← HAFTA
- *   │   │   ├── callout        "Bu hafta ..."                  ← özet adayı
- *   │   │   ├── bulleted_list  "..."
- *   │   │   └── to_do          "📺 [Video]: ..."
- *   │   └── toggle     "📅 Hafta 2: ..."                       ← HAFTA
- *   └── toggle         "🟡 2. AŞAMA: ..."
+ *   └── toggle         "🔵 1. AŞAMA: Temeller ve Güçlü JavaScript"
+ *       ├── bulleted_list_item  "📅 Hafta 1: ..."   ← HAFTA (toggle DEĞİL!)
+ *       │   └── callout         "Bu hafta ..."      ← çocuğu
+ *       ├── column_list         görevler, videolar  ← KARDEŞ, ama Hafta 1'e ait
+ *       ├── toggle              "📅 Hafta 2: ..."   ← HAFTA
+ *       │   ├── callout         "..."               ← çocuğu
+ *       │   └── column_list     görevler            ← çocuğu
+ *       └── toggle              "📅 Hafta 3: ..."
  *
- * Haftalar ayrı sayfa veya database satırı DEĞİL — aşama toggle'ları içine
- * yuvalanmış toggle blokları. Bu yüzden ayrıştırma, blok ağacında "Hafta N"
- * kalıbını arayarak yapılır.
+ * Haftalar ayrı sayfa veya database satırı DEĞİL — aşama bloklarının içine
+ * yuvalanmış toggle/liste blokları.
+ *
+ * ⚠️ İKİ FARKLI BİÇİM VAR ve ikisi de desteklenmek zorunda:
+ *   • Hafta başlığı `toggle` ise  → içerik ONUN İÇİNDE
+ *   • `bulleted_list_item` ise    → Notion iç içe koymaya izin vermez,
+ *                                    içerik BAŞLIĞIN YANINA kardeş olarak düşer
+ *
+ * İkincisi gözden kaçmıştı ve Developers Hafta 1'in tüm ders içeriği
+ * (3 hedef + 6 video görevi) siteye hiç çıkmıyordu.
  *
  * TASARIM İLKESİ: SESSİZ BAŞARISIZLIK YOK.
  * Tanınamayan bir blok, eksik hafta veya tekrar eden hafta numarası sessizce
@@ -221,12 +229,28 @@ function extractSuggestedTeaser(blocks: BlockWithChildren[]): {
   return {text: "", source: null};
 }
 
+export type ParseOptions = {
+  /**
+   * Yalnızca bu haftanın içeriğini derinlemesine çek.
+   *
+   * NEDEN: Tek bir haftayı tazelemek için tüm kampı ayrıştırmak gerekiyor —
+   * çünkü bir haftanın içeriği KARDEŞ bloklarda olabilir ve kardeşleri
+   * görebilmek için üst bloğun listesine bakmak şart. Ama diğer haftaların
+   * alt ağaçlarını çekmeye gerek yok. Bu seçenek o pahalı kısmı atlıyor:
+   * ~110 istek yerine ~10.
+   */
+  onlyWeek?: number;
+};
+
 /**
  * Bir kamp sayfasını ayrıştırır ve haftaları çıkarır.
  *
  * @param pageId Notion kamp sayfasının kimliği
  */
-export async function parseCampPage(pageId: string): Promise<ParseResult> {
+export async function parseCampPage(
+  pageId: string,
+  options: ParseOptions = {},
+): Promise<ParseResult> {
   const warnings: string[] = [];
   const weeks: ParsedWeek[] = [];
 
@@ -240,7 +264,13 @@ export async function parseCampPage(pageId: string): Promise<ParseResult> {
 
     const blocks = await listAllChildren(blockId);
 
-    for (const block of blocks) {
+    /*
+     * İNDEKSLİ DÖNGÜ — çünkü bir haftanın içeriği yalnızca kendi çocuklarında
+     * olmayabilir; KARDEŞ bloklarda da olabilir. Bu yüzden ileriye bakmamız
+     * ve tüketilen kardeşleri atlamamız gerekiyor.
+     */
+    for (let index = 0; index < blocks.length; index++) {
+      const block = blocks[index];
       const text = blockPlainText(block).trim();
       if (text.length === 0 && !block.has_children) continue;
 
@@ -248,16 +278,61 @@ export async function parseCampPage(pageId: string): Promise<ParseResult> {
 
       if (weekInfo) {
         /* ---- Bu bir HAFTA ---- */
-        if (!block.has_children) {
+
+        /*
+         * Filtre: yalnızca tek bir hafta isteniyorsa diğerlerinin PAHALI
+         * alt ağaç çekimini atla. Başlık ve kardeş taraması yine yapılır —
+         * onlar olmadan sıradaki haftanın nerede başladığı bilinemez.
+         */
+        const wanted =
+          options.onlyWeek === undefined || options.onlyWeek === weekInfo.weekNumber;
+
+        // 1) Kendi alt blokları
+        const contentBlocks: BlockWithChildren[] =
+          wanted && block.has_children ? await fetchSubtree(block.id) : [];
+
+        /*
+         * 2) KARDEŞ BLOKLARI SAHİPLEN
+         *
+         * Notion'da hafta başlığı `toggle` ise içerik onun İÇİNE yazılır.
+         * Ama `bulleted_list_item` ise Notion iç içe koymaya izin vermez ve
+         * içerik başlığın YANINA, kardeş olarak düşer:
+         *
+         *   [bulleted_list_item] 📅 Hafta 1: …     ← hafta
+         *     [callout] …                          ← çocuğu
+         *   [column_list] görevler, videolar       ← KARDEŞ, ama Hafta 1'e ait
+         *   [toggle] 📅 Hafta 2: …                 ← burada durulur
+         *
+         * Yalnızca çocuklara bakmak, bu biçimde yazılmış haftaların ders
+         * içeriğini tamamen kaybetmek demekti (Developers Hafta 1 böyleydi:
+         * 3 hedef ve 6 video görevi siteye hiç çıkmıyordu).
+         *
+         * Sahiplenme bir sonraki HAFTA veya AŞAMA başlığında durur.
+         */
+        let cursor = index + 1;
+        while (cursor < blocks.length) {
+          const sibling = blocks[cursor];
+          const siblingText = blockPlainText(sibling).trim();
+
+          if (parseWeekHeading(siblingText) || isStageHeading(siblingText)) break;
+
+          if (wanted) {
+            if (sibling.has_children && sibling.type !== "child_page") {
+              sibling.children = await fetchSubtree(sibling.id);
+            }
+            contentBlocks.push(sibling);
+          }
+          cursor += 1;
+        }
+        // Tüketilen kardeşleri tekrar işlemeyelim
+        index = cursor - 1;
+
+        if (wanted && contentBlocks.length === 0) {
           warnings.push(
             `Hafta ${weekInfo.weekNumber} ("${weekInfo.title}") bulundu ama ` +
-              `içeriği boş — Notion'da bu toggle'ın içine bir şey yazılmamış.`,
+              `hiç içeriği yok — Notion'da bu başlığın altına bir şey yazılmamış.`,
           );
         }
-
-        const contentBlocks = block.has_children
-          ? await fetchSubtree(block.id)
-          : [];
 
         const teaser = extractSuggestedTeaser(contentBlocks);
 
@@ -271,7 +346,6 @@ export async function parseCampPage(pageId: string): Promise<ParseResult> {
           teaserSource: teaser.source,
         });
 
-        // Haftanın içine hafta aramıyoruz
         continue;
       }
 

@@ -13,9 +13,10 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import {requireAdmin} from "@/lib/auth/guards";
-import {syncAll} from "@/lib/notion/sync";
+import {syncAll, syncWeek} from "@/lib/notion/sync";
 import {isNotionConfigured} from "@/lib/env";
 import {fail, handle, ok, readJson} from "@/lib/api";
+import {t} from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,14 @@ export async function GET() {
 const syncSchema = z.object({
   /** Yalnızca bu kampı senkronla; verilmezse hepsi */
   campId: z.number().int().min(1).optional(),
+  /**
+   * Yalnızca bu haftayı tazele (campId ile birlikte).
+   *
+   * Tam senkron 27 hafta için ~75 saniye sürüyor. Notion'da tek bir haftayı
+   * düzenleyip sonucu hemen görmek isteyen admin için bu çok uzun; tek hafta
+   * tazelemesi birkaç saniyede bitiyor.
+   */
+  weekNumber: z.number().int().min(1).optional(),
 });
 
 export async function POST(request: Request) {
@@ -105,6 +114,24 @@ export async function POST(request: Request) {
 
     const parsed = syncSchema.safeParse((await readJson<unknown>(request)) ?? {});
     const campId = parsed.success ? parsed.data.campId : undefined;
+    const weekNumber = parsed.success ? parsed.data.weekNumber : undefined;
+
+    /* ---- Tek hafta tazeleme ---- */
+    if (campId && weekNumber) {
+      const single = await syncWeek(campId, weekNumber);
+      if (!single.ok) {
+        return fail(single.error ?? t.errors.unknown, 502, "WEEK_SYNC_FAILED");
+      }
+      return ok({
+        scope: "week",
+        campId,
+        weekNumber,
+        changed: single.changed,
+        message: single.changed
+          ? `${weekNumber}. hafta güncellendi.`
+          : `${weekNumber}. haftada değişiklik yok.`,
+      });
+    }
 
     const result = await syncAll("manual", campId);
 
