@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "notion:probe": "tsx --env-file=.env.local scripts/notion-probe.ts",
     "notion:sync": "tsx --env-file=.env.local scripts/notion-sync.ts",
-    "e2e": "tsx --env-file=.env.local scripts/e2e-backend.ts"
+    "e2e": "tsx --env-file=.env.local scripts/e2e-backend.ts",
+    "e2e:full": "tsx --env-file=.env.local scripts/e2e-full.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.25.2",
