@@ -1,26 +1,606 @@
+/* ============================================================================
+   PRU Blockchain Kulübü — Tasarım sistemi
+   Kaynak: docs/brand.md  (bu dosya o dokümanın CSS karşılığıdır)
+
+   KURAL: Component'ler bu dosyadaki SEMANTİK token'ları kullanır
+   (--bg-surface, --fg-primary, --accent …), ham renk ölçeklerini değil.
+   Böylece tema değişikliği tek yerden yapılır.
+   ============================================================================ */
+
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   1. HAM RENK ÖLÇEKLERİ  (brand.md §2.1)
+   Bunlar doğrudan kullanılmaz; aşağıdaki semantik token'ları besler.
+   --------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Lacivert — "Derinlik" */
+  --navy-950: #050d1a;
+  --navy-900: #0a1729;
+  --navy-800: #0f2440;
+  --navy-700: #143156;
+  --navy-600: #1b4074;
+  --navy-500: #245695;
+  --navy-400: #3b76bc;
+  --navy-300: #6b9bd4;
+  --navy-200: #a3c1e5;
+  --navy-100: #cfdff2;
+  --navy-50: #edf3fb;
+
+  /* Turkuaz — "Fener" (doğrulanmış / aktif) */
+  --teal-700: #0a7c72;
+  --teal-600: #0e9c8f;
+  --teal-500: #12bfae;
+  --teal-400: #3ed9c8;
+  --teal-300: #7be9dc;
+
+  /* Amber — "Başarı" (yalnızca ödül anlarında) */
+  --amber-600: #c98200;
+  --amber-500: #f0a500;
+  --amber-400: #ffb92e;
+
+  /* Nötr — mavi tonlu gri */
+  --gray-0: #ffffff;
+  --gray-50: #f7f9fc;
+  --gray-100: #eef2f7;
+  --gray-200: #dfe5ee;
+  --gray-300: #c5cedc;
+  --gray-400: #97a3b6;
+  --gray-500: #6b7889;
+  --gray-600: #4c5768;
+  --gray-700: #37404e;
+  --gray-800: #232b36;
+  --gray-900: #151b24;
+  --gray-950: #0b0f16;
+
+  /* --------------------------------------------------------------------
+     2. SEMANTİK TOKEN'LAR — LIGHT  (brand.md §2.2)
+     -------------------------------------------------------------------- */
+  --bg-base: var(--gray-50);
+  --bg-surface: var(--gray-0);
+  --bg-elevated: var(--gray-0);
+  --bg-subtle: var(--gray-100);
+  --bg-inverse: var(--navy-900);
+
+  --fg-primary: var(--gray-900);
+  --fg-secondary: var(--gray-600);
+  --fg-muted: var(--gray-400);
+  --fg-inverse: var(--gray-0);
+  --fg-link: var(--navy-500);
+
+  --border-subtle: var(--gray-200);
+  --border-strong: var(--gray-300);
+  --border-accent: var(--teal-500);
+
+  /* light temada accent METİN için 600/700 — 500 beyaz üstünde 2.1:1, okunmaz */
+  --accent: var(--teal-600);
+  --accent-text: var(--teal-700);
+  --accent-fg: var(--gray-0);
+  --primary: var(--navy-500);
+  --primary-fg: var(--gray-0);
+  --reward: var(--amber-600);
+
+  --success: #16a34a;
+  --warning: #b45309;
+  --danger: #dc2626;
+
+  --focus-ring: var(--teal-500);
+
+  /* --------------------------------------------------------------------
+     3. BOŞLUK — 4px tabanlı  (brand.md §4)
+     -------------------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* --------------------------------------------------------------------
+     4. YUVARLAKLIK VE GÖLGE  (brand.md §5)
+     -------------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 2px rgb(10 23 41 / 0.06);
+  --shadow-md: 0 4px 12px rgb(10 23 41 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(10 23 41 / 0.12);
+  --shadow-glow: 0 0 0 3px rgb(18 191 174 / 0.25);
+
+  /* --------------------------------------------------------------------
+     5. LAYOUT  (brand.md §6)
+     -------------------------------------------------------------------- */
+  --page-max: 1200px;
+  --prose-max: 720px;
+  --header-height: 64px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ---------------------------------------------------------------------------
+   DARK TEMA
 
+   Üç durum var (brand.md §2.2):
+     • data-theme="dark"  → kullanıcı açıkça seçti
+     • data-theme="light" → kullanıcı açıkça seçti
+     • hiçbiri            → sistem tercihi
+
+   Varsayılan DARK: kripto kitlesi bunu bekliyor ve rozet görselleri koyu
+   zeminde daha iyi duruyor. Ama sistem tercihi her zaman saygı görür.
+   --------------------------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg-base: var(--navy-950);
+    --bg-surface: var(--navy-900);
+    --bg-elevated: var(--navy-800);
+    --bg-subtle: var(--navy-800);
+    --bg-inverse: var(--gray-0);
+
+    --fg-primary: var(--gray-50);
+    --fg-secondary: var(--gray-300);
+    --fg-muted: var(--gray-500);
+    --fg-inverse: var(--gray-900);
+    --fg-link: var(--navy-300);
+
+    --border-subtle: var(--navy-700);
+    --border-strong: var(--navy-600);
+    --border-accent: var(--teal-400);
+
+    --accent: var(--teal-500);
+    --accent-text: var(--teal-400);
+    --accent-fg: var(--navy-950);
+    --primary: var(--navy-400);
+    --primary-fg: var(--navy-950);
+    --reward: var(--amber-400);
+
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+
+    --focus-ring: var(--teal-300);
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
   }
 }
 
+/* Kullanıcının açık seçimi her iki yönde de kazanır */
+:root[data-theme="dark"] {
+  --bg-base: var(--navy-950);
+  --bg-surface: var(--navy-900);
+  --bg-elevated: var(--navy-800);
+  --bg-subtle: var(--navy-800);
+  --bg-inverse: var(--gray-0);
+
+  --fg-primary: var(--gray-50);
+  --fg-secondary: var(--gray-300);
+  --fg-muted: var(--gray-500);
+  --fg-inverse: var(--gray-900);
+  --fg-link: var(--navy-300);
+
+  --border-subtle: var(--navy-700);
+  --border-strong: var(--navy-600);
+  --border-accent: var(--teal-400);
+
+  --accent: var(--teal-500);
+  --accent-text: var(--teal-400);
+  --accent-fg: var(--navy-950);
+  --primary: var(--navy-400);
+  --primary-fg: var(--navy-950);
+  --reward: var(--amber-400);
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+
+  --focus-ring: var(--teal-300);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+/* ---------------------------------------------------------------------------
+   TAILWIND KÖPRÜSÜ
+   Token'ları Tailwind sınıfı olarak kullanılabilir hâle getirir:
+   bg-surface, text-primary, border-subtle …
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--bg-subtle);
+  --color-inverse: var(--bg-inverse);
+
+  --color-fg: var(--fg-primary);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-inverse: var(--fg-inverse);
+
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+  --color-line-accent: var(--border-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-fg: var(--accent-fg);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-reward: var(--reward);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+/* ---------------------------------------------------------------------------
+   TABAN STİLLER
+   --------------------------------------------------------------------------- */
+* {
+  border-color: var(--border-subtle);
+}
+
+html {
+  /* Sticky header'ın içeriği kesmemesi için */
+  scroll-padding-top: calc(var(--header-height) + var(--space-4));
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--fg-primary);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  color: var(--fg-primary);
+  text-wrap: balance;
+}
+
+/* Odak halkası — ASLA outline:none bırakılmaz (brand.md §7.1) */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+  border-radius: var(--radius-sm);
+}
+
+/* Cüzdan adresleri, hash'ler — her zaman mono (brand.md §3.1) */
+.mono {
+  font-family: var(--font-mono-code), ui-monospace, SFMono-Regular, monospace;
+  font-variant-ligatures: none;
+}
+
+/* ---------------------------------------------------------------------------
+   HAREKET  (brand.md §10)
+   Bu bir seçenek değil, uygulama şartı.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* İskelet nabzı — kilitli içerik ekranı (brand.md §8.3) */
+@keyframes nx-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.skeleton-bar {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+  animation: nx-pulse 2s ease-in-out infinite;
+}
+
+/* Rozet kazanma animasyonu — 600ms, bir kez */
+@keyframes nx-badge-earned {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.badge-earned {
+  animation: nx-badge-earned 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================================
+   NOTION İÇERİĞİ  (lib/notion/render.ts çıktısının stilleri)
+
+   Bu sınıflar renderer tarafından üretilen HTML'e uygulanır. Renderer'ın
+   ürettiği etiket kümesi sabit ve bilinen olduğu için her birini burada
+   açıkça stillendiriyoruz — beklenmedik bir etiket çıkarsa stilsiz kalır,
+   bu da fark edilmesini sağlar.
+   ============================================================================ */
+.nx-content {
+  max-width: 65ch;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.nx-content > * + * {
+  margin-top: var(--space-4);
+}
+
+.nx-p {
+  color: var(--fg-primary);
+}
+
+.nx-h2 {
+  font-size: 1.75rem;
+  line-height: 1.25;
+  font-weight: 700;
+  margin-top: var(--space-8);
+}
+
+.nx-h3 {
+  font-size: 1.375rem;
+  line-height: 1.35;
+  font-weight: 600;
+  margin-top: var(--space-6);
+}
+
+.nx-h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: var(--space-4);
+}
+
+.nx-link {
+  color: var(--fg-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.nx-link:hover {
+  color: var(--accent-text);
+}
+
+.nx-ul,
+.nx-ol {
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.nx-ul {
+  list-style: disc;
+}
+
+.nx-ol {
+  list-style: decimal;
+}
+
+.nx-li::marker {
+  color: var(--accent-text);
+}
+
+/* Görev listeleri — salt okunur, işaretlenemez */
+.nx-todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  padding-left: 0;
+}
+
+.nx-todo {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-subtle);
+}
+
+.nx-todo input {
+  margin-top: 0.35rem;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.nx-todo-done {
+  opacity: 0.65;
+}
+
+.nx-quote {
+  border-left: 3px solid var(--border-accent);
+  padding-left: var(--space-4);
+  color: var(--fg-secondary);
+  font-style: italic;
+}
+
+.nx-callout {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-subtle);
+}
+
+.nx-callout-icon {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.nx-code-inline {
+  font-family: var(--font-mono-code), ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.nx-pre {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  font-family: var(--font-mono-code), ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.nx-hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-8) 0;
+}
+
+.nx-toggle {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-surface);
+}
+
+.nx-toggle > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.nx-toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nx-toggle > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: var(--space-2);
+  color: var(--accent-text);
+  transition: transform 150ms ease-out;
+}
+
+.nx-toggle[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.nx-toggle-body {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.nx-toggle-body > * + * {
+  margin-top: var(--space-3);
+}
+
+/* Notion sütun düzeni — mobilde alt alta */
+.nx-columns {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .nx-columns {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+.nx-column > * + * {
+  margin-top: var(--space-3);
+}
+
+/* Video — 16:9 oranını koruyan çerçeve */
+.nx-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.nx-video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.nx-figure figcaption,
+.nx-video figcaption {
+  margin-top: var(--space-2);
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.nx-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+}
+
+.nx-bookmark {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  transition: border-color 150ms ease-out;
+}
+
+.nx-bookmark:hover {
+  border-color: var(--border-accent);
+}
+
+.nx-bookmark-title {
+  font-weight: 600;
+}
+
+.nx-bookmark-url {
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
 }

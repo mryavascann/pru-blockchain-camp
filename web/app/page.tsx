@@ -1,69 +1,182 @@
-import Image from "next/image";
+/**
+ * Landing sayfası — HERKESE AÇIK, SEO'ya açık.
+ *
+ * Cüzdan gerektirmez. brand.md §9.1: "Cüzdan hiçbir zaman kapıda zorlanmaz."
+ * Ziyaretçi kulübü ve kampları tanır, örnek haftayı okur, ancak kilitli bir
+ * şeye uzandığında bağlantı istenir.
+ *
+ * Sunucu bileşeni: veriyi doğrudan veritabanından okur, API'ye HTTP isteği
+ * atmaz. Aynı süreç içinde olduğu için daha hızlı ve ek bir ağ turu yok.
+ */
+import Link from "next/link";
 
-export default function Home() {
+import {Button} from "@/components/ui/Button";
+import {Card, Container, Pill} from "@/components/ui/Card";
+import {listCamps} from "@/lib/content/access";
+import {t} from "@/lib/i18n";
+
+export const revalidate = 300;
+
+export default async function HomePage() {
+  const camps = await listCamps();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      {/* ---------------------------------------------------------------- */}
+      {/* HERO                                                             */}
+      {/* ---------------------------------------------------------------- */}
+      <section className="relative overflow-hidden border-b border-[var(--border-subtle)]">
+        {/* Dekoratif zemin — içerikten bağımsız, ekran okuyucuya görünmez */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 20%, var(--teal-500) 0, transparent 45%), radial-gradient(circle at 80% 60%, var(--navy-500) 0, transparent 45%)",
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+        <Container className="relative py-20 md:py-32">
+          <div className="max-w-3xl">
+            <Pill tone="accent">{t.site.university}</Pill>
+
+            <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
+              Kampı tamamla,
+              <br />
+              rozetin{" "}
+              <span className="text-[var(--accent-text)]">zincirde</span> kalsın.
+            </h1>
+
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--fg-secondary)]">
+              {t.site.name} kamplarında her haftayı tamamladığında, o haftaya
+              ait devredilemez bir rozet kazanırsın. Rozetler cüzdanında durur;
+              satılamaz, devredilemez, kaybolmaz.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/kamplar">
+                <Button variant="accent" size="lg">
+                  {t.nav.camps} →
+                </Button>
+              </Link>
+              <Link href="/siralama">
+                <Button variant="secondary" size="lg">
+                  {t.nav.leaderboard}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* KAMPLAR                                                          */}
+      {/* ---------------------------------------------------------------- */}
+      <Container className="py-16 md:py-24">
+        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+          Kamp Programları
+        </h2>
+        <p className="mt-2 text-[var(--fg-secondary)]">
+          Müfredat herkese açık. İçeriğe erişmek için kampa katılman yeterli.
+        </p>
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {camps.map((camp) => (
+            <Card key={camp.id} interactive>
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-xl font-bold tracking-tight">{camp.name}</h3>
+                <Pill tone={camp.active ? "accent" : "muted"}>
+                  {camp.weekCount} {t.camp.weeks}
+                </Pill>
+              </div>
+
+              {camp.description && (
+                <p className="mt-3 text-[var(--fg-secondary)]">
+                  {camp.description}
+                </p>
+              )}
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href={`/kamplar/${camp.slug}`}>
+                  <Button variant="secondary">{t.camp.viewCamp}</Button>
+                </Link>
+
+                {/* Herkese açık örnek hafta — vitrin (Faz 0 şartı) */}
+                {camp.publicWeekNumber !== null && (
+                  <Link
+                    href={`/kamplar/${camp.slug}/hafta/${camp.publicWeekNumber}`}
+                  >
+                    <Button variant="ghost">
+                      🌐 {t.locked.sampleLink} →
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </Container>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* NASIL ÇALIŞIR                                                    */}
+      {/* ---------------------------------------------------------------- */}
+      <section className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        <Container className="py-16 md:py-24">
+          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Nasıl çalışıyor?
+          </h2>
+
+          <ol className="mt-8 grid gap-6 md:grid-cols-4">
+            {[
+              {
+                n: "1",
+                title: "Cüzdanını bağla",
+                text: "Bir mesaj imzalarsın. Ücretsizdir — zincire işlem gitmez, gas ödemezsin.",
+              },
+              {
+                n: "2",
+                title: "Nick seç",
+                text: "Sıralamada görüneceğin isim. Cüzdanına zincir üzerinde bağlanır.",
+              },
+              {
+                n: "3",
+                title: "Haftanı bildir",
+                text: "Kaçıncı haftada olduğunu söylersin. Kulüp yöneticisi onaylar.",
+              },
+              {
+                n: "4",
+                title: "Rozetlerini al",
+                text: "Onaylanan haftaların rozetlerini tek işlemde cüzdanına basarsın.",
+              },
+            ].map((step) => (
+              <li key={step.n}>
+                <span
+                  className="grid h-9 w-9 place-items-center rounded-full bg-[var(--accent)] font-bold text-[var(--accent-fg)]"
+                  aria-hidden="true"
+                >
+                  {step.n}
+                </span>
+                <h3 className="mt-4 font-semibold">{step.title}</h3>
+                <p className="mt-1 text-sm text-[var(--fg-secondary)]">
+                  {step.text}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          {/*
+            DÜRÜSTLÜK NOTU — Faz 0'da kararlaştırıldı.
+            Sistem "trustless" değil; rozetlerin değeri kulübün itibarına
+            dayanıyor. Bunu gizlemek yerine açıkça yazıyoruz.
+          */}
+          <p className="mt-10 max-w-2xl text-sm text-[var(--fg-muted)]">
+            Rozetler PRU Blockchain Kulübü tarafından onaylanır ve Base ağında
+            saklanır. Kulüp, hangi katılımcının hangi haftayı tamamladığını
+            belirleyen taraftır; tüm yönetim işlemleri zincirde açıkça
+            görülebilir.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        </Container>
+      </section>
+    </>
   );
 }

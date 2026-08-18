@@ -1,0 +1,199 @@
+{
+  "site": {
+    "name": "PRU Blockchain Kulübü",
+    "shortName": "PRU Blockchain",
+    "university": "Piri Reis Üniversitesi",
+    "tagline": "Kamp programlarını tamamla, devredilemez rozetini zincirde topla."
+  },
+
+  "nav": {
+    "home": "Ana Sayfa",
+    "camps": "Kamplar",
+    "leaderboard": "Sıralama",
+    "profile": "Profilim",
+    "admin": "Yönetim",
+    "join": "Katıl"
+  },
+
+  "wallet": {
+    "connect": "Cüzdanını Bağla",
+    "connecting": "Bağlanıyor…",
+    "disconnect": "Bağlantıyı Kes",
+    "signIn": "Giriş İçin İmzala",
+    "signingIn": "Cüzdanında onayla…",
+    "signInHint": "Bu imza ücretsizdir — zincire işlem gitmez, gas ödemezsin.",
+    "noWallet": "Tarayıcında cüzdan bulunamadı",
+    "noWalletHelp": "MetaMask kurabilir veya telefonundaki cüzdanın tarayıcısından girebilirsin.",
+    "installMetamask": "MetaMask'i Kur",
+    "wrongNetwork": "Yanlış ağdasın",
+    "switchNetwork": "{network} ağına geç",
+    "switching": "Ağ değiştiriliyor…",
+    "copyAddress": "Adresi kopyala",
+    "copied": "Kopyalandı",
+    "viewOnExplorer": "Blok gezgininde aç"
+  },
+
+  "auth": {
+    "sessionExpired": "Oturumun sona erdi. Tekrar giriş yapman gerekiyor.",
+    "signInRejected": "İmzayı iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
+    "signInFailed": "Giriş yapılamadı. Lütfen tekrar dene."
+  },
+
+  "camp": {
+    "weeks": "hafta",
+    "weekLabel": "Hafta {n}",
+    "curriculum": "Müfredat",
+    "viewCamp": "Kampı İncele",
+    "viewWeek": "Haftayı Görüntüle",
+    "continue": "Devam Et",
+    "publicBadge": "Herkese Açık",
+    "inactive": "Bu kamp şu anda yeni rozet almaya kapalı.",
+    "progressOf": "{done} / {total}",
+    "noWeeksYet": "Bu kampın içeriği henüz yayınlanmadı."
+  },
+
+  "locked": {
+    "title": "Kamp katılımcılarına özel",
+    "noSession": {
+      "message": "Bu haftanın içeriği kamp katılımcılarına özel.",
+      "cta": "Cüzdanını Bağla"
+    },
+    "noNickname": {
+      "message": "Son bir adım: kendine bir nick seç.",
+      "cta": "Nick Belirle"
+    },
+    "sampleLink": "Örnek haftayı incele"
+  },
+
+  "onboarding": {
+    "title": "Kampa Katıl",
+    "step1": "Cüzdanını bağla",
+    "step2": "Nick seç",
+    "step3": "Haftanı bildir",
+    "nicknameLabel": "Nick",
+    "nicknamePlaceholder": "ornek_nick",
+    "nicknameRules": "3-20 karakter. Sadece a-z, A-Z, 0-9 ve alt çizgi. Harfle başlamalı.",
+    "nicknameNoTurkish": "Türkçe karakter kullanılamaz (ğ, ü, ş, ı, ö, ç).",
+    "nicknameChecking": "Kontrol ediliyor…",
+    "nicknameAvailable": "Bu nick müsait",
+    "nicknameTaken": "Bu nick alınmış",
+    "campLabel": "Hangi kamptasın?",
+    "weekLabel": "Kaçıncı haftadasın?",
+    "weekHelp": "Beyan ettiğin haftaya kadar olan tüm rozetleri alırsın. Kulüp yöneticisi onayladıktan sonra rozetlerin hazır olur.",
+    "noteLabel": "Not (isteğe bağlı)",
+    "notePlaceholder": "Kampa nasıl katıldığını kısaca yazabilirsin",
+    "submit": "Başvuruyu Gönder",
+    "submitting": "Gönderiliyor…",
+    "submitted": "Başvurun alındı",
+    "submittedHelp": "Kulüp yöneticisi başvurunu inceleyecek. Onaylandığında profilinden rozetlerini alabileceksin."
+  },
+
+  "profile": {
+    "title": "Profilim",
+    "noNickname": "Henüz nick belirlemedin",
+    "badges": "Rozetlerim",
+    "noBadges": "Henüz rozetin yok",
+    "noBadgesHelp": "Kaçıncı haftada olduğunu bildir, onaylandığında rozetlerin hazır olacak.",
+    "claimBadge": "Rozeti Al",
+    "claimAll": "Tüm Rozetleri Al ({n})",
+    "claiming": "Alınıyor…",
+    "claimed": "Alındı",
+    "pendingPublication": "Liste yayınlanmayı bekliyor",
+    "pendingPublicationHelp": "Bu haftayı tamamladın ama kulüp yöneticisi listeyi henüz zincire yazmadı. Kısa süre içinde alabileceksin.",
+    "applicationPending": "Başvurun inceleniyor",
+    "applicationRejected": "Başvurun reddedildi",
+    "applicationApproved": "Başvurun onaylandı"
+  },
+
+  "nickname": {
+    "title": "Nick Belirle",
+    "register": "Nicki Kaydet",
+    "registering": "Kaydediliyor…",
+    "changeCooldown": "Nickini {date} tarihinden sonra değiştirebilirsin.",
+    "current": "Mevcut nickin"
+  },
+
+  "leaderboard": {
+    "title": "Sıralama",
+    "subtitle": "Kamp katılımcılarının zincirdeki ilerlemesi",
+    "rank": "#",
+    "participant": "Katılımcı",
+    "camp": "Kamp",
+    "progress": "İlerleme",
+    "empty": "Henüz kimse rozet almadı.",
+    "updatedAt": "Son güncelleme: {time}"
+  },
+
+  "tx": {
+    "idle": "Hazır",
+    "awaitingSignature": "Cüzdanında onayla…",
+    "pending": "Zincirde bekliyor…",
+    "success": "İşlem başarılı",
+    "error": "İşlem başarısız",
+    "viewTx": "İşlemi görüntüle",
+    "retry": "Tekrar Dene"
+  },
+
+  "errors": {
+    "insufficientFunds": "Cüzdanında işlem ücreti için yeterli ETH yok. Kulüpten test ETH talep edebilirsin.",
+    "userRejected": "İşlemi iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
+    "alreadyClaimed": "Bu haftanın rozetini zaten almışsın.",
+    "invalidProof": "Bu hafta için henüz onaylanmamışsın. Başvurun incelemede olabilir.",
+    "nicknameRequired": "Rozet almadan önce bir nick belirlemen gerekiyor.",
+    "nicknameTaken": "Bu nick başkası tarafından alınmış.",
+    "nicknameInvalid": "Nick kurallara uymuyor.",
+    "campNotActive": "Bu kamp şu anda yeni rozet almaya kapalı.",
+    "paused": "Rozet alma işlemi geçici olarak durduruldu.",
+    "chainMismatch": "Yanlış ağdasın.",
+    "network": "Bağlantı sorunu. İnternetini kontrol edip tekrar dene.",
+    "unknown": "Beklenmeyen bir hata oluştu. Lütfen tekrar dene.",
+    "notFound": "Aradığın sayfa bulunamadı.",
+    "forbidden": "Bu sayfa için yetkin yok."
+  },
+
+  "admin": {
+    "title": "Yönetim Paneli",
+    "applications": "Başvurular",
+    "content": "İçerik",
+    "merkle": "Merkle",
+    "pending": "Bekleyen",
+    "approved": "Onaylanan",
+    "rejected": "Reddedilen",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "declaredWeek": "Beyan edilen hafta",
+    "approvedWeek": "Onaylanan hafta",
+    "reviewNote": "İnceleme notu",
+    "syncNow": "Şimdi Senkronize Et",
+    "syncing": "Senkronlanıyor…",
+    "lastSync": "Son senkron",
+    "syncFailed": "Son senkron başarısız",
+    "syncFailedHelp": "Site son başarılı içerikle çalışmaya devam ediyor.",
+    "missingTeasers": "Özeti olmayan haftalar",
+    "teaserLabel": "Kilitli ekranda gösterilecek özet",
+    "useSuggestion": "Notion'daki öneriyi kullan",
+    "suggestionFromContent": "Bu öneri ders içeriğinden alındı — onaylamadan kullanılmaz.",
+    "publicWeek": "Herkese açık örnek hafta",
+    "publicWeekHelp": "Seçilen hafta cüzdan gerektirmeden görüntülenir ve arama motorlarına açılır.",
+    "generateTrees": "Merkle Ağaçlarını Üret",
+    "needsPublishing": "Zincire yazılması gereken",
+    "publishCommand": "Zincire yazma komutu",
+    "warning": "Bu işlemin zincire yazılması senin cüzdanınla yapılır — sunucu imza atamaz."
+  },
+
+  "common": {
+    "loading": "Yükleniyor…",
+    "cancel": "Vazgeç",
+    "close": "Kapat",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor…",
+    "saved": "Kaydedildi",
+    "back": "Geri",
+    "copy": "Kopyala",
+    "theme": "Tema",
+    "themeLight": "Açık",
+    "themeDark": "Koyu",
+    "themeSystem": "Sistem",
+    "testnetWarning": "Bu site test ağında (Base Sepolia) çalışıyor. Rozetler gerçek değer taşımaz."
+  }
+}
