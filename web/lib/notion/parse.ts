@@ -151,6 +151,41 @@ async function fetchSubtree(
 /** Kilitli ekranda 2-3 satır yeterli */
 const TEASER_MAX_LENGTH = 280;
 
+/** Bir özet adayının anlamlı sayılması için gereken en az karakter */
+const TEASER_MIN_LENGTH = 20;
+
+/**
+ * Bir bloğun ve TÜM ALT BLOKLARININ metnini toplar.
+ *
+ * NEDEN ÇOCUKLARA DA BAKIYORUZ:
+ * Notion'da callout'un metni iki farklı yerde olabiliyor ve bu tamamen
+ * yazarın nasıl yapıştırdığına bağlı:
+ *
+ *   Directors:  [callout] "Kripto paraların sadece transfer edilmediği…"
+ *                         ↑ metin bloğun kendisinde
+ *
+ *   Developers: [callout] ""                    ← kendi metni BOŞ
+ *                 └─ [quote] "Bu hafta kaputun altında…"
+ *                            ↑ metin bir alt blokta
+ *
+ * Yalnızca bloğun kendi metnine bakmak, ikinci biçimdeki tüm özetleri
+ * görmezden gelmek demekti — Developers kampının 14 haftası bu yüzden
+ * özetsiz kalmıştı.
+ */
+function collectText(block: BlockWithChildren): string {
+  const parts: string[] = [];
+
+  const own = blockPlainText(block).trim();
+  if (own) parts.push(own);
+
+  for (const child of block.children ?? []) {
+    const childText = collectText(child);
+    if (childText) parts.push(childText);
+  }
+
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
 /** Hafta içeriğinden özet adayı ve KAYNAĞINI çıkarır */
 function extractSuggestedTeaser(blocks: BlockWithChildren[]): {
   text: string;
@@ -160,15 +195,25 @@ function extractSuggestedTeaser(blocks: BlockWithChildren[]): {
   const priority: ParsedWeek["teaserSource"][] = ["callout", "quote", "paragraph"];
 
   for (const type of priority) {
-    const found = blocks.find(
-      (b) => b.type === type && blockPlainText(b).trim().length > 20,
-    );
-    if (found) {
-      const raw = blockPlainText(found).trim();
+    for (const block of blocks) {
+      if (block.type !== type) continue;
+
+      /*
+       * `callout` ve `quote` bilerek yazılmış özet kaplarıdır; içlerindeki
+       * metni de topluyoruz. `paragraph` ise gerçek ders içeriğidir —
+       * yalnızca kendi metnine bakıyoruz ki alt bloklardaki ders anlatımı
+       * özet sanılıp toplanmasın.
+       */
+      const raw =
+        type === "paragraph" ? blockPlainText(block).trim() : collectText(block);
+
+      if (raw.length < TEASER_MIN_LENGTH) continue;
+
       const text =
         raw.length > TEASER_MAX_LENGTH
-          ? `${raw.slice(0, TEASER_MAX_LENGTH - 3).trimEnd()}…`
+          ? `${raw.slice(0, TEASER_MAX_LENGTH - 1).trimEnd()}…`
           : raw;
+
       return {text, source: type};
     }
   }

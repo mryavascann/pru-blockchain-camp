@@ -143,24 +143,36 @@ export async function syncCamp(campId: number): Promise<CampSyncResult> {
         where: {campId_weekNumber: {campId, weekNumber: week.weekNumber}},
       });
 
-      /* -- KURAL 4: değişmediyse dokunma -- */
-      if (
-        existing &&
-        existing.contentHash === hash &&
-        existing.title === week.title &&
-        existing.stage === week.stage &&
-        existing.syncStatus === "OK"
-      ) {
-        result.unchanged += 1;
-        continue;
-      }
-
       /* -- KURAL 3: adminin yazdığı teaser'a dokunma -- */
       // Yalnızca `callout` / `quote` kaynaklı öneriler OTOMATİK uygulanır.
       // `paragraph` kaynaklı olanlar gerçek ders içeriğidir; admin onayı
       // olmadan kilitli ekrana çıkmaz.
       const canAutoFillTeaser =
         week.teaserSource === "callout" || week.teaserSource === "quote";
+
+      /*
+       * Ayrıştırıcı iyileştiği için, içeriği değişmemiş bir haftanın özeti
+       * artık çıkarılabiliyor olabilir. Böyle bir durumda haftayı
+       * "değişmedi" sayıp atlarsak özet sonsuza dek boş kalır.
+       */
+      const teaserNowAvailable =
+        existing !== null &&
+        existing.teaser.length === 0 &&
+        canAutoFillTeaser &&
+        week.suggestedTeaser.length > 0;
+
+      /* -- KURAL 4: değişmediyse dokunma -- */
+      if (
+        existing &&
+        existing.contentHash === hash &&
+        existing.title === week.title &&
+        existing.stage === week.stage &&
+        existing.syncStatus === "OK" &&
+        !teaserNowAvailable
+      ) {
+        result.unchanged += 1;
+        continue;
+      }
 
       const teaser =
         existing && existing.teaser.length > 0
