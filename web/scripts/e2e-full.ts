@@ -42,9 +42,18 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100";
 const RPC = "https://sepolia.base.org";
 
 /** Katılımcı: deploy cüzdanı (keystore'da, gerçek ETH'si var) */
-const PARTICIPANT = "0x133aa2E0709a4339FFFCb3ca1FAaBB5Fd26EC4aa";
-const KEYSTORE_ACCOUNT = "pru-testnet";
-const KEYSTORE_PASSWORD = "pru-testnet-2026";
+const PARTICIPANT =
+  process.env.E2E_PARTICIPANT ?? "0x133aa2E0709a4339FFFCb3ca1FAaBB5Fd26EC4aa";
+const KEYSTORE_ACCOUNT = process.env.E2E_KEYSTORE_ACCOUNT ?? "pru-testnet";
+
+/**
+ * Keystore parolası ORTAM DEĞİŞKENİNDEN okunur, koda gömülmez.
+ *
+ * Testnet cüzdanı olsa bile bir keystore parolasını depoya yazmak kötü bir
+ * alışkanlık: aynı desen bir gün mainnet cüzdanına uygulanır. Parola
+ * `web/.env.local` içinde durur ve o dosya git'e girmez.
+ */
+const KEYSTORE_PASSWORD = process.env.E2E_KEYSTORE_PASSWORD ?? "";
 
 /** Admin: Anvil hesap #0 — herkesçe bilinen test anahtarı */
 const ADMIN_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -144,6 +153,17 @@ function castSend(args: string[], retries = 3): string {
 }
 
 async function main(): Promise<void> {
+  if (!KEYSTORE_PASSWORD) {
+    console.error(
+      "\n✖ E2E_KEYSTORE_PASSWORD tanımlı değil.\n\n" +
+        "  Bu test gerçek zincir işlemleri gönderiyor ve deploy cüzdanının\n" +
+        "  şifreli keystore'unu açması gerekiyor.\n\n" +
+        "  web/.env.local dosyasına ekle:\n" +
+        "    E2E_KEYSTORE_PASSWORD=\"…\"\n",
+    );
+    process.exit(1);
+  }
+
   console.log("");
   console.log("═".repeat(74));
   console.log("  TAM UÇTAN UCA ENTEGRASYON TESTİ");
