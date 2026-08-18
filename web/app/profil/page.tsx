@@ -79,7 +79,19 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {!viewer.hasNickname && (
+        {/* Zincir okunamadı: nick isteme, durumu söyle (bkz. lib/auth/guards.ts) */}
+        {viewer.nicknameUnknown && (
+          <div className="mt-4 rounded-lg border border-warning bg-subtle p-4">
+            <p className="text-sm font-semibold text-warning">
+              Zincire şu an ulaşılamıyor
+            </p>
+            <p className="mt-1 text-sm text-fg-secondary">
+              {t.errors.chainUnreachable}
+            </p>
+          </div>
+        )}
+
+        {!viewer.hasNickname && !viewer.nicknameUnknown && (
           <div className="mt-4 rounded-lg border border-line-accent bg-subtle p-4">
             <p className="text-sm font-semibold">{t.profile.noNickname}</p>
             <p className="mt-1 text-sm text-fg-secondary">

@@ -20,7 +20,8 @@
     "e2e": "tsx --env-file=.env.local scripts/e2e-backend.ts",
     "e2e:full": "tsx --env-file=.env.local scripts/e2e-full.ts",
     "test:participant": "tsx --env-file=.env.local scripts/test-participant.ts",
-    "test:notes": "tsx --env-file=.env.local scripts/test-notes.ts"
+    "test:notes": "tsx --env-file=.env.local scripts/test-notes.ts",
+    "check:wallet": "tsx --env-file=.env.local scripts/check-wallet.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.25.2",

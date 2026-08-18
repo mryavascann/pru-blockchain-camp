@@ -18,7 +18,12 @@ import {AddressChip} from "@/components/ui/Address";
 import {Button} from "@/components/ui/Button";
 import {Card, EmptyState, Pill} from "@/components/ui/Card";
 import {NoteBody} from "@/components/notes/NoteBody";
-import {noteKindIcon, noteKindLabel} from "@/lib/notes/rules";
+import {isNoteKind, noteKindLabel} from "@/lib/notes/rules";
+import {
+  KIND_PILL,
+  NoteKindIcon,
+  SparkleIcon,
+} from "@/components/notes/kindVisuals";
 
 type AdminNote = {
   id: string;
@@ -119,16 +124,24 @@ export function NoteModeration({notes}: {notes: AdminNote[]}) {
             <Card key={note.id} className="!p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Pill tone="accent">
-                    <span aria-hidden="true">{noteKindIcon(note.kind)}</span>
+                  <Pill
+                    tone="neutral"
+                    className={
+                      isNoteKind(note.kind) ? KIND_PILL[note.kind] : ""
+                    }
+                  >
+                    {isNoteKind(note.kind) && (
+                      <NoteKindIcon kind={note.kind} className="h-3.5 w-3.5" />
+                    )}
                     {noteKindLabel(note.kind)}
                   </Pill>
                   <Pill tone="muted">
-                    {note.campName} · {note.weekNumber}. hafta
+                    {note.campName} · {note.weekNumber}. Hafta
                   </Pill>
                   {note.aiAssisted && (
                     <Pill tone="neutral" className="!text-warning !border-warning">
-                      🤖 yapay zekâ
+                      <SparkleIcon className="h-3.5 w-3.5" />
+                      Yapay Zekâ
                     </Pill>
                   )}
                   {note.status === "HIDDEN" && (

@@ -131,15 +131,26 @@ export function ConnectButton() {
             role="menu"
             className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-lg border border-line bg-elevated shadow-[var(--shadow-lg)]"
           >
-            {!session.hasNickname && (
-              <Link
-                href="/katil"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="block border-b border-line px-4 py-3 text-sm font-semibold text-accent-text hover:bg-subtle"
-              >
-                {t.locked.noNickname.cta}
-              </Link>
+            {/*
+              Zincir okunamadıysa "Nick Belirle" GÖSTERMİYORUZ: kişinin nicki
+              olabilir, ikinci kez almaya kalkarsa zincirde reddedilir ve
+              boşuna gas öder. Bilmediğimizi söylemek doğrusu.
+            */}
+            {session.nicknameUnknown ? (
+              <p className="block border-b border-line px-4 py-3 text-xs leading-relaxed text-fg-muted">
+                Zincire ulaşılamıyor — nick durumu okunamadı.
+              </p>
+            ) : (
+              !session.hasNickname && (
+                <Link
+                  href="/katil"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="block border-b border-line px-4 py-3 text-sm font-semibold text-accent-text hover:bg-subtle"
+                >
+                  {t.locked.noNickname.cta}
+                </Link>
+              )
             )}
 
             <Link

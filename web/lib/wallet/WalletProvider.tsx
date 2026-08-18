@@ -13,7 +13,6 @@ import {
   createWalletClient,
   custom,
   getAddress,
-  http,
   numberToHex,
   type Address,
   type EIP1193Provider,
@@ -29,7 +28,7 @@ import {
   type ReactNode,
 } from "react";
 
-import {activeChain} from "@/lib/chain/config";
+import {activeChain, createReadTransport} from "@/lib/chain/config";
 
 type ProviderWithEvents = EIP1193Provider & {
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -79,9 +78,14 @@ const WalletContext = createContext<WalletContextValue | null>(null);
 const DISCONNECTED_KEY = "pru-wallet-disconnected";
 const LAST_WALLET_KEY = "pru-last-wallet";
 
+/*
+ * İşlem onayını bu istemci bekliyor (`waitForTransaction`). Tek bir RPC'ye
+ * bağlıyken o adres düştüğünde, işlem zincirde BAŞARIYLA onaylanmış olsa
+ * bile kullanıcı ekranda hata görüyordu. Havuz bunu kapatıyor.
+ */
 const publicClient = createPublicClient({
   chain: activeChain,
-  transport: http(),
+  transport: createReadTransport(),
 });
 
 function orderWallets(wallets: BrowserWallet[]): BrowserWallet[] {

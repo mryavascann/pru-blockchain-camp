@@ -24,6 +24,7 @@ import {getCampProgress, canSeeWeek} from "@/lib/notes/progress";
 import {createNote, listNotes} from "@/lib/notes/service";
 import {isNoteKind, validateNote, type NoteKind} from "@/lib/notes/rules";
 import {fail, handle, ok, readJson} from "@/lib/api";
+import {t} from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,14 @@ export async function GET(request: Request) {
 
     const camp = await getCampBySlug(campSlug);
     if (!camp) return fail("Böyle bir kamp bulunamadı.", 404, "CAMP_NOT_FOUND");
+
+    /*
+     * "Nick yok" ile "nick durumu okunamadı" ayrı şeyler. İkincisinde kapıyı
+     * nick eksikliğine bağlamak yanlış olur — kişinin nicki olabilir.
+     */
+    if (viewer.nicknameUnknown && !viewer.isAdmin) {
+      return fail(t.errors.chainUnreachable, 503, "CHAIN_UNREACHABLE");
+    }
 
     if (!viewer.hasNickname && !viewer.isAdmin) {
       return fail(
@@ -124,6 +133,10 @@ export async function POST(request: Request) {
      * Nick zorunlu: not defterinde yazar adı nickle görünür. Nicksiz not,
      * ekranda sahipsiz bir metin olurdu.
      */
+    if (viewer.nicknameUnknown) {
+      return fail(t.errors.chainUnreachable, 503, "CHAIN_UNREACHABLE");
+    }
+
     if (!viewer.hasNickname) {
       return fail(
         "Not bırakmadan önce bir nick belirlemen gerekiyor.",

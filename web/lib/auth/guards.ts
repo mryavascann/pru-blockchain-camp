@@ -30,6 +30,18 @@ export type Viewer = {
   hasNickname: boolean;
   /** Zincirdeki nick (yoksa boş dize) */
   nickname: string;
+  /**
+   * Nick durumu DOĞRULANAMADI — zincire ulaşılamadı.
+   *
+   * ⚠️ `hasNickname: false` ile KARIŞTIRMA. İkisi çok farklı şey söyler:
+   *   hasNickname:false, nicknameUnknown:false → kişinin gerçekten nicki yok
+   *   hasNickname:false, nicknameUnknown:true  → bilmiyoruz
+   *
+   * Bu ayrım olmadığında (2026-08-19) RPC kesintisinde nicki OLAN
+   * kullanıcılara "Nick Belirle" gösterildi; ikinci kez nick almaya
+   * kalkışan biri zincirde reddedilip boşuna gas ödeyebilirdi.
+   */
+  nicknameUnknown: boolean;
   /** Admin paneline erişebilir mi? */
   isAdmin: boolean;
 };
@@ -38,6 +50,7 @@ const ANONYMOUS: Viewer = {
   address: null,
   hasNickname: false,
   nickname: "",
+  nicknameUnknown: false,
   isAdmin: false,
 };
 
@@ -69,6 +82,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
       address,
       hasNickname: true,
       nickname: session.nickname ?? "",
+      nicknameUnknown: false,
       isAdmin,
     };
   }
@@ -85,14 +99,21 @@ export const getViewer = cache(async (): Promise<Viewer> => {
       await session.save();
     }
 
-    return {address, hasNickname, nickname, isAdmin};
+    return {address, hasNickname, nickname, nicknameUnknown: false, isAdmin};
   } catch {
     /*
      * Zincire ulaşılamıyor (RPC düştü). Oturumu düşürmüyoruz — kullanıcı
-     * giriş yapmış durumda kalır, sadece nick bilgisi bilinmiyor sayılır.
-     * Bu, RPC kesintisinin tüm siteyi kilitlemesini engeller.
+     * giriş yapmış durumda kalır. Ama "nick yok" DEMİYORUZ: bilmiyoruz.
+     * `nicknameUnknown` bu ayrımı taşıyor; arayüz de buna göre "nick al"
+     * demek yerine "zincire ulaşılamıyor" diyor.
      */
-    return {address, hasNickname: false, nickname: "", isAdmin};
+    return {
+      address,
+      hasNickname: false,
+      nickname: "",
+      nicknameUnknown: true,
+      isAdmin,
+    };
   }
 });
 

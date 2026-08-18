@@ -15,12 +15,12 @@
  * tamamen ortadan kaldırır.
  * ============================================================================
  */
-import {createPublicClient, http, getAddress} from "viem";
+import {createPublicClient, getAddress} from "viem";
 import type {Address, PublicClient} from "viem";
 
 import {getServerEnv} from "@/lib/env";
 import {pruCampBadgesAbi} from "./abi";
-import {activeChain, contractAddress} from "./config";
+import {activeChain, contractAddress, createReadTransport} from "./config";
 import {tokenIdsForCamp} from "./tokenId";
 
 let cached: PublicClient | null = null;
@@ -33,12 +33,15 @@ export function getPublicClient(): PublicClient {
 
   cached = createPublicClient({
     chain: activeChain,
-    // RPC_URL boşsa viem zincirin varsayılan public RPC'sini kullanır.
-    transport: http(RPC_URL || undefined, {
-      // Public RPC'ler ara sıra hata döner; birkaç kez yeniden dene.
-      retryCount: 3,
-      retryDelay: 300,
-    }),
+    /*
+     * TEK RPC DEĞİL, HAVUZ. `RPC_URL` tanımlıysa önce o denenir; cevap
+     * vermezse sıradaki adrese geçilir (bkz. config.ts → createReadTransport).
+     *
+     * Eskiden burada tek adres ve `retryCount: 3` vardı. Bir sağlayıcı
+     * kalıcı olarak `eth_call` reddetmeye başladığında üç deneme de aynı
+     * ölü adrese gittiği için kesinti tüm siteye yansıyordu.
+     */
+    transport: createReadTransport(RPC_URL || undefined),
   }) as PublicClient;
 
   return cached;

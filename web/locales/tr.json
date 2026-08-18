@@ -152,6 +152,8 @@
   "errors": {
     "insufficientFunds": "Cüzdanında işlem ücreti için yeterli ETH yok. Kulüpten test ETH talep edebilirsin.",
     "userRejected": "İşlemi iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
+    "walletBusy": "Cüzdanında cevap bekleyen başka bir istek var; o kapanmadan yenisini almıyor. Cüzdan simgesine tıklayıp açık pencereyi onayla ya da reddet, sonra tekrar dene. Pencere tarayıcının arkasında ya da diğer ekranda kalmış olabilir; cüzdan kilitliyse önce parolanı girip açman gerekir.",
+    "chainUnreachable": "Zincire şu an ulaşılamıyor, bu yüzden nick durumun doğrulanamadı. Bu geçici bir sağlayıcı sorunu — birkaç saniye sonra sayfayı yenile. Zaten nickin varsa duruyor, yeniden almana gerek yok.",
     "alreadyClaimed": "Bu haftanın rozetini zaten almışsın.",
     "invalidProof": "Bu hafta için henüz onaylanmamışsın. Başvurun incelemede olabilir.",
     "nicknameRequired": "Rozet almadan önce bir nick belirlemen gerekiyor.",

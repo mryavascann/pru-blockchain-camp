@@ -88,6 +88,14 @@ export type LockReason =
   | {kind: "no-session"}
   /** Cüzdan bağlı ama zincirde nicki yok → "Nick Belirle" */
   | {kind: "no-nickname"}
+  /**
+   * Nick durumu OKUNAMADI (RPC düştü) → "tekrar dene".
+   *
+   * `no-nickname` ile aynı şey değil: orada kişinin nicki gerçekten yoktur
+   * ve yapması gereken bir iş vardır. Burada bilmiyoruz — kişiyi nick
+   * almaya yönlendirmek onu zincirde reddedilecek bir işleme sokar.
+   */
+  | {kind: "chain-unreachable"}
   /** Onaylı başvurusu yok → "Başvurun inceleniyor / Kampa katıl" */
   | {kind: "not-approved"}
   /**
@@ -249,6 +257,14 @@ export const getWeekForViewer = cache(async function getWeekForViewer(
   /* ---- 3 & 4. KİMLİK KAPISI ---- */
   if (!viewer.address) {
     return lockedResult(camp.id, weekNumber, {kind: "no-session"}, camp.startDate);
+  }
+  if (viewer.nicknameUnknown && !viewer.isAdmin) {
+    return lockedResult(
+      camp.id,
+      weekNumber,
+      {kind: "chain-unreachable"},
+      camp.startDate,
+    );
   }
   if (!viewer.hasNickname && !viewer.isAdmin) {
     return lockedResult(camp.id, weekNumber, {kind: "no-nickname"}, camp.startDate);
