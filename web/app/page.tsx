@@ -11,6 +11,7 @@
 
 import {ButtonLink} from "@/components/ui/Button";
 import {Card, Container, Pill} from "@/components/ui/Card";
+import {HackathonSpotlight} from "@/components/home/HackathonSpotlight";
 import {listCamps} from "@/lib/content/access";
 import {t} from "@/lib/i18n";
 
@@ -64,6 +65,9 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* Hackathon görsel/ürün vitrini: tek bileşen olarak geri alınabilir. */}
+      <HackathonSpotlight />
+
       {/* ---------------------------------------------------------------- */}
       {/* KAMPLAR                                                          */}
       {/* ---------------------------------------------------------------- */}
@@ -79,7 +83,24 @@ export default async function HomePage() {
           {camps.map((camp) => (
             <Card key={camp.id} interactive>
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-xl font-bold tracking-tight">{camp.name}</h3>
+                <div className="flex min-w-0 items-start gap-3">
+                  {camp.coverAssetId && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/media/${camp.coverAssetId}`}
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
+                  <div>
+                    {camp.instructorName && (
+                      <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                        {camp.instructorName}
+                      </p>
+                    )}
+                    <h3 className="text-xl font-bold tracking-tight">{camp.name}</h3>
+                  </div>
+                </div>
                 <Pill tone={camp.active ? "accent" : "muted"}>
                   {camp.weekCount} {t.camp.weeks}
                 </Pill>
