@@ -27,9 +27,9 @@
  */
 import {useCallback, useState} from "react";
 import {BaseError, ContractFunctionRevertedError} from "viem";
-import {useWaitForTransactionReceipt, useWriteContract} from "wagmi";
 
 import {t} from "@/lib/i18n";
+import {useWallet, type WalletWriteArgs} from "@/lib/wallet/WalletProvider";
 
 export type TxState = "idle" | "awaiting-signature" | "pending" | "success" | "error";
 
@@ -124,19 +124,13 @@ export function humanizeTxError(error: unknown): string {
 /**
  * Kontrat yazma çağrısının parametreleri.
  *
- * wagmi'nin kendi tipi, yapılandırılmış zincire göre türetilen çok derin bir
- * genel tip (ondan gelen hata mesajları 20 satır uzunluğunda). Burada sade ve
- * okunabilir bir arayüz tanımlayıp çağrı anında dönüştürüyoruz.
+ * viem'in ABI'ye göre türetilen genel tipi çok derindir. Burada çağrı
+ * noktalarının kullanacağı sade ve okunabilir arayüzü ortaklaştırıyoruz.
  *
  * Tip güvenliği kaybolmuyor: fonksiyon adları ve argümanlar `pruCampBadgesAbi`
  * `as const` olduğu için çağrı yerinde zaten denetleniyor.
  */
-export type WriteArgs = {
-  address: `0x${string}`;
-  abi: readonly unknown[];
-  functionName: string;
-  args?: readonly unknown[];
-};
+export type WriteArgs = WalletWriteArgs;
 
 export type UseTransactionResult = {
   state: TxState;
@@ -161,31 +155,7 @@ export function useTransaction(onConfirmed?: () => void): UseTransactionResult {
   const [error, setError] = useState<string | null>(null);
   const [hash, setHash] = useState<`0x${string}` | undefined>();
 
-  const {writeContractAsync} = useWriteContract();
-
-  /*
-   * İşlem zincire gönderildikten sonra ONAYLANMASINI bekliyoruz.
-   *
-   * Bu adım atlanırsa kullanıcıya "başarılı" denir ama rozet henüz
-   * cüzdanında olmaz; sayfa yenilendiğinde "rozetim yok" görür ve sistem
-   * bozuk sanır. Onay beklemek bu kafa karışıklığını önler.
-   */
-  const receipt = useWaitForTransactionReceipt({
-    hash,
-    query: {enabled: Boolean(hash)},
-  });
-
-  /* Onay geldiğinde durumu güncelle */
-  if (state === "pending" && receipt.isSuccess) {
-    setState("success");
-    onConfirmed?.();
-  }
-  if (state === "pending" && receipt.isError) {
-    setState("error");
-    setError(
-      "İşlem zincirde başarısız oldu. BaseScan'den detayına bakabilirsin.",
-    );
-  }
+  const {writeContract, waitForTransaction} = useWallet();
 
   const send = useCallback(
     async (args: WriteArgs) => {
@@ -194,17 +164,20 @@ export function useTransaction(onConfirmed?: () => void): UseTransactionResult {
       setState("awaiting-signature");
 
       try {
-        const txHash = await writeContractAsync(
-          args as Parameters<typeof writeContractAsync>[0],
-        );
+        const txHash = await writeContract(args);
         setHash(txHash);
         setState("pending");
+
+        /* Hash alındıktan sonra zincir onayını bekle; erken başarı gösterme. */
+        await waitForTransaction(txHash);
+        setState("success");
+        onConfirmed?.();
       } catch (caught) {
         setError(humanizeTxError(caught));
         setState("error");
       }
     },
-    [writeContractAsync],
+    [onConfirmed, waitForTransaction, writeContract],
   );
 
   const reset = useCallback(() => {

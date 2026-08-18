@@ -34,6 +34,8 @@
  * kimlik kapısı kadar gerçek — kilitli haftanın metni tarayıcıya ulaşmıyor.
  * ---------------------------------------------------------------------------
  */
+import {cache} from "react";
+
 import {db} from "@/lib/db";
 import {getViewer, type Viewer} from "@/lib/auth/guards";
 import {getCampProgress, weekLock, type CampProgress} from "@/lib/notes/progress";
@@ -130,7 +132,9 @@ export type CampSummary = {
 };
 
 /** Bir kampı slug ile bulur (herkese açık bilgi) */
-export async function getCampBySlug(slug: string): Promise<CampSummary | null> {
+export const getCampBySlug = cache(async function getCampBySlug(
+  slug: string,
+): Promise<CampSummary | null> {
   return db.camp.findUnique({
     where: {slug},
     select: {
@@ -144,7 +148,7 @@ export async function getCampBySlug(slug: string): Promise<CampSummary | null> {
       startDate: true,
     },
   });
-}
+});
 
 /** Tüm kampları listeler (landing sayfası) */
 export async function listCamps(): Promise<CampSummary[]> {
@@ -216,7 +220,7 @@ export async function getProgressForViewer(
  *
  * @returns Erişim sonucu, ya da hafta yoksa/yayında değilse `null`
  */
-export async function getWeekForViewer(
+export const getWeekForViewer = cache(async function getWeekForViewer(
   campSlug: string,
   weekNumber: number,
   viewerOverride?: Viewer,
@@ -294,7 +298,7 @@ export async function getWeekForViewer(
     week: stripStatus(week) as FullWeek,
     indexable: false,
   };
-}
+});
 
 /**
  * Bir kampın herkese açık örnek haftasını döner (varsa).
@@ -361,6 +365,7 @@ async function lockedResult(
  * ilgilendirmez. (Yayında olmayan haftalar zaten `null` dönüyor.)
  */
 function stripStatus<T extends {status: unknown}>(row: T): Omit<T, "status"> {
-  const {status: _status, ...rest} = row;
+  const {status, ...rest} = row;
+  void status;
   return rest;
 }

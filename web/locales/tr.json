@@ -17,7 +17,6 @@
     "connect": "Cüzdanını Bağla",
     "connecting": "Bağlanıyor…",
     "disconnect": "Bağlantıyı Kes",
-    "signIn": "Giriş İçin İmzala",
     "signingIn": "Cüzdanında onayla…",
     "signInHint": "Bu imza ücretsizdir — zincire işlem gitmez, gas ödemezsin.",
     "noWallet": "Tarayıcında cüzdan bulunamadı",

@@ -15,6 +15,7 @@ import Link from "next/link";
 
 import {ButtonLink} from "@/components/ui/Button";
 import {Container, EmptyState, Pill} from "@/components/ui/Card";
+import {WalletGateButton} from "@/components/wallet/ConnectButton";
 import {getViewer} from "@/lib/auth/guards";
 import {t} from "@/lib/i18n";
 import {AdminNav} from "./AdminNav";
@@ -41,9 +42,9 @@ export default async function AdminLayout({
           title="Cüzdanını bağlaman gerekiyor"
           description="Yönetim paneline erişmek için önce giriş yap."
           action={
-            <ButtonLink href="/katil" variant="accent">
+            <WalletGateButton continueTo="/admin" size="md">
               {t.wallet.connect}
-            </ButtonLink>
+            </WalletGateButton>
           }
         />
       </Container>

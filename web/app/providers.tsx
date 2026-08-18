@@ -15,9 +15,8 @@
  */
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {useState, type ReactNode} from "react";
-import {WagmiProvider} from "wagmi";
 
-import {wagmiConfig} from "@/lib/wagmi";
+import {WalletProvider} from "@/lib/wallet/WalletProvider";
 
 export function Providers({children}: {children: ReactNode}) {
   /*
@@ -40,8 +39,8 @@ export function Providers({children}: {children: ReactNode}) {
   );
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WalletProvider>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </WagmiProvider>
+    </WalletProvider>
   );
 }

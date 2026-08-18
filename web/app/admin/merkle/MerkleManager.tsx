@@ -22,7 +22,6 @@
  */
 import {useState} from "react";
 import {useRouter} from "next/navigation";
-import {useAccount} from "wagmi";
 
 import {Button} from "@/components/ui/Button";
 import {Card, Pill} from "@/components/ui/Card";
@@ -31,6 +30,7 @@ import {pruCampBadgesAbi} from "@/lib/chain/abi";
 import {contractAddress} from "@/lib/chain/config";
 import {useTransaction} from "@/lib/hooks/useTransaction";
 import {t} from "@/lib/i18n";
+import {useWallet} from "@/lib/wallet/WalletProvider";
 
 type WeekStatus = {
   weekNumber: number;
@@ -53,7 +53,7 @@ export function MerkleManager({
   contractOwner: string | null;
 }) {
   const router = useRouter();
-  const {address} = useAccount();
+  const {address} = useWallet();
   const [activeSlug, setActiveSlug] = useState(camps[0]?.slug ?? "");
   const [weeks, setWeeks] = useState<WeekStatus[] | null>(null);
   const [loading, setLoading] = useState(false);

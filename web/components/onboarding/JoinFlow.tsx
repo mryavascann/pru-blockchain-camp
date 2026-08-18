@@ -23,7 +23,6 @@
  */
 import {useState} from "react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {useAccount} from "wagmi";
 
 import {Button} from "@/components/ui/Button";
 import {Card, Pill} from "@/components/ui/Card";
@@ -61,7 +60,6 @@ type ApplicationRecord = {
 };
 
 export function JoinFlow({camps}: {camps: Camp[]}) {
-  const {isConnected} = useAccount();
   const {session, needsSignIn, wrongNetwork, refresh} = useAuth();
 
   const signedIn = Boolean(session?.address) && !needsSignIn;

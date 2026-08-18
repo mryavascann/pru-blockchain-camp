@@ -120,7 +120,7 @@ Gerekçeleriyle birlikte kodda ve `docs/` altında yazılı. Özet:
 | **Ownable2Step** | Yanlış adrese devir = kalıcı kilitlenme; iki adımlı devir bunu imkânsız kılar |
 | **Nick'te Türkçe karakter yok** | `İ/i/I/ı` dönüşümü locale'e bağlı; zincirde deterministik yapılamaz ve taklit açığı doğurur |
 | **Next.js**, ayrı backend değil | Kilitli içeriğin sunucudan çıkmaması Server Components ile *mimari olarak* garanti ediliyor |
-| **wagmi + özel arayüz**, RainbowKit değil | `docs/brand.md`'ye birebir uyum ve WalletConnect anahtarı gerektirmemesi |
+| **viem + özel arayüz**, RainbowKit/wagmi değil | EIP-6963 ile kurulu cüzdanı doğrudan bulma, tek tıklamalı bağlantı ve `docs/brand.md`'ye birebir uyum |
 
 ---
 
