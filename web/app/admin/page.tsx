@@ -42,7 +42,10 @@ export default async function AdminOverviewPage() {
     db.week.count({where: {syncStatus: "FAILED"}}),
     db.week.count({where: {teaser: "", status: "PUBLISHED"}}),
     db.syncRun.findFirst({orderBy: {startedAt: "desc"}}),
-    db.camp.findMany({orderBy: {displayOrder: "asc"}}),
+    db.camp.findMany({
+      where: {lifecycle: "PUBLISHED", chainCampId: {not: null}},
+      orderBy: {displayOrder: "asc"},
+    }),
     /*
      * "Siteyi nereden duydun" dağılımı.
      *
@@ -97,7 +100,7 @@ export default async function AdminOverviewPage() {
   const drift: string[] = [];
   if (onChain) {
     for (const camp of camps) {
-      const chainCamp = onChain.find((c) => c.campId === camp.id);
+      const chainCamp = onChain.find((c) => c.campId === camp.chainCampId);
       if (!chainCamp) {
         drift.push(`"${camp.name}" veritabanında var ama zincirde yok.`);
         continue;

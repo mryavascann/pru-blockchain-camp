@@ -68,6 +68,13 @@ export async function GET(request: Request) {
     if (!camp) {
       return fail("Böyle bir kamp bulunamadı.", 404, "CAMP_NOT_FOUND");
     }
+    if (!camp.chainCampId) {
+      return fail(
+        "Bu kampın NFT altyapısı henüz zincirde etkinleştirilmedi.",
+        409,
+        "CHAIN_ACTIVATION_PENDING",
+      );
+    }
 
     const [bundle, progress] = await Promise.all([
       getProofsForAddress(viewer.address!, camp.id),
@@ -82,7 +89,7 @@ export async function GET(request: Request) {
         ? await readBalancesForPairs(
             claimableWeeks.map((week) => ({
               address: viewer.address as `0x${string}`,
-              tokenId: encodeTokenId(camp.id, week),
+              tokenId: encodeTokenId(camp.chainCampId!, week),
             })),
           )
         : [];
@@ -102,7 +109,7 @@ export async function GET(request: Request) {
     );
 
     return ok({
-      camp: {id: camp.id, slug: camp.slug, name: camp.name},
+      camp: {id: camp.chainCampId, slug: camp.slug, name: camp.name},
       /** Nick yoksa mint zincirde reddedilir — arayüz önce nick istemeli */
       requiresNickname: !viewer.hasNickname,
       /** Nick durumu okunamadıysa "nick al" demek yanlış olur — bkz. guards.ts */

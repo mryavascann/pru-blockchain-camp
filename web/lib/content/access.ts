@@ -129,6 +129,8 @@ export type WeekAccess =
 
 export type CampSummary = {
   id: number;
+  /** Kontrattaki kimlik; taslak eğitmen kampında henüz yoktur. */
+  chainCampId: number | null;
   slug: string;
   name: string;
   description: string | null;
@@ -137,16 +139,19 @@ export type CampSummary = {
   publicWeekNumber: number | null;
   /** Kamp başlangıcı — hafta takvimini hesaplamak için (bkz. lib/notes/schedule.ts) */
   startDate: Date | null;
+  instructorName: string | null;
+  coverAssetId: string | null;
 };
 
 /** Bir kampı slug ile bulur (herkese açık bilgi) */
 export const getCampBySlug = cache(async function getCampBySlug(
   slug: string,
 ): Promise<CampSummary | null> {
-  return db.camp.findUnique({
-    where: {slug},
+  return db.camp.findFirst({
+    where: {slug, lifecycle: "PUBLISHED"},
     select: {
       id: true,
+      chainCampId: true,
       slug: true,
       name: true,
       description: true,
@@ -154,6 +159,8 @@ export const getCampBySlug = cache(async function getCampBySlug(
       active: true,
       publicWeekNumber: true,
       startDate: true,
+      instructorName: true,
+      coverAssetId: true,
     },
   });
 });
@@ -161,9 +168,11 @@ export const getCampBySlug = cache(async function getCampBySlug(
 /** Tüm kampları listeler (landing sayfası) */
 export async function listCamps(): Promise<CampSummary[]> {
   return db.camp.findMany({
+    where: {lifecycle: "PUBLISHED"},
     orderBy: {displayOrder: "asc"},
     select: {
       id: true,
+      chainCampId: true,
       slug: true,
       name: true,
       description: true,
@@ -171,6 +180,8 @@ export async function listCamps(): Promise<CampSummary[]> {
       active: true,
       publicWeekNumber: true,
       startDate: true,
+      instructorName: true,
+      coverAssetId: true,
     },
   });
 }

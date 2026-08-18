@@ -68,10 +68,10 @@ export default async function CampPage({params}: Props) {
    * "3. haftanın notunu bırak" demek kullanıcıya ne yapacağını söylüyor.
    */
   const [progress, campProgress] = await Promise.all([
-    viewer.address
+    viewer.address && camp.chainCampId
       ? readProgress(
           viewer.address as `0x${string}`,
-          camp.id,
+          camp.chainCampId,
           camp.weekCount,
         ).catch(() => null)
       : Promise.resolve(null),
@@ -90,6 +90,11 @@ export default async function CampPage({params}: Props) {
   return (
     <Container className="py-12 md:py-16">
       <header className="max-w-3xl">
+        {camp.instructorName && (
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent-text">
+            {camp.instructorName}
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
             {camp.name}

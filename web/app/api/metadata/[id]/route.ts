@@ -61,8 +61,8 @@ export async function GET(
   }
 
   const camp = await db.camp.findUnique({
-    where: {id: campId},
-    select: {name: true, slug: true, weekCount: true},
+    where: {chainCampId: campId},
+    select: {id: true, name: true, slug: true, weekCount: true},
   });
 
   if (!camp) {
@@ -70,8 +70,8 @@ export async function GET(
   }
 
   const weekRow = await db.week.findUnique({
-    where: {campId_weekNumber: {campId, weekNumber: week}},
-    select: {title: true, imageCid: true},
+    where: {campId_weekNumber: {campId: camp.id, weekNumber: week}},
+    select: {title: true, imageCid: true, imageAssetId: true},
   });
 
   const appUrl = publicEnv.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
@@ -86,7 +86,9 @@ export async function GET(
    */
   const image = weekRow?.imageCid
     ? `ipfs://${weekRow.imageCid}`
-    : `${appUrl}/api/metadata/${tokenId.toString()}/image`;
+    : weekRow?.imageAssetId
+      ? `${appUrl}/api/media/${weekRow.imageAssetId}`
+      : `${appUrl}/api/metadata/${tokenId.toString()}/image`;
 
   const weekTitle = weekRow?.title ?? `Hafta ${week}`;
 

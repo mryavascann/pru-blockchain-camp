@@ -104,17 +104,20 @@ async function main(): Promise<void> {
       where: {id: camp.campId},
       create: {
         id: camp.campId,
+        chainCampId: camp.campId,
         slug: meta.slug,
         name: camp.name,
         description: meta.description,
         weekCount: camp.weekCount,
         active: camp.active,
+        lifecycle: "PUBLISHED",
         notionSourceId: meta.notionSourceId,
         displayOrder: meta.order,
       },
       update: {
         // Zincirden gelenler her zaman güncellenir
         name: camp.name,
+        chainCampId: camp.campId,
         weekCount: camp.weekCount,
         active: camp.active,
         // Elle tanımlananlar da güncellenir (kod değişirse yansısın)

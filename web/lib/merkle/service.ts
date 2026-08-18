@@ -48,6 +48,14 @@ export async function generateTree(
   weekNumber: number,
   createdBy: string,
 ): Promise<GeneratedTree | null> {
+  const camp = await db.camp.findUnique({
+    where: {id: campId},
+    select: {chainCampId: true},
+  });
+  if (!camp?.chainCampId) {
+    throw new Error("Kamp henüz zincire bağlanmadığı için Merkle ağacı üretilemez.");
+  }
+
   const completions = await db.weeklyCompletion.findMany({
     where: {campId, weekNumber},
     select: {address: true},
@@ -57,7 +65,7 @@ export async function generateTree(
   if (completions.length === 0) return null;
 
   const {root, dump, entryCount} = buildMerkleTree(
-    campId,
+    camp.chainCampId,
     weekNumber,
     completions.map((c) => c.address),
   );
@@ -84,12 +92,12 @@ export async function generateTree(
     });
   }
 
-  const onChainRoot = await readMerkleRoot(campId, weekNumber).catch(
+  const onChainRoot = await readMerkleRoot(camp.chainCampId, weekNumber).catch(
     () => "0x0" as `0x${string}`,
   );
 
   return {
-    campId,
+    campId: camp.chainCampId,
     weekNumber,
     root,
     entryCount,
@@ -130,6 +138,13 @@ export async function getProofsForAddress(
   campId: number,
 ): Promise<ProofBundle> {
   const normalized = address.toLowerCase();
+  const camp = await db.camp.findUnique({
+    where: {id: campId},
+    select: {chainCampId: true},
+  });
+  if (!camp?.chainCampId) {
+    return {campId, claimable: [], pendingPublication: []};
+  }
 
   /*
    * Her hafta için en son ağacı alıyoruz.
@@ -157,11 +172,16 @@ export async function getProofsForAddress(
   for (const [weekNumber, tree] of [...latestPerWeek].sort(
     (a, b) => a[0] - b[0],
   )) {
-    const proof = getProofFromDump(tree.treeJson, normalized, campId, weekNumber);
+    const proof = getProofFromDump(
+      tree.treeJson,
+      normalized,
+      camp.chainCampId,
+      weekNumber,
+    );
     if (!proof) continue; // bu kişi bu haftanın listesinde değil
 
     // Zincirdeki kök bizim ağacımızla aynı mı?
-    const onChainRoot = await readMerkleRoot(campId, weekNumber).catch(
+    const onChainRoot = await readMerkleRoot(camp.chainCampId, weekNumber).catch(
       () => "0x0" as `0x${string}`,
     );
     const rootPublished = onChainRoot.toLowerCase() === tree.root.toLowerCase();
@@ -173,7 +193,7 @@ export async function getProofsForAddress(
     }
   }
 
-  return {campId, claimable, pendingPublication};
+  return {campId: camp.chainCampId, claimable, pendingPublication};
 }
 
 /**

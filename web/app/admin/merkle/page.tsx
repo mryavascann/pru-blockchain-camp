@@ -13,6 +13,7 @@ export default async function MerklePage() {
   if (!(await isAdminViewer())) return null;
 
   const camps = await db.camp.findMany({
+    where: {lifecycle: "PUBLISHED", chainCampId: {not: null}},
     orderBy: {displayOrder: "asc"},
     select: {id: true, slug: true, name: true, weekCount: true},
   });

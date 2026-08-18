@@ -10,7 +10,7 @@
  * Kullanıcı açıkça bir şey seçmediyse `data-theme` niteliği hiç yazılmaz
  * ve CSS `prefers-color-scheme`'e bırakılır.
  */
-import {useEffect, useState} from "react";
+import {useSyncExternalStore} from "react";
 
 import {t} from "@/lib/i18n";
 
@@ -20,21 +20,13 @@ const STORAGE_KEY = "pru-theme";
 const ORDER: Theme[] = ["system", "light", "dark"];
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("system");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "light" || stored === "dark") setTheme(stored);
-    } catch {
-      /* localStorage engelli (gizli sekme vb.) — sistem temasında kal */
-    }
-  }, []);
+  const theme = useSyncExternalStore<Theme>(
+    subscribeTheme,
+    readTheme,
+    () => "system",
+  );
 
   function apply(next: Theme) {
-    setTheme(next);
     try {
       if (next === "system") {
         localStorage.removeItem(STORAGE_KEY);
@@ -49,15 +41,7 @@ export function ThemeToggle() {
         document.documentElement.setAttribute("data-theme", next);
       }
     }
-  }
-
-  /*
-   * Sunucuda tema bilinmez. Yüklenmeden önce sabit bir yer tutucu
-   * gösteriyoruz — aksi hâlde sunucu ve tarayıcı farklı ikon üretir
-   * ve React hydration uyarısı verir.
-   */
-  if (!mounted) {
-    return <div className="h-9 w-9" aria-hidden="true" />;
+    window.dispatchEvent(new Event("pru-theme-change"));
   }
 
   const label =
@@ -78,6 +62,24 @@ export function ThemeToggle() {
       {theme === "system" ? <MonitorIcon /> : theme === "light" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
+}
+
+function readTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === "light" || stored === "dark" ? stored : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function subscribeTheme(onChange: () => void): () => void {
+  window.addEventListener("storage", onChange);
+  window.addEventListener("pru-theme-change", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("pru-theme-change", onChange);
+  };
 }
 
 const iconProps = {

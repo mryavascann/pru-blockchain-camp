@@ -47,9 +47,12 @@ export async function GET(request: Request) {
 
     const camp = await db.camp.findUnique({
       where: {slug},
-      select: {id: true, name: true, slug: true, weekCount: true},
+      select: {id: true, chainCampId: true, name: true, slug: true, weekCount: true},
     });
     if (!camp) return fail("Kamp bulunamadı.", 404, "CAMP_NOT_FOUND");
+    if (!camp.chainCampId) {
+      return fail("Kamp henüz zincire bağlanmadı.", 409, "CHAIN_ACTIVATION_PENDING");
+    }
 
     /* Hak eden sayıları */
     const completions = await db.weeklyCompletion.groupBy({
@@ -77,7 +80,7 @@ export async function GET(request: Request) {
       Array.from({length: camp.weekCount}, async (_, i) => {
         const weekNumber = i + 1;
         const tree = latestTree.get(weekNumber);
-        const onChainRoot = await readMerkleRoot(camp.id, weekNumber).catch(
+        const onChainRoot = await readMerkleRoot(camp.chainCampId!, weekNumber).catch(
           () => null,
         );
 
@@ -100,7 +103,16 @@ export async function GET(request: Request) {
       }),
     );
 
-    return ok({camp, contractAddress, weeks});
+    return ok({
+      camp: {
+        id: camp.chainCampId,
+        name: camp.name,
+        slug: camp.slug,
+        weekCount: camp.weekCount,
+      },
+      contractAddress,
+      weeks,
+    });
   });
 }
 
@@ -125,9 +137,12 @@ export async function POST(request: Request) {
 
     const camp = await db.camp.findUnique({
       where: {slug: parsed.data.campSlug},
-      select: {id: true, name: true, weekCount: true},
+      select: {id: true, chainCampId: true, name: true, weekCount: true},
     });
     if (!camp) return fail("Kamp bulunamadı.", 404, "CAMP_NOT_FOUND");
+    if (!camp.chainCampId) {
+      return fail("Kamp henüz zincire bağlanmadı.", 409, "CHAIN_ACTIVATION_PENDING");
+    }
 
     /* Hangi haftalar için üreteceğiz */
     let targetWeeks = parsed.data.weeks;
@@ -167,7 +182,7 @@ export async function POST(request: Request) {
       );
 
     return ok({
-      camp: {id: camp.id, name: camp.name},
+      camp: {id: camp.chainCampId, name: camp.name},
       trees: results,
       /** Zincire yazılması gereken hafta sayısı */
       needsPublishing: results.filter((r) => !r.alreadyOnChain).length,

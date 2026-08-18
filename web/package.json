@@ -21,6 +21,7 @@
     "e2e:full": "tsx --env-file=.env.local scripts/e2e-full.ts",
     "test:participant": "tsx --env-file=.env.local scripts/test-participant.ts",
     "test:notes": "tsx --env-file=.env.local scripts/test-notes.ts",
+    "test:instructor": "tsx scripts/test-instructor-platform.ts",
     "check:wallet": "tsx --env-file=.env.local scripts/check-wallet.ts"
   },
   "dependencies": {

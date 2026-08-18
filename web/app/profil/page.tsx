@@ -37,11 +37,13 @@ export default async function ProfilePage() {
   const campsWithProgress = await Promise.all(
     camps.map(async (camp) => ({
       ...camp,
-      progress: await readProgress(
-        viewer.address as `0x${string}`,
-        camp.id,
-        camp.weekCount,
-      ).catch(() => new Array(camp.weekCount).fill(false) as boolean[]),
+      progress: camp.chainCampId
+        ? await readProgress(
+            viewer.address as `0x${string}`,
+            camp.chainCampId,
+            camp.weekCount,
+          ).catch(() => new Array(camp.weekCount).fill(false) as boolean[])
+        : (new Array(camp.weekCount).fill(false) as boolean[]),
     })),
   );
 
@@ -69,6 +71,17 @@ export default async function ProfilePage() {
             <div className="mt-2">
               <AddressChip address={viewer.address} />
             </div>
+            {viewer.nickname && (
+              <div className="mt-4">
+                <ButtonLink
+                  href={`/profil/${encodeURIComponent(viewer.nickname)}`}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Herkese açık portfolyomu gör →
+                </ButtonLink>
+              </div>
+            )}
           </div>
 
           {totalBadges > 0 && (
@@ -159,7 +172,7 @@ export default async function ProfilePage() {
             {campsWithProgress.map((camp) => (
               <CampBadges
                 key={camp.id}
-                campId={camp.id}
+                campId={camp.chainCampId ?? camp.id}
                 campSlug={camp.slug}
                 campName={camp.name}
                 weekCount={camp.weekCount}

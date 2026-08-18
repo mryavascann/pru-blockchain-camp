@@ -53,7 +53,7 @@ export async function GET(
   const {campId, week} = decodeTokenId(tokenId);
 
   const camp = await db.camp.findUnique({
-    where: {id: campId},
+    where: {chainCampId: campId},
     select: {name: true, slug: true},
   });
 

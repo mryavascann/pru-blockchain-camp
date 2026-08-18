@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 
 import {ConnectButton} from "@/components/wallet/ConnectButton";
 import {Container} from "@/components/ui/Card";
@@ -20,21 +20,20 @@ import {ThemeToggle} from "./ThemeToggle";
 const LINKS = [
   {href: "/kamplar", label: t.nav.camps},
   {href: "/siralama", label: t.nav.leaderboard},
+  {href: "/portfolyo", label: "Portfolyolar"},
 ] as const;
 
 export function Header() {
   const pathname = usePathname();
   const {session} = useAuth();
-  const [open, setOpen] = useState(false);
-
-  /* Sayfa değişince mobil menüyü kapat */
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  // Route değişince önceki yol artık eşleşmez ve menü etkisiz biçimde kapanır.
+  const open = menuPath === pathname;
 
   const links = [
     ...LINKS,
     ...(session?.address ? [{href: "/profil", label: t.nav.profile}] : []),
+    ...(session?.address ? [{href: "/egitmen", label: "Eğitmen"}] : []),
     ...(session?.isAdmin ? [{href: "/admin", label: t.nav.admin}] : []),
   ];
 
@@ -78,7 +77,7 @@ export function Header() {
 
             <button
               type="button"
-              onClick={() => setOpen((value) => !value)}
+              onClick={() => setMenuPath(open ? null : pathname)}
               aria-expanded={open}
               aria-label="Menü"
               className="grid h-9 w-9 place-items-center rounded-md text-fg-secondary transition-colors hover:bg-subtle md:hidden"

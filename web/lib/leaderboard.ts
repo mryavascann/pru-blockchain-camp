@@ -42,8 +42,9 @@ async function computeLeaderboardUncached(): Promise<{
   const updatedAt = new Date().toISOString();
 
   const camps = await db.camp.findMany({
+    where: {lifecycle: "PUBLISHED", chainCampId: {not: null}},
     orderBy: {displayOrder: "asc"},
-    select: {id: true, slug: true, name: true, weekCount: true},
+    select: {id: true, chainCampId: true, slug: true, name: true, weekCount: true},
   });
   if (camps.length === 0) return {rows: [], updatedAt};
 
@@ -66,7 +67,7 @@ async function computeLeaderboardUncached(): Promise<{
     for (let week = 1; week <= camp.weekCount; week++) {
       pairs.push({
         address: participant.address as `0x${string}`,
-        tokenId: encodeTokenId(camp.id, week),
+        tokenId: encodeTokenId(camp.chainCampId!, week),
       });
       index.push({address: participant.address, campId: camp.id, week});
     }

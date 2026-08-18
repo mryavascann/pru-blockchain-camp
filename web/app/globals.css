@@ -700,3 +700,42 @@ h4 {
   font-size: 0.8125rem;
   color: var(--fg-muted);
 }
+
+/* ---------------------------------------------------------------------------
+   Eğitmen stüdyosu form kontrolü
+   --------------------------------------------------------------------------- */
+.input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  outline: none;
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.portfolio-orbit {
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  right: -12rem;
+  top: -18rem;
+  border: 1px solid var(--border-accent);
+  border-radius: 9999px;
+  box-shadow:
+    0 0 0 4rem color-mix(in srgb, var(--accent) 4%, transparent),
+    0 0 0 8rem color-mix(in srgb, var(--accent) 3%, transparent);
+  pointer-events: none;
+}

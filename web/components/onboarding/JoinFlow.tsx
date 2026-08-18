@@ -23,6 +23,7 @@
  */
 import {useState} from "react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import Link from "next/link";
 
 import {Button} from "@/components/ui/Button";
 import {Card, Pill} from "@/components/ui/Card";
@@ -673,12 +674,12 @@ function CampApplication({
       {application?.status === "APPROVED" && (
         <p className="mt-2 text-sm text-fg-secondary">
           1–{application.declaredWeek}. hafta rozetlerin hazır.{" "}
-          <a
+          <Link
             href="/profil"
             className="font-semibold text-accent-text underline underline-offset-2"
           >
             Profilinden alabilirsin →
-          </a>
+          </Link>
         </p>
       )}
 

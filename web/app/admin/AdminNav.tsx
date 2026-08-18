@@ -15,6 +15,7 @@ const TABS: Tab[] = [
   {href: "/admin/ilerleme", label: t.admin.progress},
   {href: "/admin/icerik", label: t.admin.content},
   {href: "/admin/notlar", label: t.admin.notes},
+  {href: "/admin/egitmen-kamplari", label: "Eğitmen Kampları"},
   {href: "/admin/merkle", label: t.admin.merkle},
 ];
 

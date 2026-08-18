@@ -9,6 +9,7 @@
  * kaydırmadan görebilmeli.
  */
 import type {Metadata} from "next";
+import Link from "next/link";
 
 import {AddressChip} from "@/components/ui/Address";
 import {Container, EmptyState, Pill} from "@/components/ui/Card";
@@ -80,11 +81,13 @@ export default async function LeaderboardPage() {
                       <Rank index={index} />
                     </td>
                     <td className="py-4 pr-4">
-                      <AddressChip
-                        address={row.address}
-                        nickname={row.nickname || undefined}
-                        showExplorer={false}
-                      />
+                      {row.nickname ? (
+                        <Link href={`/profil/${encodeURIComponent(row.nickname)}`} className="rounded underline-offset-4 hover:underline">
+                          <AddressChip address={row.address} nickname={row.nickname} showExplorer={false} />
+                        </Link>
+                      ) : (
+                        <AddressChip address={row.address} showExplorer={false} />
+                      )}
                     </td>
                     <td className="py-4 pr-4 text-sm text-fg-secondary">
                       {row.campName}
@@ -108,11 +111,13 @@ export default async function LeaderboardPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Rank index={index} />
-                    <AddressChip
-                      address={row.address}
-                      nickname={row.nickname || undefined}
-                      showExplorer={false}
-                    />
+                    {row.nickname ? (
+                      <Link href={`/profil/${encodeURIComponent(row.nickname)}`} className="rounded underline-offset-4 hover:underline">
+                        <AddressChip address={row.address} nickname={row.nickname} showExplorer={false} />
+                      </Link>
+                    ) : (
+                      <AddressChip address={row.address} showExplorer={false} />
+                    )}
                   </div>
                   <Pill tone="muted">{row.campName.split(" ").pop()}</Pill>
                 </div>

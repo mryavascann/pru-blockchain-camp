@@ -21,18 +21,53 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CampLifecycle {
+  /// Eğitmen hazırlıyor; yalnızca kamp ekibi ve platform yöneticileri görür.
+  DRAFT
+
+  /// Eğitmen yayına hazır olduğunu bildirdi; platform zincir kaydını inceler.
+  REVIEW
+
+  /// Zincirdeki kamp kimliği bağlandı ve kamp herkese açık.
+  PUBLISHED
+
+  /// Yeni katılıma kapalı; geçmiş ve rozetler korunur.
+  ARCHIVED
+}
+
+enum CampMemberRole {
+  OWNER
+  EDITOR
+  REVIEWER
+}
+
+enum WeekContentSource {
+  NOTION
+  EDITOR
+}
+
+enum MediaKind {
+  CAMP_COVER
+  WEEK_ART
+}
+
 // ============================================================================
 //                                  KAMPLAR
 // ============================================================================
 
-/// Bir kamp programı. `id` alanı ZİNCİRDEKİ campId ile birebir aynıdır.
+/// Bir kamp programı. `id` veritabanı ilişkilerinin iç kimliği,
+/// `chainCampId` ise kontrattaki kimliktir.
 ///
-/// Neden otomatik artan id kullanmıyoruz: tokenId hesabı `(campId << 16) | week`
-/// formülüne dayanıyor. Veritabanı ile zincir farklı campId'ler kullanırsa
-/// yanlış rozet gösterilir. Bu yüzden id elle, zincirdeki değerle yazılır.
+/// Ayrım neden gerekli: eğitmen kampı önce taslak olarak hazırlanır; kontratta
+/// henüz bir campId'si yoktur. TokenId/Merkle hesabı yalnızca `chainCampId`
+/// bağlandıktan sonra yapılır. Eski çekirdek kamplarda iki değer aynı kalır.
 model Camp {
-  /// Zincirdeki campId (1'den başlar)
-  id Int @id
+  /// Veritabanı kimliği. Mevcut iki kampta zincir kimliğiyle aynıdır; yeni
+  /// eğitmen kamplarında zincir bağlantısı `chainCampId` ile ayrıca kurulur.
+  id Int @id @default(autoincrement())
+
+  /// Kontrattaki campId. Taslak/revizyon aşamasında null kalır.
+  chainCampId Int? @unique
 
   /// URL'de kullanılan kısa ad: "developers", "directors"
   slug String @unique
@@ -48,6 +83,19 @@ model Camp {
 
   /// Kamp yeni rozet almaya açık mı (zincirdeki `active` ile eşleşmeli)
   active Boolean @default(true)
+
+  /// Kampın yayın yaşam döngüsü. Eski kamplar geriye uyumluluk için yayındadır.
+  lifecycle CampLifecycle @default(PUBLISHED)
+
+  /// Kampı ilk oluşturan eğitmenin küçük harfli cüzdan adresi.
+  /// null, platformun mevcut/çekirdek kampları anlamına gelir.
+  ownerAddress String?
+
+  /// Kartlarda gösterilebilen eğitmen/ekip adı. Cüzdan adresinden bağımsızdır.
+  instructorName String?
+
+  /// Platform incelemesinin eğitmene bıraktığı revizyon notu.
+  reviewNote String?
 
   /// HANGİ HAFTA HERKESE AÇIK OLACAK.
   /// Bu bir ERİŞİM KONTROLÜ kararıdır, içerik değil — bu yüzden Notion'da
@@ -69,6 +117,11 @@ model Camp {
   /// OpenSea koleksiyon avatarı olarak kullanılır.
   coverCid String?
 
+  /// Eğitmenin panelden yüklediği kapak. IPFS'e geçildiğinde `coverCid`
+  /// öncelikli kalabilir; bu alan hackathon yükleme akışını sağlar.
+  coverAssetId String?     @unique
+  coverAsset   MediaAsset? @relation("CampCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+
   /// Sıralama (landing sayfasında hangi kamp önce görünsün)
   displayOrder Int @default(0)
 
@@ -77,11 +130,15 @@ model Camp {
   completions  WeeklyCompletion[]
   merkleTrees  MerkleTree[]
   notes        WeekNote[]
+  members      CampMember[]
+  assets       MediaAsset[]       @relation("CampAssets")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([slug])
+  @@index([lifecycle, displayOrder])
+  @@index([ownerAddress])
 }
 
 // ============================================================================
@@ -152,6 +209,15 @@ model Week {
   /// Tam içerik, HTML'e dönüştürülmüş — KİLİTLİ
   contentHtml String?
 
+  /// Eğitmen editöründeki düz metin. Kullanıcı HTML'i olarak render edilmez;
+  /// sunucuda kaçırılarak güvenli `contentHtml` üretilir.
+  editorBody String?
+
+  /// [{title, url}] biçimindeki doğrulanmış http/https kaynakları.
+  resources Json?
+
+  contentSource WeekContentSource @default(NOTION)
+
   /// Notion'dan gelen ham bloklar — KİLİTLİ. Yeniden render için saklanır.
   rawBlocks Json?
 
@@ -166,6 +232,10 @@ model Week {
   /// noktası yer tutucu bir görsel döner — NFT "bozuk" görünmez, sadece
   /// henüz tasarlanmamış görünür.
   imageCid String?
+
+  /// Eğitmenin yüklediği NFT görseli (PNG/JPEG/WebP/GIF, en çok 5 MB).
+  imageAssetId String?     @unique
+  imageAsset   MediaAsset? @relation("WeekArtwork", fields: [imageAssetId], references: [id], onDelete: SetNull)
 
   // ---- Notion senkron durumu ----
 
@@ -192,6 +262,59 @@ model Week {
 
   @@unique([campId, weekNumber])
   @@index([campId, status])
+}
+
+// ============================================================================
+//                         EĞİTMEN YETKİLERİ VE MEDYA
+// ============================================================================
+
+/// Kamp bazlı yetki. Bir eğitmen yalnızca burada üyesi olduğu kampın içeriğini,
+/// başvurularını ve ilerlemesini yönetebilir. Platform admini bu tablodan
+/// bağımsız olarak bütün kamplara erişir.
+model CampMember {
+  id String @id @default(cuid())
+
+  campId Int
+  camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  /// Her zaman küçük harfli cüzdan adresi.
+  address String
+  role    CampMemberRole @default(EDITOR)
+
+  /// Üyeyi ekleyen adres (denetim izi).
+  addedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campId, address])
+  @@index([address])
+}
+
+/// Hackathon sürümünde harici depolama hesabı gerektirmeyen küçük medya deposu.
+/// Yalnızca doğrulanmış raster dosyalar kabul edilir. Üretimde bu tablo aynı
+/// kimlikler korunarak S3/R2/IPFS arkasına taşınabilir.
+model MediaAsset {
+  id String @id @default(cuid())
+
+  campId Int
+  camp   Camp @relation("CampAssets", fields: [campId], references: [id], onDelete: Cascade)
+
+  ownerAddress String
+  kind         MediaKind
+  fileName     String
+  mimeType     String
+  byteSize     Int
+  sha256       String
+  data         Bytes
+
+  coveredCamp Camp? @relation("CampCover")
+  artworkWeek Week? @relation("WeekArtwork")
+
+  createdAt DateTime @default(now())
+
+  @@index([campId, kind, createdAt])
+  @@index([sha256])
 }
 
 // ============================================================================

@@ -58,7 +58,24 @@ export default async function CampsPage() {
           {camps.map((camp) => (
             <Card key={camp.id} interactive>
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-xl font-bold tracking-tight">{camp.name}</h2>
+                <div className="flex min-w-0 items-start gap-3">
+                  {camp.coverAssetId && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/media/${camp.coverAssetId}`}
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
+                  <div>
+                    {camp.instructorName && (
+                      <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                        {camp.instructorName}
+                      </p>
+                    )}
+                    <h2 className="text-xl font-bold tracking-tight">{camp.name}</h2>
+                  </div>
+                </div>
                 <Pill tone={camp.active ? "accent" : "muted"}>
                   {camp.weekCount} {t.camp.weeks}
                 </Pill>
