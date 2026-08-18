@@ -5,33 +5,54 @@
 > Testnet'te bir hata düzeltilebilir. Mainnet'te basılmış bir rozet kalıcıdır
 > ve yanlış bir kök yazımı geri alınamaz.
 
-**Durum:** Faz 4 — testnet tamamlandı, mainnet bekliyor.
+**Durum:** Faz 4 — testnette çalışıyor. Mainnet, site tamamlandıktan sonra.
 **Son güncelleme:** 18 Ağustos 2026
 
 ---
 
-## 🔴 BÖLÜM 0 — Acil: sohbette paylaşılan sırlar
+## BÖLÜM 0 — Sır rotasyonu
 
-Geliştirme sırasında iki sır sohbet geçmişine düz metin olarak girdi.
-Testnet aşamasında pratik bir sorun değildi; **mainnet'e geçmeden önce
-ikisi de yenilenmeli.**
+Geliştirme sırasında iki sır sohbet geçmişine düz metin olarak girdi ve
+**18 Ağustos 2026'da yenilendi.**
 
-- [ ] **Neon veritabanı parolası yenilendi**
-      Neon konsolu → Project → Roles → `neondb_owner` → Reset password.
-      Yeni bağlantı dizesi `web/.env.local` ve Vercel ortam değişkenlerine.
+- [x] **Neon veritabanı parolası yenilendi**
+      Yeni uç nokta oluştu; şema, kamplar ve 27 hafta sıfırdan kuruldu.
+      Tüm veri yeniden üretilebilir olduğu için kayıp yok — bu aynı zamanda
+      kurulumun sıfırdan tekrarlanabildiğinin kanıtı oldu.
 
-- [ ] **Notion integration token'ı yenilendi**
-      notion.so/profile/integrations → `PRU Camp Site` → token'ı yeniden üret.
-      Eski token anında geçersiz olur.
+- [x] **Notion integration token'ı yenilendi**
+      Sayfa paylaşımları (Connections) bozulmadı; senkron doğrulandı.
 
-- [ ] **Test admin adresi listeden çıkarıldı**
-      `ADMIN_ADDRESSES` içindeki `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
-      Anvil'in herkesçe bilinen test hesabıdır. Üretimde **kesinlikle olmamalı** —
-      private key'i internette açıkça duruyor.
+Aşağıdakiler **üretim ortamı kurulurken** yapılacak (yerel geliştirmede
+gerekmiyor):
+
+- [ ] **`SESSION_SECRET` ve `CRON_SECRET` üretim için YENİDEN üretildi**
+      Yereldekiler bu oturumda ekrana yazıldı; Vercel'e taşınmamalı.
+      ```bash
+      openssl rand -base64 32   # SESSION_SECRET
+      openssl rand -hex 32      # CRON_SECRET
+      ```
+
+- [ ] **Test admin adresi `ADMIN_ADDRESSES`'ten çıkarıldı**
+      `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` Anvil'in herkesçe bilinen
+      test hesabıdır — private key'i internette açıkça duruyor. Yerelde
+      `npm run e2e` için gerekli, **Vercel'e girilmeyecek.**
 
 - [ ] **Testnet deploy cüzdanı mainnet'te KULLANILMAYACAK**
       `0x133aa2E0709a4339FFFCb3ca1FAaBB5Fd26EC4aa` anahtarı bir AI oturumunda
       üretildi. Testnet için sorun yok, mainnet için kabul edilemez.
+
+---
+
+## 📌 MEVCUT PLAN: testnette kal
+
+Site **tamamen bitene kadar Base Sepolia'da** kalacak. Amaç, hocalara
+çalışan bir sistemi denetmek. Mainnet geçişi bu listenin tamamı
+tamamlandıktan sonra yapılacak.
+
+Testnette kalmanın pratik sonucu: rozetler gerçek değer taşımıyor ve site
+üstünde bunu söyleyen bir şerit var (`TestnetBanner`). Mainnet'e geçildiğinde
+(`NEXT_PUBLIC_CHAIN="base"`) şerit kendiliğinden kaybolur.
 
 ---
 
