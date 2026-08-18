@@ -51,33 +51,40 @@ her zaman semantik token kullanılır.
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `--violet-950` | `#0D0118` | Dark tema en derin zemin |
-| `--violet-900` | `#16032A` | Dark tema sayfa zemini · rozet arka planı |
-| `--violet-800` | `#22063F` | Dark tema yüzey (kart) |
-| `--violet-700` | `#310A57` | Dark tema kenarlık |
-| `--violet-600` | `#451073` | Vurgu, hover |
-| `--violet-500` | `#5E1A96` | **Ana marka rengi** — light temada primary buton |
-| `--violet-400` | `#7C2FBE` | Link, hover |
-| `--violet-300` | `#A067DA` | Dark temada link |
-| `--violet-200` | `#C6A2EC` | Pasif ikon |
-| `--violet-100` | `#E3CDF7` | Light temada seçili satır zemini |
-| `--violet-50`  | `#F5ECFD` | Light temada bilgi kutusu zemini |
+| `--violet-950` | `#0E001F` | Dark tema en derin zemin |
+| `--violet-900` | `#180034` | Dark tema sayfa zemini · rozet arka planı |
+| `--violet-800` | `#24004C` | **Logonun tam zemin rengi** — dark tema yüzey (kart) |
+| `--violet-700` | `#35006F` | Dark tema kenarlık |
+| `--violet-600` | `#480096` | Vurgu, hover |
+| `--violet-500` | `#5D0BBB` | **Ana marka rengi** — light temada primary buton |
+| `--violet-400` | `#7B2FD6` | Dark temada primary buton, link |
+| `--violet-300` | `#9C68E0` | Dark temada link |
+| `--violet-200` | `#C2A2EC` | Pasif ikon |
+| `--violet-100` | `#E1D0F7` | Light temada seçili satır zemini |
+| `--violet-50`  | `#F4ECFD` | Light temada bilgi kutusu zemini |
+
+> Ölçek, logonun zemininden **piksel örneklemesiyle** türetildi: `#24004C`
+> (H 268°, S %100, L %15). Tüm tonlar aynı renk tonuna (H=268) sabitlenip
+> yalnızca aydınlık ekseninde üretildi — hiçbir ton logodan sapmıyor.
 
 **Neon menekşe — "Işık" (accent / doğrulanmış)** · logonun parıltısı
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `--neon-700` | `#7B2CBF` | Light temada accent metin (kontrast için) |
-| `--neon-600` | `#9333EA` | **Accent** — light temada buton zemini |
-| `--neon-500` | `#A855F7` | Dark temada accent, kazanılmış rozet çerçevesi |
-| `--neon-400` | `#C77DFF` | Dark temada accent metin |
-| `--neon-300` | `#DFB8FF` | Parıltı, focus halkası |
+| `--neon-700` | `#7A2AA8` | Light temada accent metin (beyaz üstünde 7.71:1) |
+| `--neon-600` | `#9339C4` | **Accent** — light temada buton zemini (5.80:1) |
+| `--neon-500` | `#AC55DE` | Dark temada accent, kazanılmış rozet çerçevesi |
+| `--neon-400` | `#C77DEF` | Dark temada accent metin |
+| `--neon-300` | `#DEADE7` | **Logodan doğrudan örneklendi** — parıltı, focus halkası |
+
+> Logonun parıltı çizgileri H≈284°, doygunluk ≈%48 — saf mor değil, hafif
+> pembeye kaçan yumuşak bir menekşe. Ölçek buna göre kuruldu.
 
 **Amber — "Başarı" (ödül anları)**
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `--amber-600` | `#C98200` | Light temada amber metin |
+| `--amber-600` | `#9A6300` | Light temada amber metin (beyaz üstünde 5.05:1) |
 | `--amber-500` | `#F0A500` | Rozet mint başarı animasyonu, leaderboard ilk 3 |
 | `--amber-400` | `#FFB92E` | Dark temada amber metin |
 
@@ -159,9 +166,9 @@ her zaman semantik token kullanılır.
   --border-accent:  var(--neon-400);
 
   --accent:         var(--neon-500);
-  --accent-fg:      var(--violet-950);
+  --accent-fg:      var(--violet-950);  /* koyu metin, parlak zemin  → 4.92:1 */
   --primary:        var(--violet-400);
-  --primary-fg:     var(--violet-950);
+  --primary-fg:     var(--gray-50);     /* AÇIK metin — koyu metin 3.10:1'de kalıyordu */
   --reward:         var(--amber-400);
 
   --focus-ring:     var(--neon-300);
@@ -188,6 +195,30 @@ Tailwind'de `text-*` hem yazı boyutu hem renk olabildiği için CSS değişkeni
 verildiğinde **yazı boyutu** sanılır ve renk hiç uygulanmaz; metin gövde
 rengini miras alır (koyu temada siyah, açık temada beyaz → görünmez).
 Doğrusu: `text-[color:var(--x)]`. Aynısı `border-*` ve `bg-*` için de geçerli.
+
+### Doğrulanmış kontrast oranları
+
+Palet, logodan türetildikten sonra 12 kritik kombinasyon için ölçüldü —
+hepsi WCAG AA (≥4.5:1) geçiyor:
+
+| Kombinasyon | Oran |
+|---|---|
+| Light · ana metin | 17.22:1 |
+| Light · ikincil metin | 7.43:1 |
+| Light · accent metin | 7.71:1 |
+| Light · accent buton | 5.80:1 |
+| Light · primary buton | 9.41:1 |
+| Light · ödül (amber) | 5.05:1 |
+| Dark · ana metin | 19.16:1 |
+| Dark · ikincil metin | 11.55:1 |
+| Dark · accent metin | 6.99:1 |
+| Dark · accent buton | 4.92:1 |
+| Dark · primary buton | 6.18:1 |
+| Dark · ödül (amber) | 11.24:1 |
+
+İlk ölçümde iki kombinasyon düşük çıktı ve düzeltildi:
+`--amber-600` koyulaştırıldı (3.15 → 5.05), dark temadaki primary butonun
+metni koyudan açığa çevrildi (3.10 → 6.18).
 
 ---
 

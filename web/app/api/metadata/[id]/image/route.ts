@@ -23,10 +23,10 @@ import {db} from "@/lib/db";
 import {decodeTokenId, parseTokenIdParam} from "@/lib/chain/tokenId";
 
 /* brand.md renk paletinden — kulüp logosundan türetildi */
-const VIOLET_950 = "#0D0118";
-const VIOLET_800 = "#22063F";
-const NEON_500 = "#A855F7";
-const NEON_300 = "#DFB8FF";
+const VIOLET_950 = "#0E001F";
+const VIOLET_800 = "#24004C";  // logonun tam zemin rengi
+const NEON_500 = "#AC55DE";
+const NEON_300 = "#DEADE7";    // logodan dogrudan orneklendi
 const GRAY_50 = "#FAF8FC";
 const GRAY_400 = "#A096AE";
 

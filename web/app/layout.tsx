@@ -61,7 +61,7 @@ export const viewport: Viewport = {
   // Mobil tarayıcıların adres çubuğu rengi — palet logodan türetildi
   themeColor: [
     {media: "(prefers-color-scheme: light)", color: "#faf8fc"},
-    {media: "(prefers-color-scheme: dark)", color: "#0d0118"},
+    {media: "(prefers-color-scheme: dark)", color: "#0e001f"},
   ],
 };
 

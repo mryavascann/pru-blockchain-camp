@@ -24,28 +24,33 @@
      "kazanıldı" hissini taşıyor.
      ------------------------------------------------------------------- */
 
-  /* Mor — "Derinlik" (logonun zemini) */
-  --violet-950: #0d0118;
-  --violet-900: #16032a;
-  --violet-800: #22063f;
-  --violet-700: #310a57;
-  --violet-600: #451073;
-  --violet-500: #5e1a96;
-  --violet-400: #7c2fbe;
-  --violet-300: #a067da;
-  --violet-200: #c6a2ec;
-  --violet-100: #e3cdf7;
-  --violet-50: #f5ecfd;
+  /* Mor — "Derinlik"
+     Logonun zemini piksel örneklemesiyle ölçüldü: #24004C (H268 S100 L15).
+     Ölçeğin tamamı bu tona (H=268) sabitlenip aydınlık ekseninde türetildi,
+     böylece hiçbir ton logodan sapmıyor. */
+  --violet-950: #0e001f;
+  --violet-900: #180034;
+  --violet-800: #24004c; /* ← logonun tam zemin rengi */
+  --violet-700: #35006f;
+  --violet-600: #480096;
+  --violet-500: #5d0bbb;
+  --violet-400: #7b2fd6;
+  --violet-300: #9c68e0;
+  --violet-200: #c2a2ec;
+  --violet-100: #e1d0f7;
+  --violet-50: #f4ecfd;
 
-  /* Neon menekşe — "Işık" (logonun parıltısı, doğrulanmış/aktif) */
-  --neon-700: #7b2cbf;
-  --neon-600: #9333ea;
-  --neon-500: #a855f7;
-  --neon-400: #c77dff;
-  --neon-300: #dfb8ff;
+  /* Neon menekşe — "Işık"
+     Logonun parıltı çizgileri H≈284, doygunluk ≈%48. Saf mor değil, hafif
+     pembeye kaçan yumuşak bir menekşe — ölçek buna göre kuruldu. */
+  --neon-700: #7a2aa8; /* light temada accent metin (kontrast için) */
+  --neon-600: #9339c4;
+  --neon-500: #ac55de;
+  --neon-400: #c77def;
+  --neon-300: #deade7; /* ← logodan doğrudan örneklendi */
 
   /* Amber — "Başarı" (yalnızca ödül anlarında) */
-  --amber-600: #c98200;
+  --amber-600: #9a6300; /* beyaz zeminde 5.05:1 — WCAG AA */
   --amber-500: #f0a500;
   --amber-400: #ffb92e;
 
@@ -118,10 +123,10 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  --shadow-sm: 0 1px 2px rgb(34 6 63 / 0.06);
-  --shadow-md: 0 4px 12px rgb(34 6 63 / 0.08);
-  --shadow-lg: 0 12px 32px rgb(34 6 63 / 0.12);
-  --shadow-glow: 0 0 0 3px rgb(168 85 247 / 0.25);
+  --shadow-sm: 0 1px 2px rgb(36 0 76 / 0.06);
+  --shadow-md: 0 4px 12px rgb(36 0 76 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(36 0 76 / 0.12);
+  --shadow-glow: 0 0 0 3px rgb(172 85 222 / 0.25);
 
   /* --------------------------------------------------------------------
      5. LAYOUT  (brand.md §6)
@@ -164,7 +169,7 @@
     --accent-text: var(--neon-400);
     --accent-fg: var(--violet-950);
     --primary: var(--violet-400);
-    --primary-fg: var(--violet-950);
+    --primary-fg: var(--gray-50); /* violet-400 uzerinde 6.18:1 */
     --reward: var(--amber-400);
 
     --success: #4ade80;
@@ -201,7 +206,7 @@
   --accent-text: var(--neon-400);
   --accent-fg: var(--violet-950);
   --primary: var(--violet-400);
-  --primary-fg: var(--violet-950);
+  --primary-fg: var(--gray-50); /* violet-400 uzerinde 6.18:1 */
   --reward: var(--amber-400);
 
   --success: #4ade80;
