@@ -3,25 +3,22 @@
  * HAFTA TAKVİMİ — "bu hafta ne zaman açılacak?"
  *
  * ---------------------------------------------------------------------------
- * ÖNEMLİ: TAKVİM BİR KİLİT DEĞİL, BİR BEKLENTİDİR
+ * KİŞİSEL TARİH ERİŞİM KURALIDIR; GENEL TARİHLER PLAN BİLGİSİDİR
  *
- * Bir haftayı gerçekten açan tek şey, kulüp yöneticisinin o haftayı
- * `/admin/ilerleme` ekranından işaretlemesidir. Buradaki tarih yalnızca
- * "planlanan açılış" bilgisidir ve kullanıcıya bilgi vermek için var.
- *
- * Neden ikinci bir kilit yapmadık: tarih geldiğinde hafta kendiliğinden
- * açılsaydı, kimin o haftayı tamamladığı bilgisi olmadan rozet hak edişi
- * üretilemezdi. Hak ediş insan kararıdır (Faz 0 şartı); takvim ona
- * eşlik eden bir tahmin.
+ * Katılımcının kişisel tarihi (`fallbackDate`) erişim kapısıyla aynı kaynaktan
+ * gelir: o cüzdanın o kamptaki ilk notu + 7 gün. Süre dolunca yalnızca o
+ * katılımcı ilerler. Kamp ve hafta tarihleri kişisel tarih bulunmadığında
+ * gösterilen genel plan bilgisidir.
  *
  * Bu yüzden arayüzde tarih ASLA kesin bir vaat gibi yazılmaz:
  * "12 Eylül'de açılıyor" değil, "planlanan açılış: 12 Eylül".
  * ---------------------------------------------------------------------------
  *
  * TARİH NEREDEN GELİYOR (öncelik sırasıyla):
- *   1. `Week.publishDate`  → o haftaya özel tarih (Notion'dan ya da elle)
- *   2. `Camp.startDate`    → kamp başlangıcı + (hafta-1) × 7 gün
- *   3. Hiçbiri yoksa null  → arayüz tarih göstermez, sadece "yakında" der
+ *   1. Kişisel tarih       → bu cüzdanın mevcut haftadaki ilk notu + 7 gün
+ *   2. `Week.publishDate`  → o haftaya özel genel tarih (Notion'dan ya da elle)
+ *   3. `Camp.startDate`    → kamp başlangıcı + (hafta-1) × 7 gün
+ *   4. Hiçbiri yoksa null  → arayüz tarih göstermez, sadece "yakında" der
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,19 +29,26 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * @param campStartDate    Kampın başlangıç tarihi (yoksa null)
  * @param weekPublishDate  Haftaya özel tarih (yoksa null) — varsa kazanır
  * @param weekNumber       1'den başlar
+ * @param fallbackDate     Kişisel açılış tarihi — varsa diğerlerinden önce gelir
  */
 export function plannedOpening(
   campStartDate: Date | string | null,
   weekPublishDate: Date | string | null,
   weekNumber: number,
+  fallbackDate: Date | string | null = null,
 ): Date | null {
+  if (fallbackDate) {
+    const fallback = new Date(fallbackDate);
+    if (!Number.isNaN(fallback.getTime())) return fallback;
+  }
   if (weekPublishDate) return new Date(weekPublishDate);
-  if (!campStartDate) return null;
-
-  const start = new Date(campStartDate);
-  if (Number.isNaN(start.getTime())) return null;
-
-  return new Date(start.getTime() + (weekNumber - 1) * 7 * DAY_MS);
+  if (campStartDate) {
+    const start = new Date(campStartDate);
+    if (!Number.isNaN(start.getTime())) {
+      return new Date(start.getTime() + (weekNumber - 1) * 7 * DAY_MS);
+    }
+  }
+  return null;
 }
 
 /**
@@ -91,7 +95,7 @@ export type OpeningInfo = {
   date: Date;
   /** Kalan süre metni; tarih geçtiyse null */
   remaining: string | null;
-  /** Tarih geçti mi? (geçtiyse hafta yöneticinin işaretlemesini bekliyor) */
+  /** Tarih geçti mi? */
   overdue: boolean;
 };
 
@@ -101,8 +105,14 @@ export function openingInfo(
   weekPublishDate: Date | string | null,
   weekNumber: number,
   now: Date = new Date(),
+  fallbackDate: Date | string | null = null,
 ): OpeningInfo | null {
-  const date = plannedOpening(campStartDate, weekPublishDate, weekNumber);
+  const date = plannedOpening(
+    campStartDate,
+    weekPublishDate,
+    weekNumber,
+    fallbackDate,
+  );
   if (!date) return null;
 
   const remaining = formatRemaining(date, now);

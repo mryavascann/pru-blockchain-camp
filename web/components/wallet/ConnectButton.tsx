@@ -19,6 +19,7 @@ import {useAuth} from "@/lib/hooks/useAuth";
 import {fmt, t} from "@/lib/i18n";
 
 export function ConnectButton() {
+  const router = useRouter();
   const {
     isConnected,
     session,
@@ -28,12 +29,24 @@ export function ConnectButton() {
     needsSignIn,
     wrongNetwork,
     authenticate,
+    changeAccount,
     signOut,
     disconnect,
   } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  async function chooseAnotherWallet() {
+    try {
+      authenticate.reset();
+      await changeAccount.mutateAsync();
+      setMenuOpen(false);
+      router.refresh();
+    } catch {
+      // Hata düğmenin/menünün hemen yanında gösterilir.
+    }
+  }
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -63,7 +76,10 @@ export function ConnectButton() {
         <Button
           variant={wrongNetwork ? "danger" : "accent"}
           loading={authenticate.isPending}
-          onClick={() => authenticate.mutate()}
+          onClick={() => {
+            changeAccount.reset();
+            authenticate.mutate(undefined);
+          }}
           title={t.wallet.signInHint}
         >
           {authenticate.isPending
@@ -72,10 +88,15 @@ export function ConnectButton() {
               ? fmt(t.wallet.switchNetwork, {network: activeChain.name})
               : t.wallet.connect}
         </Button>
-        <Button variant="ghost" size="sm" onClick={disconnect}>
-          {t.wallet.disconnect}
+        <Button
+          variant="ghost"
+          size="sm"
+          loading={changeAccount.isPending}
+          onClick={() => void chooseAnotherWallet()}
+        >
+          {changeAccount.isPending ? t.wallet.changing : t.wallet.change}
         </Button>
-        <AuthError error={authenticate.error} />
+        <AuthError error={changeAccount.error ?? authenticate.error} />
       </div>
     );
   }
@@ -144,6 +165,25 @@ export function ConnectButton() {
             <button
               type="button"
               role="menuitem"
+              disabled={changeAccount.isPending}
+              onClick={() => void chooseAnotherWallet()}
+              className="block w-full border-t border-line px-4 py-3 text-left text-sm text-fg-secondary hover:bg-subtle hover:text-fg disabled:opacity-50"
+            >
+              {changeAccount.isPending ? t.wallet.changing : t.wallet.change}
+            </button>
+
+            {changeAccount.error && (
+              <p
+                role="alert"
+                className="border-t border-danger px-4 py-3 text-xs leading-relaxed text-danger"
+              >
+                {changeAccount.error.message}
+              </p>
+            )}
+
+            <button
+              type="button"
+              role="menuitem"
               onClick={() => {
                 setMenuOpen(false);
                 signOut.mutate();
@@ -174,15 +214,26 @@ export function ConnectButton() {
   }
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative flex items-center gap-2">
       <Button
         variant="accent"
         loading={authenticate.isPending}
-        onClick={() => authenticate.mutate()}
+        onClick={() => {
+          changeAccount.reset();
+          authenticate.mutate(undefined);
+        }}
       >
         {authenticate.isPending ? t.wallet.signingIn : t.wallet.connect}
       </Button>
-      <AuthError error={authenticate.error} />
+      <Button
+        variant="ghost"
+        size="sm"
+        loading={changeAccount.isPending}
+        onClick={() => void chooseAnotherWallet()}
+      >
+        {changeAccount.isPending ? t.wallet.changing : t.wallet.change}
+      </Button>
+      <AuthError error={changeAccount.error ?? authenticate.error} />
     </div>
   );
 }
@@ -210,7 +261,7 @@ export function WalletGateButton({
   async function continueAfterAuthentication() {
     try {
       if (!session?.address || needsSignIn) {
-        await authenticate.mutateAsync();
+        await authenticate.mutateAsync(undefined);
       }
       router.push(continueTo);
       router.refresh();

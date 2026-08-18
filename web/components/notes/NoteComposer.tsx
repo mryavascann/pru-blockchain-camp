@@ -37,6 +37,7 @@ export type ComposerResult = {
     visibleWeek: number;
     openedWeek: number | null;
     owedWeeks: number[];
+    nextWeekAt: string | null;
   };
 };
 

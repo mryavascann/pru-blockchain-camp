@@ -96,6 +96,7 @@ export async function GET(request: Request) {
         owedWeeks: progress.owedWeeks,
         notedWeeks: progress.notedWeeks,
         blockingWeek: progress.blockingWeek,
+        nextWeekAt: progress.nextWeekAt?.toISOString() ?? null,
       },
     });
   });
@@ -209,9 +210,9 @@ export async function POST(request: Request) {
     });
 
     /*
-     * Notu yazmak bir kapı açtı: bu haftanın rozeti ve bir sonraki haftanın
-     * içeriği. Arayüzün bunu hemen gösterebilmesi için güncel durumu geri
-     * veriyoruz — kullanıcı sayfayı yenilemek zorunda kalmasın.
+     * Not bu haftanın rozet kapısını tamamladı. Sonraki hafta yönetici
+     * ilerlemeyi işaretlediyse hemen açılabilir; henüz işaretlenmediyse
+     * kişisel planlanan açılış zamanını da arayüze döndürüyoruz.
      */
     const after = await getCampProgress(
       viewer.address,
@@ -231,6 +232,7 @@ export async function POST(request: Request) {
         openedWeek:
           after.visibleWeek > progress.visibleWeek ? after.visibleWeek : null,
         owedWeeks: after.owedWeeks,
+        nextWeekAt: after.nextWeekAt?.toISOString() ?? null,
       },
     });
   });

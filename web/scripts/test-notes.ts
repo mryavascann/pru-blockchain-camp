@@ -32,7 +32,8 @@ import {
 import {listNotes} from "../lib/notes/service";
 import {safeUrl, validateNote} from "../lib/notes/rules";
 
-const BASE = "http://localhost:3100";
+const BASE = process.env.TEST_BASE_URL ?? "http://localhost:3100";
+const DOMAIN = new URL(BASE).host;
 
 let fails = 0;
 let skipped = 0;
@@ -269,6 +270,22 @@ async function main() {
     validateNote({kind: "OZET", title: "Baslik burada", body: "kisa"}).ok === false,
   );
   check(
+    "20 karakterlik not kabul edildi",
+    validateNote({
+      kind: "OZET",
+      title: "Baslik burada",
+      body: "12345678901234567890",
+    }).ok === true,
+  );
+  check(
+    "19 karakterlik not reddedildi",
+    validateNote({
+      kind: "OZET",
+      title: "Baslik burada",
+      body: "1234567890123456789",
+    }).ok === false,
+  );
+  check(
     "kisa baslik reddedildi",
     validateNote({kind: "OZET", title: "ab", body: BODY}).ok === false,
   );
@@ -413,7 +430,7 @@ async function main() {
     const message = createSiweMessage({
       address: acct.address,
       chainId: 84532,
-      domain: "localhost:3100",
+      domain: DOMAIN,
       nonce,
       uri: BASE,
       version: "1",
@@ -566,7 +583,7 @@ async function main() {
     );
 
     /* 4. haftanin notunu yaz -> 5 acilmali */
-    await db.weekNote.create({
+    const gateNote = await db.weekNote.create({
       data: {
         campId: camp.id,
         weekNumber: 4,
@@ -600,6 +617,35 @@ async function main() {
     const reverted = await getCampProgress(ALICE, camp.id, camp.weekCount);
     check("hak edilen hafta 4'e dondu", reverted.entitledWeek === 4);
     check("borc kalmadi (4'un notu yazilmisti)", reverted.owedWeeks.length === 0);
+    check(
+      "not tamamlaninca sonraki hafta icin 7 gunluk tahmin olustu",
+      reverted.nextWeekAt?.getTime() ===
+        gateNote.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000,
+      `nextWeekAt=${reverted.nextWeekAt?.toISOString() ?? "null"}`,
+    );
+
+    /* Aynı notu sekiz gün önce atılmış hâle getir: yalnızca Alice ilerlemeli. */
+    await db.weekNote.update({
+      where: {id: gateNote.id},
+      data: {createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)},
+    });
+    const personallyOpened = await getCampProgress(
+      ALICE,
+      camp.id,
+      camp.weekCount,
+    );
+    check(
+      "7 gun dolunca Alice'in 5. haftasi otomatik acildi",
+      personallyOpened.entitledWeek === 5 && canSeeWeek(personallyOpened, 5),
+      `entitled=${personallyOpened.entitledWeek} visible=${personallyOpened.visibleWeek}`,
+    );
+
+    const bobProgress = await getCampProgress(BOB, camp.id, camp.weekCount);
+    check(
+      "Alice'in suresi Bob'un ilerlemesini degistirmedi",
+      bobProgress.entitledWeek === 0 && !canSeeWeek(bobProgress, 1),
+      `bobEntitled=${bobProgress.entitledWeek}`,
+    );
 
     /* Kamp hafta sayisinin disina isaretleme reddedilmeli */
     const outOfRange = await (

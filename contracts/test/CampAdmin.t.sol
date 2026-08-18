@@ -86,6 +86,10 @@ contract CampAdminTest is BaseTest {
         badges.createCamp("Kamp", 0);
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                 KAMP SORGULARI
+    //////////////////////////////////////////////////////////////////////////*/
+
     function test_GetCamp_RevertsOnUnknownCamp() public {
         vm.expectRevert(abi.encodeWithSelector(CampNotFound.selector, 99));
         badges.getCamp(99);
@@ -107,7 +111,7 @@ contract CampAdminTest is BaseTest {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                 KAMP GÜNCELLEME
+                                  KAMP ADI
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Kamp adı değiştirilebilir olmalı — kamplar her dönem tekrarlanan,
@@ -141,6 +145,10 @@ contract CampAdminTest is BaseTest {
         badges.setCampName(devCampId, "Ele Gecirildi");
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                HAFTA SAYISI
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @dev GENİŞLETİLEBİLİRLİĞİN İKİNCİ KANITI: 15 hafta → 18 hafta.
     function test_SetCampWeekCount_CanIncrease() public {
         vm.prank(owner);
@@ -173,6 +181,16 @@ contract CampAdminTest is BaseTest {
         badges.setCampWeekCount(devCampId, DEV_WEEKS);
         assertEq(badges.getCamp(devCampId).weekCount, DEV_WEEKS);
     }
+
+    function test_SetCampWeekCount_RevertsOnZero() public {
+        vm.prank(owner);
+        vm.expectRevert(WeekCountZero.selector);
+        badges.setCampWeekCount(devCampId, 0);
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                KAMP AKTİFLİĞİ
+    //////////////////////////////////////////////////////////////////////////*/
 
     function test_SetCampActive_Toggle() public {
         vm.startPrank(owner);
@@ -222,12 +240,6 @@ contract CampAdminTest is BaseTest {
         uint256 tooBig = uint256(type(uint240).max) + 1;
         vm.expectRevert(abi.encodeWithSelector(InvalidTokenIdInput.selector, tooBig, 1));
         badges.encodeTokenId(tooBig, 1);
-    }
-
-    function test_SetCampWeekCount_RevertsOnZero() public {
-        vm.prank(owner);
-        vm.expectRevert(WeekCountZero.selector);
-        badges.setCampWeekCount(devCampId, 0);
     }
 
     /// @dev Kodlama ve çözme her zaman birbirinin tersi olmalı.

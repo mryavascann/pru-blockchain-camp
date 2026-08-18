@@ -212,11 +212,10 @@ function lockCopy(
           (opening && opening.remaining
             ? `Bu haftanın planlanan açılışı ${formatOpeningDate(opening.date)} ` +
               `(yaklaşık ${opening.remaining} sonra). ` +
-              "Kulüp yöneticisi haftayı açtığında burada görünür olacak."
+              "Süre dolduğunda yalnızca senin için burada görünür olacak."
             : opening
-              ? "Planlanan açılış tarihi geçti; kulüp yöneticisi haftayı " +
-                "açtığında burada görünür olacak."
-              : "Kamp bu haftaya geldiğinde kulüp yöneticisi açacak."),
+              ? "Açılış süresi doldu; sayfayı yenilediğinde hafta görünür olacak."
+              : "Kamp bu haftaya geldiğinde açılacak."),
         cta: "Ortak notları oku",
         href: `/kamplar/${campSlug}/notlar`,
       };

@@ -20,6 +20,7 @@ import {NoteCard, type NoteView} from "@/components/notes/NoteCard";
 import {NoteComposer, type ComposerResult} from "@/components/notes/NoteComposer";
 import {NotesGuide} from "@/components/notes/NotesGuide";
 import {NOTE_KIND_LIST, type NoteKind} from "@/lib/notes/rules";
+import {formatRemaining} from "@/lib/notes/schedule";
 
 type Progress = {
   entitledWeek: number;
@@ -28,6 +29,7 @@ type Progress = {
   owedWeeks: number[];
   notedWeeks: number[];
   blockingWeek: number | null;
+  nextWeekAt: string | null;
 };
 
 export function NotesBoard({
@@ -60,6 +62,7 @@ export function NotesBoard({
   >(null);
 
   const [flash, setFlash] = useState<string | null>(null);
+  const [nextWeekAt, setNextWeekAt] = useState(progress.nextWeekAt);
 
   const visibleWeeks = Array.from(
     {length: progress.visibleWeek},
@@ -96,11 +99,20 @@ export function NotesBoard({
     });
 
     const opened = result.unlocked?.openedWeek ?? null;
+    const nextOpening = result.unlocked?.nextWeekAt ?? null;
+    setNextWeekAt(nextOpening);
+    const remaining = nextOpening
+      ? formatRemaining(new Date(nextOpening))
+      : null;
     setFlash(
       opened
         ? `Notun kaydedildi. ${opened}. hafta açıldı ve ${saved.weekNumber}. haftanın rozeti artık alınabilir.`
         : result.unlocked
-          ? `Notun kaydedildi. ${saved.weekNumber}. haftanın rozeti artık alınabilir.`
+          ? `Notun kaydedildi. ${saved.weekNumber}. haftanın rozeti artık alınabilir.${
+              remaining
+                ? ` Sonraki haftanın kişisel açılışına yaklaşık ${remaining} var.`
+                : ""
+            }`
           : "Notun güncellendi.",
     );
 
@@ -145,6 +157,36 @@ export function NotesBoard({
           </div>
         </Card>
       )}
+
+      {progress.owedWeeks.length === 0 &&
+        progress.entitledWeek < weekCount &&
+        nextWeekAt &&
+        !composer && (
+          <Card>
+            <p className="font-bold">
+              ✓ {progress.entitledWeek}. hafta notun tamamlandı
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-fg-secondary">
+              {formatRemaining(new Date(nextWeekAt)) ? (
+                <>
+                  {progress.entitledWeek + 1}. haftanın planlanan açılışına
+                  yaklaşık{" "}
+                  <strong className="text-fg">
+                    {formatRemaining(new Date(nextWeekAt))}
+                  </strong>{" "}
+                  var.
+                </>
+              ) : (
+                <>
+                  Süre doldu; sayfayı yenilediğinde {progress.entitledWeek + 1}.
+                  hafta açılacak.
+                </>
+              )}{" "}
+              Yeni bir not eklemen gerekmiyor. Bu sayaç yalnızca bu cüzdanın
+              bu kamptaki ilerlemesine aittir; diğer katılımcıları etkilemez.
+            </p>
+          </Card>
+        )}
 
       {flash && (
         <p

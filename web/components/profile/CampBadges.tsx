@@ -27,6 +27,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
 
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 
 import {Button} from "@/components/ui/Button";
 import {Card, Pill} from "@/components/ui/Card";
@@ -76,6 +77,7 @@ export function CampBadges({
   /** Zincirden okunmuş ilerleme (sunucuda hesaplandı) */
   progress: boolean[];
 }) {
+  const router = useRouter();
   const [justClaimed, setJustClaimed] = useState<number[]>([]);
   /** Not formu açık mı — hangi hafta için */
   const [writingFor, setWritingFor] = useState<number | null>(null);
@@ -249,6 +251,7 @@ export function CampBadges({
                      * açıyoruz.
                      */
                     proofs.refetch();
+                    router.refresh();
                   }}
                 />
 

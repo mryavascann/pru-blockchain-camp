@@ -183,7 +183,7 @@ contract PruCampBadges is
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            KULLANICI İŞLEMLERİ
+                             KULLANICI — NICK
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Nick belirler veya değiştirir.
@@ -193,6 +193,10 @@ contract PruCampBadges is
     function registerNickname(string calldata nickname) external whenNotPaused {
         _setNickname(_msgSender(), nickname);
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                         KULLANICI — ROZET ALIMI
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Tek bir haftanın rozetini alır.
     /// @param campId Kamp kimliği
@@ -253,7 +257,7 @@ contract PruCampBadges is
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                              YÖNETİCİ İŞLEMLERİ
+                           YÖNETİCİ — KAMPLAR
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Yeni bir kamp oluşturur.
@@ -287,6 +291,10 @@ contract PruCampBadges is
         _setCampActive(campId, active);
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                        YÖNETİCİ — MERKLE ROOT'LARI
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @notice Bir (kamp, hafta) için merkle root yazar veya günceller.
     function setMerkleRoot(uint256 campId, uint256 week, bytes32 root) external onlyOwner {
         _requireValidWeek(campId, week);
@@ -310,6 +318,10 @@ contract PruCampBadges is
             _setMerkleRoot(campId, weekNumbers[i], roots[i]);
         }
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                         YÖNETİCİ — ROZET DÜZELTME
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Yanlış basılmış bir rozeti yakar.
     /// @dev SADECE basımdan sonraki 7 gün içinde mümkündür (`BURN_WINDOW`).
@@ -337,6 +349,10 @@ contract PruCampBadges is
         emit BadgeBurned(account, campId, week, tokenId);
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                         YÖNETİCİ — ACİL DURUM
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @notice Yeni rozet basımını durdurur.
     /// @dev Mevcut rozetleri etkilemez; yalnızca `claim*` ve `registerNickname`
     ///      çağrılarını bloklar. `adminBurn` duraklatma sırasında da çalışır.
@@ -348,6 +364,10 @@ contract PruCampBadges is
     function unpause() external onlyOwner {
         _unpause();
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                           YÖNETİCİ — METADATA
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Metadata taban URI'sini değiştirir.
     /// @param newURI "{id}" yer tutucusunu İÇERMELİDİR.
@@ -378,6 +398,20 @@ contract PruCampBadges is
         _metadataFrozen = true;
         emit MetadataFrozen();
     }
+
+    /// @notice Koleksiyon seviyesi metadata URI'si (OpenSea standardı).
+    function contractURI() external view returns (string memory) {
+        return _contractURI;
+    }
+
+    /// @notice Metadata dondurulmuş mu?
+    function isMetadataFrozen() external view returns (bool) {
+        return _metadataFrozen;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                          YÖNETİCİ — SAHİPLİK
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Sahiplikten feragat DEVRE DIŞI.
     /// @dev Bu kontratta feragat etmek kampı geri dönülemez şekilde öldürür:
@@ -433,18 +467,8 @@ contract PruCampBadges is
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                 GÖRÜNÜMLER
+                           ROZET İLERLEME GÖRÜNÜMLERİ
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Koleksiyon seviyesi metadata URI'si (OpenSea standardı).
-    function contractURI() external view returns (string memory) {
-        return _contractURI;
-    }
-
-    /// @notice Metadata dondurulmuş mu?
-    function isMetadataFrozen() external view returns (bool) {
-        return _metadataFrozen;
-    }
 
     /// @notice Bir kullanıcının bir kamptaki ilerlemesini döner.
     /// @return owned Uzunluğu kampın hafta sayısı kadar olan dizi;

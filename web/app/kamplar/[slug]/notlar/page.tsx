@@ -150,6 +150,7 @@ export default async function NotesPage({params, searchParams}: Props) {
             owedWeeks: progress.owedWeeks,
             notedWeeks: progress.notedWeeks,
             blockingWeek: progress.blockingWeek,
+            nextWeekAt: progress.nextWeekAt?.toISOString() ?? null,
           }}
         />
 

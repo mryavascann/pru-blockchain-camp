@@ -282,6 +282,10 @@ export const getWeekForViewer = cache(async function getWeekForViewer(
           }
         : lock,
       camp.startDate,
+      lock.kind === "not-reached" &&
+        weekNumber === progress.entitledWeek + 1
+        ? progress.nextWeekAt
+        : null,
     );
   }
 
@@ -330,6 +334,7 @@ async function lockedResult(
   weekNumber: number,
   reason: LockReason,
   campStartDate: Date | null = null,
+  fallbackOpeningDate: Date | null = null,
 ): Promise<WeekAccess | null> {
   const week = await db.week.findUnique({
     where: {campId_weekNumber: {campId, weekNumber}},
@@ -348,7 +353,13 @@ async function lockedResult(
     reason.kind === "not-reached"
       ? {
           ...reason,
-          opening: openingInfo(campStartDate, week.publishDate, weekNumber),
+          opening: openingInfo(
+            campStartDate,
+            week.publishDate,
+            weekNumber,
+            new Date(),
+            fallbackOpeningDate,
+          ),
         }
       : reason;
 

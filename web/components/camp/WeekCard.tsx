@@ -40,8 +40,8 @@ export function WeekCard({
         kind: "not-reached";
         /** Hâlâ bekleyen not borcu (yoksa null) */
         owedWeek: number | null;
-        /** "6 gün 11 saat" — planlanan açılışa kalan süre (bilinmiyorsa null) */
-        remaining: string | null;
+        /** Planlanan açılış ve kalan süre (bilinmiyorsa null) */
+        opening: {remaining: string | null; overdue: boolean} | null;
       }
     | {kind: "note-required"; blockingWeek: number};
 }) {
@@ -109,9 +109,11 @@ export function WeekCard({
           <p className="mt-3 text-xs text-fg-muted">
             {lock.owedWeek !== null
               ? `Önce ${lock.owedWeek}. haftanın notunu bırak.`
-              : lock.remaining
-                ? `Planlanan açılışa ~${lock.remaining} var.`
-                : "Bu haftaya henüz gelmedin."}
+              : lock.opening?.remaining
+                ? `✓ Not tamamlandı · kişisel açılışına ~${lock.opening.remaining} var.`
+                : lock.opening?.overdue
+                  ? "✓ Not tamamlandı · sayfayı yenilediğinde hafta açılacak."
+                  : "Bu haftaya henüz gelmedin; senden beklenen bir not yok."}
           </p>
         )}
 
@@ -126,6 +128,8 @@ export function WeekCard({
             ? t.camp.viewWeek
             : lock?.kind === "note-required"
               ? "Not bırak"
+              : lock?.kind === "not-reached"
+                ? "Açılış durumunu gör"
               : lock
                 ? "Müfredatı gör"
                 : t.camp.continue}{" "}

@@ -67,6 +67,7 @@ type WalletContextValue = {
   wallets: BrowserWallet[];
   hasWallet: boolean;
   connect: (wallet?: BrowserWallet) => Promise<{address: Address; chainId: number}>;
+  selectAccount: () => Promise<{address: Address; chainId: number}>;
   disconnect: () => void;
   switchToExpectedChain: () => Promise<number>;
   signMessage: (message: string, account?: Address) => Promise<Hash>;
@@ -252,6 +253,60 @@ export function WalletProvider({children}: {children: ReactNode}) {
     [setConnection],
   );
 
+  /**
+   * Kullanıcının açıkça "Cüzdanı değiştir" eylemine basmasıyla mevcut
+   * sağlayıcının hesap izin penceresini yeniden açar.
+   *
+   * `eth_requestAccounts` daha önce izin verilmişse seçiciyi göstermeden
+   * mevcut hesabı döndürür. EIP-2255 `wallet_requestPermissions` çağrısı ise
+   * MetaMask masaüstünde hesap seçimini yeniden açar. Normal `connect` akışı
+   * bundan etkilenmez; hızlı tek tık davranışı korunur.
+   */
+  const selectAccount = useCallback(async () => {
+    const wallet =
+      connectionRef.current?.wallet ?? orderWallets(walletsRef.current)[0];
+    if (!wallet) {
+      throw new Error(
+        "Tarayıcında cüzdan bulunamadı. MetaMask kurup tekrar deneyebilirsin.",
+      );
+    }
+
+    try {
+      await wallet.provider.request({
+        method: "wallet_requestPermissions",
+        params: [{eth_accounts: {}}],
+      });
+    } catch (error) {
+      const code = (error as {code?: number}).code;
+      if (code === 4001) throw error;
+      if (code === 4200 || code === -32601) {
+        throw new Error(
+          "Bu cüzdan hesap seçme penceresini desteklemiyor. Hesabı cüzdan uygulamasından değiştirip tekrar deneyebilirsin.",
+        );
+      }
+      throw error;
+    }
+
+    const accounts = (await wallet.provider.request({
+      method: "eth_accounts",
+    })) as string[];
+    if (!accounts[0]) throw new Error("Cüzdandan hesap alınamadı.");
+
+    const chainHex = (await wallet.provider.request({
+      method: "eth_chainId",
+    })) as string;
+    const next = {
+      wallet,
+      address: getAddress(accounts[0]),
+      chainId: Number(chainHex),
+    };
+
+    window.localStorage.removeItem(DISCONNECTED_KEY);
+    window.localStorage.setItem(LAST_WALLET_KEY, wallet.info.uuid);
+    setConnection(next);
+    return {address: next.address, chainId: next.chainId};
+  }, [setConnection]);
+
   const disconnect = useCallback(() => {
     window.localStorage.setItem(DISCONNECTED_KEY, "1");
     setConnection(null);
@@ -342,6 +397,7 @@ export function WalletProvider({children}: {children: ReactNode}) {
     wallets,
     hasWallet: wallets.length > 0,
     connect,
+    selectAccount,
     disconnect,
     switchToExpectedChain,
     signMessage,

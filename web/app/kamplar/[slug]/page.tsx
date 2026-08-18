@@ -199,7 +199,11 @@ function cardLock(
   weekPublishDate: Date | null,
 ):
   | {kind: "not-approved"}
-  | {kind: "not-reached"; owedWeek: number | null; remaining: string | null}
+  | {
+      kind: "not-reached";
+      owedWeek: number | null;
+      opening: ReturnType<typeof openingInfo>;
+    }
   | {kind: "note-required"; blockingWeek: number}
   | undefined {
   const lock = weekLock(campProgress, weekNumber);
@@ -210,11 +214,21 @@ function cardLock(
     case "not-approved":
       return {kind: "not-approved"};
     case "not-reached": {
-      const opening = openingInfo(campStartDate, weekPublishDate, weekNumber);
+      const personalEstimate =
+        weekNumber === campProgress.entitledWeek + 1
+          ? campProgress.nextWeekAt
+          : null;
+      const opening = openingInfo(
+        campStartDate,
+        weekPublishDate,
+        weekNumber,
+        new Date(),
+        personalEstimate,
+      );
       return {
         kind: "not-reached",
         owedWeek: campProgress.blockingWeek,
-        remaining: opening?.remaining ?? null,
+        opening,
       };
     }
     case "note-required":

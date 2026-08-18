@@ -15,6 +15,8 @@
   },
   "wallet": {
     "connect": "Cüzdanını Bağla",
+    "change": "Cüzdanı Değiştir",
+    "changing": "Cüzdan seçiliyor…",
     "connecting": "Bağlanıyor…",
     "disconnect": "Bağlantıyı Kes",
     "signingIn": "Cüzdanında onayla…",
@@ -32,6 +34,7 @@
   "auth": {
     "sessionExpired": "Oturumun sona erdi. Tekrar giriş yapman gerekiyor.",
     "signInRejected": "İmzayı iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
+    "changeWalletRejected": "Cüzdan değiştirmeyi iptal ettin. Mevcut oturumun açık kalmaya devam ediyor.",
     "signInFailed": "Giriş yapılamadı. Lütfen tekrar dene."
   },
   "camp": {
