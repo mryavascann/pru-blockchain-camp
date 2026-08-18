@@ -16,6 +16,7 @@ import {readAllCamps, readPaused} from "@/lib/chain/client";
 import {isAdminViewer} from "@/lib/auth/adminPage";
 import {isNotionConfigured} from "@/lib/env";
 import {contractAddress, explorerAddressUrl, activeChain} from "@/lib/chain/config";
+import {referralLabel} from "@/lib/participant";
 import {t} from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +25,40 @@ export default async function AdminOverviewPage() {
   /* ⚠️ VERİ ÇEKMEDEN ÖNCE. Layout'taki kontrol yetmez — bkz. lib/auth/adminPage.ts */
   if (!(await isAdminViewer())) return null;
 
-  const [pendingApplications, failedWeeks, missingTeasers, lastSync, camps] =
-    await Promise.all([
-      db.application.count({where: {status: "PENDING"}}),
-      db.week.count({where: {syncStatus: "FAILED"}}),
-      db.week.count({where: {teaser: "", status: "PUBLISHED"}}),
-      db.syncRun.findFirst({orderBy: {startedAt: "desc"}}),
-      db.camp.findMany({orderBy: {displayOrder: "asc"}}),
-    ]);
+  const [
+    pendingApplications,
+    failedWeeks,
+    missingTeasers,
+    lastSync,
+    camps,
+    referralGroups,
+    universityGroups,
+    participantCount,
+  ] = await Promise.all([
+    db.application.count({where: {status: "PENDING"}}),
+    db.week.count({where: {syncStatus: "FAILED"}}),
+    db.week.count({where: {teaser: "", status: "PUBLISHED"}}),
+    db.syncRun.findFirst({orderBy: {startedAt: "desc"}}),
+    db.camp.findMany({orderBy: {displayOrder: "asc"}}),
+    /*
+     * "Siteyi nereden duydun" dağılımı.
+     *
+     * Sabit seçenek listesi kullanmamızın karşılığı burada görülüyor: cevaplar
+     * gruplanabiliyor. Serbest metin olsaydı "instagram" / "Instagram" / "insta"
+     * ayrı satırlar olur ve bu tablo işe yaramazdı.
+     */
+    db.participant.groupBy({
+      by: ["referralSource"],
+      _count: true,
+      where: {referralSource: {not: null}},
+    }),
+    db.participant.groupBy({
+      by: ["university"],
+      _count: true,
+      where: {university: {not: null}},
+    }),
+    db.participant.count(),
+  ]);
 
   /* Zincir durumu — RPC düşerse panel yine açılsın */
   const onChain = await readAllCamps().catch(() => null);
@@ -174,6 +201,44 @@ export default async function AdminOverviewPage() {
         </div>
       </Card>
 
+      {/* ---------------- Katılımcı dağılımı ---------------- */}
+      {participantCount > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <h2 className="text-lg font-bold tracking-tight">
+              {t.admin.referralBreakdown}
+            </h2>
+            <p className="mt-1 text-sm text-fg-secondary">
+              {participantCount} katılımcı profil doldurdu
+            </p>
+            <Breakdown
+              rows={referralGroups
+                .map((g) => ({
+                  label: referralLabel(g.referralSource),
+                  count: g._count,
+                }))
+                .sort((a, b) => b.count - a.count)}
+              total={participantCount}
+            />
+          </Card>
+
+          <Card>
+            <h2 className="text-lg font-bold tracking-tight">
+              {t.admin.universityBreakdown}
+            </h2>
+            <p className="mt-1 text-sm text-fg-secondary">
+              Katılımcıların geldiği kurumlar
+            </p>
+            <Breakdown
+              rows={universityGroups
+                .map((g) => ({label: g.university ?? "—", count: g._count}))
+                .sort((a, b) => b.count - a.count)}
+              total={participantCount}
+            />
+          </Card>
+        </div>
+      )}
+
       {/* ---------------- Kontrat ---------------- */}
       <Card>
         <h2 className="text-lg font-bold tracking-tight">Kontrat</h2>
@@ -208,6 +273,55 @@ export default async function AdminOverviewPage() {
         </dl>
       </Card>
     </div>
+  );
+}
+
+/**
+ * Basit dağılım listesi — sayı + oran çubuğu.
+ *
+ * Grafik kütüphanesi kullanmıyoruz: birkaç satırlık bir dağılım için
+ * onlarca kilobaytlık bir bağımlılık taşımak orantısız olurdu. Oran çubuğu
+ * tek bir div genişliğiyle çiziliyor.
+ */
+function Breakdown({
+  rows,
+  total,
+}: {
+  rows: {label: string; count: number}[];
+  total: number;
+}) {
+  if (rows.length === 0) {
+    return (
+      <p className="mt-4 text-sm text-fg-muted">Henüz veri yok.</p>
+    );
+  }
+
+  return (
+    <ul className="mt-4 flex flex-col gap-2.5">
+      {rows.map((row) => {
+        const percent = total > 0 ? Math.round((row.count / total) * 100) : 0;
+        return (
+          <li key={row.label}>
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="truncate">{row.label}</span>
+              <span className="shrink-0 tabular-nums text-fg-secondary">
+                {row.count}
+                <span className="ml-1 text-xs text-fg-muted">%{percent}</span>
+              </span>
+            </div>
+            <div
+              className="mt-1 h-1.5 overflow-hidden rounded-full bg-subtle"
+              role="presentation"
+            >
+              <div
+                className="h-full rounded-full bg-accent"
+                style={{width: `${Math.max(percent, 2)}%`}}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

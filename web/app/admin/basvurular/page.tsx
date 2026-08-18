@@ -23,6 +23,26 @@ export default async function ApplicationsPage() {
   const grouped = await db.application.groupBy({by: ["status"], _count: true});
   const counts = Object.fromEntries(grouped.map((g) => [g.status, g._count]));
 
+  /*
+   * Katılımcı profilleri (üniversite + siteyi nereden duydu).
+   *
+   * `Participant` ile `Application` arasında Prisma ilişkisi YOK — ikisi de
+   * adrese bağlı ama farklı yaşam döngüleri var (profil kişiye ait, başvuru
+   * kampa). Bu yüzden ayrı çekip kodda eşleştiriyoruz. Tek sorgu, sonra
+   * bellekte Map — başvuru başına ayrı sorgu atmıyoruz.
+   */
+  const addresses = [...new Set(applications.map((a) => a.address))];
+  const participants = await db.participant.findMany({
+    where: {address: {in: addresses}},
+    select: {
+      address: true,
+      university: true,
+      referralSource: true,
+      referralDetail: true,
+    },
+  });
+  const profileByAddress = new Map(participants.map((p) => [p.address, p]));
+
   return (
     <ApplicationQueue
       counts={counts}
@@ -37,6 +57,7 @@ export default async function ApplicationsPage() {
         // Date nesnesi istemci bileşenine serileştirilerek geçer
         createdAt: application.createdAt.toISOString(),
         camp: application.camp,
+        profile: profileByAddress.get(application.address) ?? null,
       }))}
     />
   );

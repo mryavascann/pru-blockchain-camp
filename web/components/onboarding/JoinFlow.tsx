@@ -16,6 +16,7 @@
  * ============================================================================
  */
 import {useState} from "react";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useAccount} from "wagmi";
 
 import {Button} from "@/components/ui/Button";
@@ -27,6 +28,13 @@ import {contractAddress} from "@/lib/chain/config";
 import {useAuth} from "@/lib/hooks/useAuth";
 import {useTransaction} from "@/lib/hooks/useTransaction";
 import {checkNickname} from "@/lib/nickname";
+import {
+  REFERRAL_OPTIONS,
+  UNIVERSITY_OPTIONS,
+  PRIMARY_UNIVERSITY,
+  isProfileComplete,
+  type ParticipantProfile,
+} from "@/lib/participant";
 import {t} from "@/lib/i18n";
 
 type Camp = {
@@ -43,6 +51,23 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
 
   const signedIn = Boolean(session?.address) && !needsSignIn;
   const hasNickname = Boolean(session?.hasNickname);
+
+  /*
+   * Profil (üniversite + siteyi nereden duydu) zincir dışı, KİŞİ BAZLI bir
+   * kayıt. Oturum açılmadan istek bile atılmıyor.
+   */
+  const profileQuery = useQuery({
+    queryKey: ["participant"],
+    queryFn: async (): Promise<ParticipantProfile> => {
+      const response = await fetch("/api/participant", {cache: "no-store"});
+      const json = await response.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data.profile;
+    },
+    enabled: signedIn,
+  });
+
+  const profileDone = isProfileComplete(profileQuery.data ?? null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,9 +101,21 @@ export function JoinFlow({camps}: {camps: Camp[]}) {
 
       <Step
         index={3}
+        title={t.onboarding.step2b}
+        done={profileDone}
+        active={signedIn && hasNickname && !profileDone}
+      >
+        <ProfileStep
+          initial={profileQuery.data ?? null}
+          onDone={() => void profileQuery.refetch()}
+        />
+      </Step>
+
+      <Step
+        index={4}
         title={t.onboarding.step3}
         done={false}
-        active={signedIn && hasNickname}
+        active={signedIn && hasNickname && profileDone}
       >
         <ApplicationStep camps={camps} />
       </Step>
@@ -239,7 +276,175 @@ function NicknameStep({onDone}: {onDone: () => void}) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                          3. ADIM — HAFTA BEYANI                            */
+/*                        3. ADIM — KENDİNİ TANIT                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Üniversite ve "bu siteyi nereden duydun" bilgisi.
+ *
+ * ZİNCİR DIŞI ve KİŞİ BAZLI: adrese bağlı tek bir kayıt. Kullanıcı ikinci bir
+ * kampa başvurduğunda bu adım zaten tamamlanmış görünür ve tekrar sorulmaz.
+ *
+ * Bu bilgiler sıralamada veya profilde GÖRÜNMEZ — yalnızca kulüp yönetimi
+ * görür. Kullanıcıya da bu açıkça söyleniyor; ne toplandığını bilmeden veri
+ * vermek istemez.
+ */
+function ProfileStep({
+  initial,
+  onDone,
+}: {
+  initial: ParticipantProfile | null;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+
+  /* Kayıtlı üniversite listede yoksa "Diğer" seçilmiş demektir */
+  const savedIsOther =
+    Boolean(initial?.university) && initial!.university !== PRIMARY_UNIVERSITY;
+
+  const [universityChoice, setUniversityChoice] = useState(
+    savedIsOther ? "Diğer" : (initial?.university ?? ""),
+  );
+  const [universityOther, setUniversityOther] = useState(
+    savedIsOther ? (initial!.university ?? "") : "",
+  );
+  const [referral, setReferral] = useState(initial?.referralSource ?? "");
+  const [referralDetail, setReferralDetail] = useState(
+    initial?.referralDetail ?? "",
+  );
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const isOtherUniversity = universityChoice === "Diğer";
+  const isOtherReferral = referral === "other";
+
+  const university = isOtherUniversity ? universityOther.trim() : universityChoice;
+  const valid =
+    university.length > 0 &&
+    referral.length > 0 &&
+    (!isOtherReferral || referralDetail.trim().length > 0);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/participant", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          university,
+          referralSource: referral,
+          referralDetail: isOtherReferral ? referralDetail.trim() : undefined,
+        }),
+      });
+      const json = await response.json();
+
+      if (json.ok) {
+        setSaved(true);
+        queryClient.setQueryData(["participant"], json.data.profile);
+        onDone();
+      } else {
+        setError(json.error ?? t.errors.unknown);
+      }
+    } catch {
+      setError(t.errors.network);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fieldClass =
+    "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <label className="block">
+        <span className="mb-1 block text-sm font-semibold">
+          {t.onboarding.universityLabel}
+        </span>
+        <select
+          value={universityChoice}
+          onChange={(event) => setUniversityChoice(event.target.value)}
+          className={fieldClass}
+        >
+          <option value="">{t.onboarding.selectPlaceholder}</option>
+          {UNIVERSITY_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {isOtherUniversity && (
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold">
+            {t.onboarding.universityOtherLabel}
+          </span>
+          <input
+            type="text"
+            value={universityOther}
+            onChange={(event) => setUniversityOther(event.target.value)}
+            placeholder={t.onboarding.universityOtherPlaceholder}
+            maxLength={120}
+            className={fieldClass}
+          />
+        </label>
+      )}
+
+      <label className="block">
+        <span className="mb-1 block text-sm font-semibold">
+          {t.onboarding.referralLabel}
+        </span>
+        <select
+          value={referral}
+          onChange={(event) => setReferral(event.target.value)}
+          className={fieldClass}
+        >
+          <option value="">{t.onboarding.selectPlaceholder}</option>
+          {REFERRAL_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {isOtherReferral && (
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold">
+            {t.onboarding.referralDetailLabel}
+          </span>
+          <input
+            type="text"
+            value={referralDetail}
+            onChange={(event) => setReferralDetail(event.target.value)}
+            placeholder={t.onboarding.referralDetailPlaceholder}
+            maxLength={200}
+            className={fieldClass}
+          />
+        </label>
+      )}
+
+      <p className="text-xs text-fg-muted">{t.onboarding.profileHelp}</p>
+
+      <Button variant="accent" loading={busy} disabled={!valid} onClick={submit}>
+        {saved ? t.onboarding.profileSaved : t.common.save}
+      </Button>
+
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          4. ADIM — HAFTA BEYANI                            */
 /* -------------------------------------------------------------------------- */
 
 function ApplicationStep({camps}: {camps: Camp[]}) {

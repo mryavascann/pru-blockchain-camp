@@ -373,3 +373,40 @@ model SyncRun {
 
   @@index([startedAt])
 }
+
+// ============================================================================
+//                            KATILIMCI PROFİLİ
+// ============================================================================
+
+/// Katılımcının kendisi hakkında verdiği, zincir dışı bilgiler.
+///
+/// NEDEN `Application` İÇİNDE DEĞİL, AYRI BİR MODEL:
+/// Bir kişi birden fazla kampa başvurabilir (Faz 0 şartı). Üniversite ve
+/// "siteyi nereden duydun" bilgileri KİŞİYE ait; başvuruya değil. Application
+/// içinde tutulsaydı aynı sorular her başvuruda tekrar sorulur ve iki farklı
+/// cevap kaydedilebilirdi.
+///
+/// Adres birincil anahtar: zincirdeki kimlik neyse, buradaki kayıt da ona bağlı.
+model Participant {
+  /// Cüzdan adresi — HER ZAMAN KÜÇÜK HARF (bkz. Application.address)
+  address String @id
+
+  /// Katılımcının üniversitesi.
+  /// Listeden seçilirse o değer, "Diğer" seçilirse yazdığı metin saklanır.
+  university String?
+
+  /// Siteyi nereden duyduğu — SABİT seçeneklerden biri.
+  /// Gruplayarak sayabilmek için ayrı tutuluyor (admin panelinde dağılım
+  /// gösteriliyor); serbest metin olsaydı "instagram" / "Instagram" / "insta"
+  /// üç ayrı satır olurdu.
+  referralSource String?
+
+  /// "Diğer" seçildiğinde yazdığı açıklama
+  referralDetail String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referralSource])
+  @@index([university])
+}

@@ -5,7 +5,6 @@
     "university": "Piri Reis Üniversitesi",
     "tagline": "Kamp programlarını tamamla, devredilemez rozetini zincirde topla."
   },
-
   "nav": {
     "home": "Ana Sayfa",
     "camps": "Kamplar",
@@ -14,7 +13,6 @@
     "admin": "Yönetim",
     "join": "Katıl"
   },
-
   "wallet": {
     "connect": "Cüzdanını Bağla",
     "connecting": "Bağlanıyor…",
@@ -32,13 +30,11 @@
     "copied": "Kopyalandı",
     "viewOnExplorer": "Blok gezgininde aç"
   },
-
   "auth": {
     "sessionExpired": "Oturumun sona erdi. Tekrar giriş yapman gerekiyor.",
     "signInRejected": "İmzayı iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
     "signInFailed": "Giriş yapılamadı. Lütfen tekrar dene."
   },
-
   "camp": {
     "weeks": "hafta",
     "weekLabel": "Hafta {n}",
@@ -51,7 +47,6 @@
     "progressOf": "{done} / {total}",
     "noWeeksYet": "Bu kampın içeriği henüz yayınlanmadı."
   },
-
   "locked": {
     "title": "Kamp katılımcılarına özel",
     "noSession": {
@@ -64,7 +59,6 @@
     },
     "sampleLink": "Örnek haftayı incele"
   },
-
   "onboarding": {
     "title": "Kampa Katıl",
     "step1": "Cüzdanını bağla",
@@ -85,9 +79,18 @@
     "submit": "Başvuruyu Gönder",
     "submitting": "Gönderiliyor…",
     "submitted": "Başvurun alındı",
-    "submittedHelp": "Kulüp yöneticisi başvurunu inceleyecek. Onaylandığında profilinden rozetlerini alabileceksin."
+    "submittedHelp": "Kulüp yöneticisi başvurunu inceleyecek. Onaylandığında profilinden rozetlerini alabileceksin.",
+    "step2b": "Kendini tanıt",
+    "universityLabel": "Hangi üniversitedensin?",
+    "universityOtherLabel": "Üniversitenin adı",
+    "universityOtherPlaceholder": "Örn. İstanbul Teknik Üniversitesi",
+    "referralLabel": "Bu siteyi nereden duydun?",
+    "referralDetailLabel": "Kısaca yazar mısın?",
+    "referralDetailPlaceholder": "Örn. bölüm hocamız derste bahsetti",
+    "profileHelp": "Bu bilgiler yalnızca kulüp yönetimince görülür; sıralamada veya profilinde görünmez.",
+    "profileSaved": "Bilgilerin kaydedildi",
+    "selectPlaceholder": "Seç…"
   },
-
   "profile": {
     "title": "Profilim",
     "noNickname": "Henüz nick belirlemedin",
@@ -104,7 +107,6 @@
     "applicationRejected": "Başvurun reddedildi",
     "applicationApproved": "Başvurun onaylandı"
   },
-
   "nickname": {
     "title": "Nick Belirle",
     "register": "Nicki Kaydet",
@@ -112,7 +114,6 @@
     "changeCooldown": "Nickini {date} tarihinden sonra değiştirebilirsin.",
     "current": "Mevcut nickin"
   },
-
   "leaderboard": {
     "title": "Sıralama",
     "subtitle": "Kamp katılımcılarının zincirdeki ilerlemesi",
@@ -123,7 +124,6 @@
     "empty": "Henüz kimse rozet almadı.",
     "updatedAt": "Son güncelleme: {time}"
   },
-
   "tx": {
     "idle": "Hazır",
     "awaitingSignature": "Cüzdanında onayla…",
@@ -133,7 +133,6 @@
     "viewTx": "İşlemi görüntüle",
     "retry": "Tekrar Dene"
   },
-
   "errors": {
     "insufficientFunds": "Cüzdanında işlem ücreti için yeterli ETH yok. Kulüpten test ETH talep edebilirsin.",
     "userRejected": "İşlemi iptal ettin. Hazır olduğunda tekrar deneyebilirsin.",
@@ -150,7 +149,6 @@
     "notFound": "Aradığın sayfa bulunamadı.",
     "forbidden": "Bu sayfa için yetkin yok."
   },
-
   "admin": {
     "title": "Yönetim Paneli",
     "applications": "Başvurular",
@@ -178,9 +176,14 @@
     "generateTrees": "Merkle Ağaçlarını Üret",
     "needsPublishing": "Zincire yazılması gereken",
     "publishCommand": "Zincire yazma komutu",
-    "warning": "Bu işlemin zincire yazılması senin cüzdanınla yapılır — sunucu imza atamaz."
+    "warning": "Bu işlemin zincire yazılması senin cüzdanınla yapılır — sunucu imza atamaz.",
+    "participant": "Katılımcı bilgisi",
+    "university": "Üniversite",
+    "referral": "Nereden duydu",
+    "referralBreakdown": "Siteyi nereden duydular",
+    "universityBreakdown": "Üniversite dağılımı",
+    "noProfile": "profil bilgisi yok"
   },
-
   "common": {
     "loading": "Yükleniyor…",
     "cancel": "Vazgeç",

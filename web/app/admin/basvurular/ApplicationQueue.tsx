@@ -23,6 +23,7 @@ import {useRouter} from "next/navigation";
 import {AddressChip} from "@/components/ui/Address";
 import {Button} from "@/components/ui/Button";
 import {Card, EmptyState, Pill} from "@/components/ui/Card";
+import {referralLabel} from "@/lib/participant";
 import {t} from "@/lib/i18n";
 
 type Application = {
@@ -35,6 +36,12 @@ type Application = {
   reviewNote: string | null;
   createdAt: string;
   camp: {id: number; slug: string; name: string; weekCount: number};
+  /** Katılımcının onboarding'de verdiği zincir dışı bilgiler */
+  profile: {
+    university: string | null;
+    referralSource: string | null;
+    referralDetail: string | null;
+  } | null;
 };
 
 export function ApplicationQueue({
@@ -198,8 +205,38 @@ function ApplicationRow({
         </Pill>
       </div>
 
+      {/* ---- Katılımcı bilgisi (onboarding'de verilen) ---- */}
+      <div className="mt-3 grid gap-2 rounded-md border border-line bg-subtle p-3 sm:grid-cols-2">
+        <div>
+          <p className="text-xs text-fg-muted">{t.admin.university}</p>
+          <p className="text-sm font-medium">
+            {application.profile?.university ?? (
+              <span className="text-fg-muted">{t.admin.noProfile}</span>
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-fg-muted">{t.admin.referral}</p>
+          <p className="text-sm font-medium">
+            {application.profile?.referralSource ? (
+              <>
+                {referralLabel(application.profile.referralSource)}
+                {application.profile.referralDetail && (
+                  <span className="text-fg-secondary">
+                    {" "}
+                    — {application.profile.referralDetail}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-fg-muted">{t.admin.noProfile}</span>
+            )}
+          </p>
+        </div>
+      </div>
+
       {/* ---- Beyan ---- */}
-      <div className="mt-4 rounded-md border border-line bg-subtle p-3">
+      <div className="mt-3 rounded-md border border-line bg-subtle p-3">
         <p className="text-sm">
           <span className="text-fg-muted">{t.admin.declaredWeek}:</span>{" "}
           <strong className="text-lg">{application.declaredWeek}</strong>
