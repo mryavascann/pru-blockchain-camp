@@ -15,8 +15,8 @@
  * Üç kavram var, karıştırılmamalı:
  *
  *   hakEdilenHafta (entitledWeek)
- *       Yöneticinin onayladığı en yüksek hafta. `WeeklyCompletion` tablosundan
- *       gelir. "Bu kişi buraya kadar geldi" demektir.
+ *       Yöneticinin onayladığı en yüksek haftadan başlar. Mevcut haftanın ilk
+ *       notunun üzerinden 7 gün geçtiğinde yalnızca o cüzdan için bir artar.
  *
  *   girişHaftası (entryWeek)
  *       Kişinin kampa katıldığı hafta (onaylı başvurudaki `declaredWeek`).
@@ -37,10 +37,10 @@
  *
  * Örnekle: giriş 3, hakEdilen 3, borç [3]
  *     → görünen 1-2-3 (borçlu hafta dahil), rozet 1-2 serbest, rozet 3 kapalı
- *   Hafta geçer, hakEdilen 4 olur, borç [3, 4]
- *     → görünen 1-2-3. Hafta 4 KAPALI, çünkü 3'ün notu yazılmadı.
- *   Kişi 3'ün notunu yazar, borç [4]
- *     → görünen 1-2-3-4, rozet 3 açılır. Hafta 5 için 4'ün notu gerekecek.
+ *   Kişi 3'ün notunu yazar
+ *     → 3. hafta rozeti açılır; 4. hafta için kişisel 7 günlük sayaç başlar.
+ *   Yedi gün geçer, hakEdilen 4 olur, borç [4]
+ *     → görünen 1-2-3-4. 4'ün notu yazılınca 5 için yeni sayaç başlar.
  * ---------------------------------------------------------------------------
  *
  * YÖNETİCİ İSTİSNASI: Admin her şeyi görür. İçeriği denetlemesi, eksik
@@ -52,7 +52,10 @@ import {db} from "@/lib/db";
 export type CampProgress = {
   campId: number;
 
-  /** Yöneticinin onayladığı en yüksek hafta. 0 = hiç onaylı hafta yok. */
+  /**
+   * Yöneticinin onayladığı veya kişisel 7 günlük süresi dolduğu için açılan
+   * en yüksek hafta. 0 = hiç onaylı hafta yok.
+   */
   entitledWeek: number;
 
   /**
@@ -75,10 +78,18 @@ export type CampProgress = {
   visibleWeek: number;
 
   /**
-   * Görünümü kilitleyen hafta (varsa). `visibleWeek + 1` bu haftanın notu
-   * yazılınca açılır. Yoksa null — kişi hak ettiği her haftayı görüyordur.
+   * Görünümü kilitleyen hafta (varsa). Bu haftanın notu yazılınca bir sonraki
+   * hafta için kişisel 7 günlük sayaç başlar. Yoksa null.
    */
   blockingWeek: number | null;
+
+  /**
+   * Bir sonraki haftanın kişiye özel açılışı.
+   *
+   * Mevcut haftanın ilk notunun üzerinden yedi gün hesaplanır. Süre dolunca
+   * yalnızca bu cüzdanın bu kamptaki bir sonraki haftası açılır.
+   */
+  nextWeekAt: Date | null;
 
   /** Yönetici mi? (her şeyi görür) */
   isAdmin: boolean;
@@ -94,6 +105,7 @@ function unrestricted(campId: number, weekCount: number): CampProgress {
     owedWeeks: [],
     visibleWeek: weekCount,
     blockingWeek: null,
+    nextWeekAt: null,
     isAdmin: true,
   };
 }
@@ -124,16 +136,18 @@ export async function getCampProgress(
       owedWeeks: [],
       visibleWeek: 0,
       blockingWeek: null,
+      nextWeekAt: null,
       isAdmin: false,
     };
   }
 
   const normalized = address.toLowerCase();
 
-  const [completionAgg, application, notes] = await Promise.all([
-    db.weeklyCompletion.aggregate({
+  const [latestCompletion, application, notes] = await Promise.all([
+    db.weeklyCompletion.findFirst({
       where: {address: normalized, campId},
-      _max: {weekNumber: true},
+      orderBy: {weekNumber: "desc"},
+      select: {weekNumber: true},
     }),
     db.application.findFirst({
       where: {address: normalized, campId, status: "APPROVED"},
@@ -141,24 +155,62 @@ export async function getCampProgress(
     }),
     db.weekNote.findMany({
       where: {address: normalized, campId},
-      select: {weekNumber: true},
-      distinct: ["weekNumber"],
+      select: {weekNumber: true, createdAt: true},
     }),
   ]);
 
-  const entitledWeek = Math.min(completionAgg._max.weekNumber ?? 0, weekCount);
+  const recordedWeek = Math.min(latestCompletion?.weekNumber ?? 0, weekCount);
 
   /*
-   * Onaylı başvuru yoksa hiçbir hafta borçlu sayılmaz.
-   *
-   * Bu durum normalde oluşmaz (tamamlama kayıtları onaydan doğar) ama elle
-   * eklenmiş bir kayıt varsa kişiyi yazamayacağı bir borçla kilitlemeyelim.
+   * Onaylı başvuru yoksa hiçbir hafta borçlu sayılmaz ve kişisel sayaç
+   * çalışmaz. Elle eklenmiş bir tamamlama kaydı erişimi yanlışlıkla büyütmesin.
    */
-  const entryWeek = application?.declaredWeek ?? entitledWeek + 1;
+  const entryWeek = application?.declaredWeek ?? recordedWeek + 1;
 
-  const notedWeeks = notes
-    .map((n) => n.weekNumber)
-    .sort((a, b) => a - b);
+  /* İlk not tarihi kapının tamamlandığı andır; sonraki notlar sayacı yenilemez. */
+  const firstNoteAtByWeek = new Map<number, Date>();
+  for (const note of notes) {
+    const current = firstNoteAtByWeek.get(note.weekNumber);
+    if (!current || note.createdAt < current) {
+      firstNoteAtByWeek.set(note.weekNumber, note.createdAt);
+    }
+  }
+
+  /*
+   * KİŞİSEL HAFTA TAKVİMİ
+   *
+   * Her cüzdan ve kamp kendi not tarihleriyle yürür. Bir haftanın ilk notundan
+   * yedi gün sonra yalnızca o kişinin sonraki haftası açılır. Yönetici kaydı
+   * daha ilerideyse onu başlangıç/override olarak kabul ederiz.
+   */
+  const now = Date.now();
+  let entitledWeek = recordedWeek;
+  let nextWeekAt: Date | null = null;
+  while (application && entitledWeek > 0 && entitledWeek < weekCount) {
+    let hasEarlierDebt = false;
+    for (let week = entryWeek; week < entitledWeek; week++) {
+      if (!firstNoteAtByWeek.has(week)) {
+        hasEarlierDebt = true;
+        break;
+      }
+    }
+    if (hasEarlierDebt) break;
+
+    const noteAt = firstNoteAtByWeek.get(entitledWeek);
+    if (!noteAt) break;
+
+    const availableAt = new Date(noteAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    if (availableAt.getTime() > now) {
+      nextWeekAt = availableAt;
+      break;
+    }
+
+    entitledWeek += 1;
+  }
+
+  const notedWeeks = [...new Set(notes.map((n) => n.weekNumber))].sort(
+    (a, b) => a - b,
+  );
   const notedSet = new Set(notedWeeks);
 
   const owedWeeks: number[] = [];
@@ -173,6 +225,9 @@ export async function getCampProgress(
   const visibleWeek = owedWeeks.length > 0 ? owedWeeks[0] : entitledWeek;
   const blockingWeek = owedWeeks.length > 0 ? owedWeeks[0] : null;
 
+  /* Not borcu varsa sayaç başlamaz; önce mevcut haftanın notu tamamlanır. */
+  if (blockingWeek !== null) nextWeekAt = null;
+
   return {
     campId,
     entitledWeek,
@@ -181,6 +236,7 @@ export async function getCampProgress(
     owedWeeks,
     visibleWeek,
     blockingWeek,
+    nextWeekAt,
     isAdmin: false,
   };
 }

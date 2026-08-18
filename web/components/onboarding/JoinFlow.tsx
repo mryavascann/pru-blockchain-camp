@@ -178,7 +178,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <Card accent={active} className={done ? "opacity-70" : undefined}>
+    <Card accent={active} className={done && !active ? "opacity-70" : undefined}>
       <div className="mb-4 flex items-center gap-3">
         <span
           className={[
@@ -520,6 +520,13 @@ function ApplicationStep({
         haftanı bildir. Kamplar birbirinden bağımsız ilerler — birinde 6.
         haftada, diğerinde 2. haftada olabilirsin.
       </p>
+
+      {activeCamps.length > 1 && (
+        <p className="rounded-lg border border-line-accent bg-subtle px-3 py-2 text-sm font-semibold text-accent-text">
+          Birden fazla kamp seçebilirsin. Aşağıdaki her kampın hafta seçimi ve
+          başvurusu birbirinden bağımsızdır.
+        </p>
+      )}
 
       {activeCamps.map((camp) => (
         <CampApplication

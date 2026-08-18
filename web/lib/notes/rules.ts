@@ -7,7 +7,7 @@
  *   2. Kullanıcıya gösterilen yönerge metinleri
  *
  * NEDEN AYNI DOSYADA: Kural ile açıklaması ayrı dosyalarda dursaydı, biri
- * değişip diğeri eskiyebilirdi — kullanıcıya "en az 80 karakter" yazarken
+ * değişip diğeri eskiyebilirdi — kullanıcıya "en az 20 karakter" yazarken
  * sunucunun 120 istediği bir durum. Burada tek kaynak var; `lib/participant.ts`
  * ile aynı desen.
  *

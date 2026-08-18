@@ -113,7 +113,7 @@ async function main(): Promise<void> {
     nonce,
     uri: BASE_URL,
     version: "1",
-    statement: "PRU Blockchain Kulübü kamp sitesine giriş yapıyorsun.",
+    statement: "Sign in to the PRU Blockchain Club camp platform.",
     issuedAt: new Date(),
   });
 
@@ -171,20 +171,29 @@ async function main(): Promise<void> {
   }>("/api/camps/developers/weeks/3");
 
   const lockLevel = lockedWithSession.body.data?.level;
-  check(
-    "hafta hâlâ kilitli (nick olmadan içerik açılmıyor)",
-    lockLevel === "locked",
-    `level: ${lockLevel}`,
-  );
-  check(
-    'kilit sebebi "no-nickname" (cüzdan bağlı ama nick yok)',
-    lockedWithSession.body.data?.reason === "no-nickname",
-    `reason: ${lockedWithSession.body.data?.reason}`,
-  );
-  check(
-    ">>> contentHtml YANITTA YOK",
-    !("contentHtml" in (lockedWithSession.body.data?.week ?? {})),
-  );
+  if (isAdmin) {
+    check(
+      "admin nick olmadan da içerik denetleyebiliyor",
+      lockLevel === "full" &&
+        "contentHtml" in (lockedWithSession.body.data?.week ?? {}),
+      `level: ${lockLevel}`,
+    );
+  } else {
+    check(
+      "hafta hâlâ kilitli (nick olmadan içerik açılmıyor)",
+      lockLevel === "locked",
+      `level: ${lockLevel}`,
+    );
+    check(
+      'kilit sebebi "no-nickname" (cüzdan bağlı ama nick yok)',
+      lockedWithSession.body.data?.reason === "no-nickname",
+      `reason: ${lockedWithSession.body.data?.reason}`,
+    );
+    check(
+      ">>> contentHtml YANITTA YOK",
+      !("contentHtml" in (lockedWithSession.body.data?.week ?? {})),
+    );
+  }
 
   /* ====================================================================== */
   step("Geri doldurma başvurusu");
@@ -208,6 +217,36 @@ async function main(): Promise<void> {
 
   check("başvuru kaydedildi", application.body.ok, application.body.error);
   const applicationId = application.body.data?.application.id;
+
+  const secondApplication = await api("/api/applications", {
+    method: "POST",
+    body: JSON.stringify({
+      campSlug: "directors",
+      declaredWeek: 2,
+      note: "İkinci kamp için bağımsız hafta beyanı",
+    }),
+  });
+  check(
+    "aynı katılımcı ikinci kampa bağımsız haftayla başvurabildi",
+    secondApplication.body.ok,
+    secondApplication.body.error,
+  );
+
+  const bothApplications = await api<{
+    applications: {campId: number; declaredWeek: number; camp: {slug: string}}[];
+  }>("/api/applications");
+  check(
+    "iki kampın hafta beyanları birlikte saklandı",
+    Boolean(
+      bothApplications.body.ok &&
+        bothApplications.body.data?.applications.some(
+          (item) => item.camp.slug === "developers" && item.declaredWeek === 3,
+        ) &&
+        bothApplications.body.data.applications.some(
+          (item) => item.camp.slug === "directors" && item.declaredWeek === 2,
+        ),
+    ),
+  );
 
   const duplicate = await api("/api/applications", {
     method: "POST",

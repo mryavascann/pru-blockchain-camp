@@ -51,6 +51,7 @@ export function useAuth() {
     isReady: isWalletReady,
     hasWallet,
     connect,
+    selectAccount,
     disconnect,
     switchToExpectedChain,
     signMessage,
@@ -92,10 +93,12 @@ export function useAuth() {
    * kullanıcı sitede ikinci kez bir düğmeye basmaz.
    */
   const authenticate = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (
+      selected?: {address: `0x${string}`; chainId: number},
+    ) => {
       try {
-        let signingAddress = address;
-        let connectedChainId = chainId;
+        let signingAddress = selected?.address ?? address;
+        let connectedChainId = selected?.chainId ?? chainId;
 
         if (!signingAddress) {
           const connected = await connect();
@@ -170,6 +173,47 @@ export function useAuth() {
     },
   });
 
+  /*
+   * Ayrı ve bilinçli hesap değiştirme akışı:
+   * hesap seçici → eski sunucu oturumunu kapat → yeni hesapla SIWE imzası.
+   * Kullanıcı aynı hesabı seçerse gereksiz logout ve imza yapılmaz.
+   */
+  const changeAccount = useMutation({
+    mutationFn: async () => {
+      try {
+        const selected = await selectAccount();
+        const currentSession =
+          queryClient.getQueryData<SessionInfo>(SESSION_KEY) ?? session;
+
+        if (
+          currentSession?.address?.toLowerCase() ===
+          selected.address.toLowerCase()
+        ) {
+          return currentSession;
+        }
+
+        const logoutResponse = await fetch("/api/auth/logout", {method: "POST"});
+        if (!logoutResponse.ok) throw new Error(t.auth.signInFailed);
+
+        queryClient.setQueryData(SESSION_KEY, {
+          address: null,
+          nickname: "",
+          hasNickname: false,
+          isAdmin: false,
+        } satisfies SessionInfo);
+
+        return await authenticate.mutateAsync(selected);
+      } catch (error) {
+        const code = (error as {code?: number}).code;
+        const message = error instanceof Error ? error.message.toLowerCase() : "";
+        if (code === 4001 || message.includes("user rejected")) {
+          throw new Error(t.auth.changeWalletRejected);
+        }
+        throw error;
+      }
+    },
+  });
+
   const signOut = useMutation({
     mutationFn: async () => {
       await fetch("/api/auth/logout", {method: "POST"});
@@ -206,6 +250,7 @@ export function useAuth() {
     /** Yanlış ağda mı */
     wrongNetwork,
     authenticate,
+    changeAccount,
     disconnect,
     signOut,
     refresh,
