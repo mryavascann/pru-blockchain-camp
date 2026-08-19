@@ -28,14 +28,19 @@ library MerkleLib {
     ///      Sıralama şart: OpenZeppelin'in `MerkleProof` doğrulayıcısı
     ///      kardeşlerin hangi tarafta olduğunu proof'ta taşımaz, bunun yerine
     ///      her adımda küçük olanı sola koyar. Kurucu da aynısını yapmalı.
-    function hashPair(bytes32 a, bytes32 b) internal pure returns (bytes32) {
+    function hashPair(
+        bytes32 a,
+        bytes32 b
+    ) internal pure returns (bytes32) {
         return a < b ? keccak256(abi.encodePacked(a, b)) : keccak256(abi.encodePacked(b, a));
     }
 
     /// @dev Bir seviyeyi bir üst seviyeye indirger.
     ///      Düğüm sayısı tekse son düğüm eşsiz kalır ve olduğu gibi yukarı
     ///      taşınır (kendisiyle hash'lenmez — bu yaygın bir hata kaynağıdır).
-    function nextLevel(bytes32[] memory nodes) internal pure returns (bytes32[] memory out) {
+    function nextLevel(
+        bytes32[] memory nodes
+    ) internal pure returns (bytes32[] memory out) {
         uint256 count = nodes.length;
         uint256 parentCount = (count + 1) / 2;
         out = new bytes32[](parentCount);
@@ -48,7 +53,9 @@ library MerkleLib {
     }
 
     /// @dev Yapraklardan kök (root) hesaplar.
-    function getRoot(bytes32[] memory leaves) internal pure returns (bytes32) {
+    function getRoot(
+        bytes32[] memory leaves
+    ) internal pure returns (bytes32) {
         require(leaves.length > 0, "MerkleLib: bos yaprak listesi");
 
         bytes32[] memory level = leaves;
@@ -59,11 +66,10 @@ library MerkleLib {
     }
 
     /// @dev Belirli bir yaprak için proof üretir.
-    function getProof(bytes32[] memory leaves, uint256 index)
-        internal
-        pure
-        returns (bytes32[] memory proof)
-    {
+    function getProof(
+        bytes32[] memory leaves,
+        uint256 index
+    ) internal pure returns (bytes32[] memory proof) {
         require(index < leaves.length, "MerkleLib: gecersiz indeks");
 
         // Ağaç derinliği pratikte 32'yi geçmez (2^32 yaprak).
@@ -129,10 +135,8 @@ abstract contract BaseTest is Test {
                                     SABİTLER
     //////////////////////////////////////////////////////////////////////////*/
 
-    string internal constant BASE_URI =
-        "https://prublockchain.vercel.app/api/metadata/{id}.json";
-    string internal constant CONTRACT_URI =
-        "https://prublockchain.vercel.app/api/collection.json";
+    string internal constant BASE_URI = "https://prublockchain.vercel.app/api/metadata/{id}.json";
+    string internal constant CONTRACT_URI = "https://prublockchain.vercel.app/api/collection.json";
 
     string internal constant DEV_CAMP_NAME = "PRU Blockchain Developers";
     string internal constant DIR_CAMP_NAME = "PRU Blockchain Directors";
@@ -170,10 +174,11 @@ abstract contract BaseTest is Test {
 
     /// @dev Verilen adresler için bir haftanın root'unu hesaplar ve zincire yazar.
     /// @return leaves Yapraklar — proof üretmek için saklanmalı.
-    function _publishRoot(uint256 campId, uint256 week, address[] memory accounts)
-        internal
-        returns (bytes32[] memory leaves)
-    {
+    function _publishRoot(
+        uint256 campId,
+        uint256 week,
+        address[] memory accounts
+    ) internal returns (bytes32[] memory leaves) {
         leaves = new bytes32[](accounts.length);
         for (uint256 i = 0; i < accounts.length; ++i) {
             leaves[i] = badges.merkleLeaf(accounts[i], campId, week);
@@ -201,11 +206,10 @@ abstract contract BaseTest is Test {
     }
 
     /// @dev Bir hafta aralığı için belirli bir katılımcının proof dizisini üretir.
-    function _proofsFor(bytes32[][] memory leavesPerWeek, uint256 accountIndex)
-        internal
-        pure
-        returns (bytes32[][] memory proofs)
-    {
+    function _proofsFor(
+        bytes32[][] memory leavesPerWeek,
+        uint256 accountIndex
+    ) internal pure returns (bytes32[][] memory proofs) {
         proofs = new bytes32[][](leavesPerWeek.length);
         for (uint256 i = 0; i < leavesPerWeek.length; ++i) {
             proofs[i] = MerkleLib.getProof(leavesPerWeek[i], accountIndex);
@@ -216,22 +220,27 @@ abstract contract BaseTest is Test {
                               DİZİ YARDIMCILARI
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _addresses(address a) internal pure returns (address[] memory out) {
+    function _addresses(
+        address a
+    ) internal pure returns (address[] memory out) {
         out = new address[](1);
         out[0] = a;
     }
 
-    function _addresses(address a, address b) internal pure returns (address[] memory out) {
+    function _addresses(
+        address a,
+        address b
+    ) internal pure returns (address[] memory out) {
         out = new address[](2);
         out[0] = a;
         out[1] = b;
     }
 
-    function _addresses(address a, address b, address c)
-        internal
-        pure
-        returns (address[] memory out)
-    {
+    function _addresses(
+        address a,
+        address b,
+        address c
+    ) internal pure returns (address[] memory out) {
         out = new address[](3);
         out[0] = a;
         out[1] = b;
@@ -239,7 +248,10 @@ abstract contract BaseTest is Test {
     }
 
     /// @dev `from`..`to` aralığını içeren artan sayı dizisi üretir.
-    function _range(uint256 from, uint256 to) internal pure returns (uint256[] memory out) {
+    function _range(
+        uint256 from,
+        uint256 to
+    ) internal pure returns (uint256[] memory out) {
         uint256 total = to - from + 1;
         out = new uint256[](total);
         for (uint256 i = 0; i < total; ++i) {
@@ -247,7 +259,9 @@ abstract contract BaseTest is Test {
         }
     }
 
-    function _uints(uint256 a) internal pure returns (uint256[] memory out) {
+    function _uints(
+        uint256 a
+    ) internal pure returns (uint256[] memory out) {
         out = new uint256[](1);
         out[0] = a;
     }
@@ -257,7 +271,10 @@ abstract contract BaseTest is Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Bir adrese nick verir.
-    function _giveNickname(address account, string memory nickname) internal {
+    function _giveNickname(
+        address account,
+        string memory nickname
+    ) internal {
         vm.prank(account);
         badges.registerNickname(nickname);
     }
@@ -265,7 +282,10 @@ abstract contract BaseTest is Test {
     /// @dev Tam bir "geri doldurma" senaryosu kurar:
     ///      alice'e nick verir, 1..`throughWeek` haftalarını yayınlar ve
     ///      alice'in rozetlerini almasını sağlar.
-    function _backfillAlice(uint256 campId, uint256 throughWeek) internal {
+    function _backfillAlice(
+        uint256 campId,
+        uint256 throughWeek
+    ) internal {
         _giveNickname(alice, "alice");
 
         address[] memory participants = _addresses(alice, bob);

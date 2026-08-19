@@ -26,6 +26,7 @@ type Camp = {
   description: string | null;
   instructorName: string | null;
   weekCount: number;
+  firstWeekRequiresApproval: boolean;
   publicWeekNumber: number | null;
   lifecycle: "DRAFT" | "REVIEW" | "PUBLISHED" | "ARCHIVED";
   chainCampId: number | null;
@@ -71,6 +72,8 @@ export function CampStudio({camp}: {camp: Camp}) {
       description: form.get("description"),
       startDate: form.get("startDate") || null,
       weekCount: Number(form.get("weekCount")),
+      firstWeekRequiresApproval:
+        form.get("firstWeekRequiresApproval") === "on",
       publicWeekNumber:
         form.get("publicWeekNumber") === ""
           ? null
@@ -189,6 +192,24 @@ export function CampStudio({camp}: {camp: Camp}) {
                 ))}
               </select>
             </Field>
+            <label className="flex items-start gap-3 rounded-lg border border-line bg-subtle p-3 md:col-span-2">
+              <input
+                name="firstWeekRequiresApproval"
+                type="checkbox"
+                defaultChecked={camp.firstWeekRequiresApproval}
+                disabled={lockedForReview}
+                className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+              />
+              <span>
+                <span className="block text-sm font-semibold">
+                  1. hafta için eğitmen onayı iste
+                </span>
+                <span className="mt-1 block text-xs text-fg-muted">
+                  Kapalıysa herkes 1. haftaya hemen başlar. İleri hafta istekleri
+                  her zaman öğrenci portalındaki onay kuyruğuna düşer.
+                </span>
+              </span>
+            </label>
             <div className="md:col-span-2"><Field label="Açıklama"><textarea className="input resize-y" name="description" defaultValue={camp.description ?? ""} required minLength={20} maxLength={1200} rows={4} disabled={lockedForReview} /></Field></div>
             <div className="md:col-span-2"><Button type="submit" variant="accent" loading={busy} disabled={lockedForReview}>Kamp bilgilerini kaydet</Button></div>
           </form>

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PausableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import {BaseTest, MerkleLib} from "./Helpers.sol";
 import {CampRegistry} from "../src/CampRegistry.sol";
@@ -67,9 +69,7 @@ contract CampAdminTest is BaseTest {
     function test_CreateCamp_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.createCamp("Sahte Kamp", 5);
     }
@@ -138,9 +138,7 @@ contract CampAdminTest is BaseTest {
     function test_SetCampName_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.setCampName(devCampId, "Ele Gecirildi");
     }
@@ -170,9 +168,7 @@ contract CampAdminTest is BaseTest {
     ///      hafta"ya düşürüp tutarsızlık yaratırdı.
     function test_SetCampWeekCount_RevertsOnDecrease() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(WeekCountCannotDecrease.selector, DEV_WEEKS, 10)
-        );
+        vm.expectRevert(abi.encodeWithSelector(WeekCountCannotDecrease.selector, DEV_WEEKS, 10));
         badges.setCampWeekCount(devCampId, 10);
     }
 
@@ -208,13 +204,13 @@ contract CampAdminTest is BaseTest {
 
     function test_EncodeTokenId_KnownValues() public view {
         // Kamp 1, Hafta 3  →  (1 << 16) | 3  = 65539
-        assertEq(badges.encodeTokenId(1, 3), 65539);
+        assertEq(badges.encodeTokenId(1, 3), 65_539);
         // Kamp 2, Hafta 12 →  (2 << 16) | 12 = 131084
-        assertEq(badges.encodeTokenId(2, 12), 131084);
+        assertEq(badges.encodeTokenId(2, 12), 131_084);
     }
 
     function test_DecodeTokenId() public view {
-        (uint256 campId, uint256 week) = badges.decodeTokenId(65539);
+        (uint256 campId, uint256 week) = badges.decodeTokenId(65_539);
         assertEq(campId, 1);
         assertEq(week, 3);
     }
@@ -244,7 +240,10 @@ contract CampAdminTest is BaseTest {
 
     /// @dev Kodlama ve çözme her zaman birbirinin tersi olmalı.
     ///      Bu, tokenId şemasının en temel değişmezidir.
-    function testFuzz_EncodeDecodeRoundTrip(uint240 campIdSeed, uint16 weekSeed) public view {
+    function testFuzz_EncodeDecodeRoundTrip(
+        uint240 campIdSeed,
+        uint16 weekSeed
+    ) public view {
         uint256 campId = uint256(campIdSeed);
         uint256 week = uint256(weekSeed);
         vm.assume(campId > 0);
@@ -267,9 +266,7 @@ contract CampAdminTest is BaseTest {
         vm.assume(campA > 0 && campB > 0 && weekA > 0 && weekB > 0);
         vm.assume(campA != campB || weekA != weekB);
 
-        assertTrue(
-            badges.encodeTokenId(campA, weekA) != badges.encodeTokenId(campB, weekB)
-        );
+        assertTrue(badges.encodeTokenId(campA, weekA) != badges.encodeTokenId(campB, weekB));
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -289,9 +286,7 @@ contract CampAdminTest is BaseTest {
     function test_Pause_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.pause();
     }
@@ -371,9 +366,7 @@ contract CampAdminTest is BaseTest {
 
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.adminBurn(alice, devCampId, 1);
     }
@@ -431,8 +424,8 @@ contract CampAdminTest is BaseTest {
     ///      döner ve "{id}" yer tutucusunu istemci değiştirir. Bu sayede yeni
     ///      hafta/kamp eklendiğinde kontrata hiç dokunulmaz.
     function test_URI_IsSameTemplateForAllTokens() public view {
-        assertEq(badges.uri(65539), badges.uri(131084));
-        assertEq(badges.uri(65539), BASE_URI);
+        assertEq(badges.uri(65_539), badges.uri(131_084));
+        assertEq(badges.uri(65_539), BASE_URI);
     }
 
     function test_SetBaseURI() public {
@@ -477,9 +470,7 @@ contract CampAdminTest is BaseTest {
     function test_SetBaseURI_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.setBaseURI("https://saldirgan.example/{id}.json");
     }

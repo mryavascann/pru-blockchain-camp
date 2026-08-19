@@ -18,7 +18,7 @@
  * Çalıştırma:  npm run test:notes   (dev sunucusu ayakta olmalı)
  * ============================================================================
  */
-import {privateKeyToAccount} from "viem/accounts";
+import {generatePrivateKey, privateKeyToAccount} from "viem/accounts";
 import {createSiweMessage} from "viem/siwe";
 
 import {db} from "../lib/db";
@@ -31,6 +31,7 @@ import {
 } from "../lib/notes/progress";
 import {listNotes} from "../lib/notes/service";
 import {safeUrl, validateNote} from "../lib/notes/rules";
+import {loadFoundryKeystore} from "./helpers/foundry-keystore";
 
 const BASE = process.env.TEST_BASE_URL ?? "http://localhost:3100";
 const DOMAIN = new URL(BASE).host;
@@ -416,10 +417,8 @@ async function main() {
       `status=${anonAdmin.status}`,
     );
 
-    /* --- Anvil test hesabiyla giris (ADMIN_ADDRESSES icinde) --- */
-    const acct = privateKeyToAccount(
-      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-    );
+    /* --- Şifreli Foundry test keystore'uyla admin girişi --- */
+    const keystore = loadFoundryKeystore();
     let cookie = "";
 
     const nonceRes = await fetch(`${BASE}/api/auth/nonce`);
@@ -428,7 +427,7 @@ async function main() {
     const nonce = (await nonceRes.json()).data.nonce;
 
     const message = createSiweMessage({
-      address: acct.address,
+      address: keystore.address,
       chainId: 84532,
       domain: DOMAIN,
       nonce,
@@ -436,7 +435,7 @@ async function main() {
       version: "1",
       issuedAt: new Date(),
     });
-    const signature = await acct.signMessage({message});
+    const signature = keystore.signMessage(message);
 
     const verify = await fetch(`${BASE}/api/auth/verify`, {
       method: "POST",
@@ -454,27 +453,51 @@ async function main() {
     ).json();
     check("oturumla not listesi alindi", listed.ok === true, listed.error);
 
-    /*
-     * --- Nick kapisi ---
-     *
-     * NOT: Bu hesabin zincirde nicki YOK, bu yuzden POST her zaman nick
-     * kapisinda durur ve icerik dogrulamasina HIC ULASILMAZ. Dolayisiyla
-     * "kisa not sunucuda reddedilir" iddiasini buradan test EDEMEYIZ —
-     * ettigimizi sansaydik test yanlis sebeple gecerdi.
-     *
-     * Icerik dogrulamasi Bolum 1c'de dogrudan `validateNote` uzerinden
-     * test ediliyor; sunucunun cagirdigi fonksiyonun ta kendisi.
-     */
+    /* --- Nick kapısı: bellekte üretilen, gerçekten nicksiz geçici hesap --- */
+    const noNickAccount = privateKeyToAccount(generatePrivateKey());
+    let noNickCookie = "";
+
+    const noNickNonceRes = await fetch(`${BASE}/api/auth/nonce`);
+    const noNickNonceCookie = noNickNonceRes.headers.get("set-cookie");
+    if (noNickNonceCookie) noNickCookie = noNickNonceCookie.split(";")[0];
+    const noNickNonce = (await noNickNonceRes.json()).data.nonce;
+
+    const noNickMessage = createSiweMessage({
+      address: noNickAccount.address,
+      chainId: 84532,
+      domain: DOMAIN,
+      nonce: noNickNonce,
+      uri: BASE,
+      version: "1",
+      issuedAt: new Date(),
+    });
+    const noNickSignature = await noNickAccount.signMessage({
+      message: noNickMessage,
+    });
+
+    const noNickVerify = await fetch(`${BASE}/api/auth/verify`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", Cookie: noNickCookie},
+      body: JSON.stringify({
+        message: noNickMessage,
+        signature: noNickSignature,
+      }),
+    });
+    const noNickVerifyCookie = noNickVerify.headers.get("set-cookie");
+    if (noNickVerifyCookie) {
+      noNickCookie = noNickVerifyCookie.split(";")[0];
+    }
+
     const noNick = await (
       await fetch(`${BASE}/api/notes`, {
         method: "POST",
-        headers: {"Content-Type": "application/json", Cookie: cookie},
+        headers: {"Content-Type": "application/json", Cookie: noNickCookie},
         body: JSON.stringify({
           campSlug: camp.slug,
           weekNumber: 1,
           kind: "OZET",
           title: "Baslik burada",
-          body: "cok kisa",
+          body: BODY,
         }),
       })
     ).json();

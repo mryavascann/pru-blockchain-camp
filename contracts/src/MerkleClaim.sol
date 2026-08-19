@@ -92,30 +92,39 @@ abstract contract MerkleClaim is Initializable {
 
     /// @notice Bir (kamp, hafta) için yazılmış merkle root'u döner.
     /// @return Root. Henüz yazılmamışsa bytes32(0).
-    function merkleRootOf(uint256 campId, uint256 week) public view returns (bytes32) {
+    function merkleRootOf(
+        uint256 campId,
+        uint256 week
+    ) public view returns (bytes32) {
         return _merkleRoots[campId][week];
     }
 
     /// @notice Bir rozetin ne zaman alındığını döner.
     /// @return Zaman damgası. Hiç alınmamışsa 0.
     /// @dev Rozet yakılmış olsa bile bu değer sıfırlanmaz.
-    function claimedAt(uint256 tokenId, address account) public view returns (uint64) {
+    function claimedAt(
+        uint256 tokenId,
+        address account
+    ) public view returns (uint64) {
         return _claimedAt[tokenId][account];
     }
 
     /// @notice Bu rozet daha önce alınmış mı?
-    function hasClaimed(uint256 tokenId, address account) public view returns (bool) {
+    function hasClaimed(
+        uint256 tokenId,
+        address account
+    ) public view returns (bool) {
         return _claimedAt[tokenId][account] != 0;
     }
 
     /// @notice Merkle yaprağını üretir.
     /// @dev Backend'in ürettiği yaprakla birebir aynı olmalıdır. Faz 2'de
     ///      backend testleri bu fonksiyonu referans alacak.
-    function merkleLeaf(address account, uint256 campId, uint256 week)
-        public
-        pure
-        returns (bytes32)
-    {
+    function merkleLeaf(
+        address account,
+        uint256 campId,
+        uint256 week
+    ) public pure returns (bytes32) {
         return keccak256(bytes.concat(keccak256(abi.encode(account, campId, week))));
     }
 
@@ -137,7 +146,11 @@ abstract contract MerkleClaim is Initializable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Merkle root yazar/günceller. Erişim kontrolü çağıranın sorumluluğunda.
-    function _setMerkleRoot(uint256 campId, uint256 week, bytes32 newRoot) internal {
+    function _setMerkleRoot(
+        uint256 campId,
+        uint256 week,
+        bytes32 newRoot
+    ) internal {
         bytes32 oldRoot = _merkleRoots[campId][week];
         _merkleRoots[campId][week] = newRoot;
         emit MerkleRootSet(campId, week, oldRoot, newRoot);

@@ -103,20 +103,26 @@ abstract contract NicknameRegistry is Initializable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Bir adresin nickini döner. Nick yoksa boş dize döner.
-    function nicknameOf(address account) public view returns (string memory) {
+    function nicknameOf(
+        address account
+    ) public view returns (string memory) {
         return _nicknames[account];
     }
 
     /// @notice Bir adresin nicki var mı?
     /// @dev Rozet almanın ön koşuludur (bkz. `PruCampBadges`).
-    function hasNickname(address account) public view returns (bool) {
+    function hasNickname(
+        address account
+    ) public view returns (bool) {
         return _nicknameSetAt[account] != 0;
     }
 
     /// @notice Verilen nickin sahibini döner. Sahipsizse sıfır adres döner.
     /// @dev Büyük/küçük harf duyarsızdır: "Bugra" ve "bugra" aynı sonucu verir.
     ///      Nick kurallara uymuyorsa revert eder.
-    function ownerOfNickname(string memory nickname) public view returns (address) {
+    function ownerOfNickname(
+        string memory nickname
+    ) public view returns (address) {
         return _nicknameOwners[_normalizeAndValidate(nickname)];
     }
 
@@ -124,26 +130,34 @@ abstract contract NicknameRegistry is Initializable {
     /// @dev Doğrulama da yapar; kurallara uymayan nick için revert eder.
     ///      Frontend, kullanıcı yazarken bunu `staticcall` ile çağırıp anında
     ///      geri bildirim verebilir.
-    function nicknameKey(string memory nickname) public pure returns (bytes32) {
+    function nicknameKey(
+        string memory nickname
+    ) public pure returns (bytes32) {
         return _normalizeAndValidate(nickname);
     }
 
     /// @notice Normalize anahtarın sahibini döner (yoksa sıfır adres).
-    function ownerOfNicknameKey(bytes32 key) public view returns (address) {
+    function ownerOfNicknameKey(
+        bytes32 key
+    ) public view returns (address) {
         return _nicknameOwners[key];
     }
 
     /// @notice Bu nick alınabilir mi?
     /// @dev Kurallara uymayan nick için revert eder — yani "false" dönmez,
     ///      hatanın kendisi hangi kuralın çiğnendiğini söyler.
-    function isNicknameAvailable(string memory nickname) public view returns (bool) {
+    function isNicknameAvailable(
+        string memory nickname
+    ) public view returns (bool) {
         bytes32 key = _normalizeAndValidate(nickname);
         return _nicknameOwners[key] == address(0);
     }
 
     /// @notice Bir adresin nickini ne zaman değiştirebileceğini döner.
     /// @return Zaman damgası. Hiç nick almamışsa 0 (yani hemen alabilir).
-    function nicknameChangeAvailableAt(address account) public view returns (uint64) {
+    function nicknameChangeAvailableAt(
+        address account
+    ) public view returns (uint64) {
         uint64 setAt = _nicknameSetAt[account];
         if (setAt == 0) return 0;
         return setAt + NICKNAME_CHANGE_COOLDOWN;
@@ -161,7 +175,10 @@ abstract contract NicknameRegistry is Initializable {
     ///      büyütür ve test kapsamında asla kapanmayan bir dal bırakır.
     ///      Gelecekte bu fonksiyon farklı bir kaynaktan çağrılacaksa kontrol
     ///      ORADA yapılmalıdır.
-    function _setNickname(address account, string memory nickname) internal {
+    function _setNickname(
+        address account,
+        string memory nickname
+    ) internal {
         // 1) Kural doğrulaması + normalizasyon
         bytes32 key = _normalizeAndValidate(nickname);
 
@@ -204,7 +221,9 @@ abstract contract NicknameRegistry is Initializable {
     ///        0x5F      → _
     ///        0x61-0x7A → a-z
     ///      Büyük harften küçük harfe geçiş: +32 (0x20)
-    function _normalizeAndValidate(string memory nickname) internal pure returns (bytes32) {
+    function _normalizeAndValidate(
+        string memory nickname
+    ) internal pure returns (bytes32) {
         bytes memory raw = bytes(nickname);
         uint256 len = raw.length;
 

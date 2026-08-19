@@ -136,6 +136,7 @@ export type CampSummary = {
   description: string | null;
   weekCount: number;
   active: boolean;
+  firstWeekRequiresApproval: boolean;
   publicWeekNumber: number | null;
   /** Kamp başlangıcı — hafta takvimini hesaplamak için (bkz. lib/notes/schedule.ts) */
   startDate: Date | null;
@@ -157,6 +158,7 @@ export const getCampBySlug = cache(async function getCampBySlug(
       description: true,
       weekCount: true,
       active: true,
+      firstWeekRequiresApproval: true,
       publicWeekNumber: true,
       startDate: true,
       instructorName: true,
@@ -178,6 +180,7 @@ export async function listCamps(): Promise<CampSummary[]> {
       description: true,
       weekCount: true,
       active: true,
+      firstWeekRequiresApproval: true,
       publicWeekNumber: true,
       startDate: true,
       instructorName: true,

@@ -309,7 +309,9 @@ contract NicknameTest is BaseTest {
 
     /// @dev Geçerli karakter kümesinden üretilen her nick kabul edilmeli.
     ///      Girdi: 8 karakterlik, harfle başlayan, alt çizgisiz bir dize.
-    function testFuzz_ValidNicknamesAreAccepted(uint8[8] calldata seeds) public {
+    function testFuzz_ValidNicknamesAreAccepted(
+        uint8[8] calldata seeds
+    ) public {
         bytes memory nickname = new bytes(8);
         bytes memory letters = "abcdefghijklmnopqrstuvwxyz";
         bytes memory alnum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -329,7 +331,9 @@ contract NicknameTest is BaseTest {
     /// @dev Rastgele baytlar ya kurallara uyup kabul edilir ya da revert eder;
     ///      hiçbir durumda sessizce bozuk bir kayıt oluşmaz.
     ///      Ayrıca aynı anahtarın iki kez atanamayacağı korunur.
-    function testFuzz_RandomBytesNeverCorruptState(bytes calldata raw) public {
+    function testFuzz_RandomBytesNeverCorruptState(
+        bytes calldata raw
+    ) public {
         vm.prank(alice);
         try badges.registerNickname(string(raw)) {
             // Kabul edildiyse: kayıt tutarlı olmalı

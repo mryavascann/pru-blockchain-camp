@@ -2,8 +2,9 @@
 pragma solidity 0.8.24;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import {BaseTest, MerkleLib} from "./Helpers.sol";
@@ -22,7 +23,9 @@ contract PruCampBadgesV2Mock is PruCampBadges {
     /// @dev V2'de eklenen yeni durum değişkeni.
     uint256 public extraValue;
 
-    function setExtraValue(uint256 value) external onlyOwner {
+    function setExtraValue(
+        uint256 value
+    ) external onlyOwner {
         extraValue = value;
     }
 
@@ -62,9 +65,8 @@ contract UpgradeTest is BaseTest {
     ///      sessizce sahipsiz bir kontrat üretmesini engeller.
     function test_Initialize_RevertsOnZeroOwner() public {
         PruCampBadges freshImpl = new PruCampBadges();
-        bytes memory initData = abi.encodeCall(
-            PruCampBadges.initialize, (address(0), BASE_URI, CONTRACT_URI)
-        );
+        bytes memory initData =
+            abi.encodeCall(PruCampBadges.initialize, (address(0), BASE_URI, CONTRACT_URI));
 
         vm.expectRevert(ZeroAddress.selector);
         new ERC1967Proxy(address(freshImpl), initData);
@@ -73,8 +75,7 @@ contract UpgradeTest is BaseTest {
     /// @dev Metadata URI'si olmadan deploy edilemez — rozetler görselsiz doğardı.
     function test_Initialize_RevertsOnEmptyBaseURI() public {
         PruCampBadges freshImpl = new PruCampBadges();
-        bytes memory initData =
-            abi.encodeCall(PruCampBadges.initialize, (owner, "", CONTRACT_URI));
+        bytes memory initData = abi.encodeCall(PruCampBadges.initialize, (owner, "", CONTRACT_URI));
 
         vm.expectRevert(EmptyURI.selector);
         new ERC1967Proxy(address(freshImpl), initData);
@@ -89,9 +90,7 @@ contract UpgradeTest is BaseTest {
 
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.upgradeToAndCall(address(v2), "");
     }

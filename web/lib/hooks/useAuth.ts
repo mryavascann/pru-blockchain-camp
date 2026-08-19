@@ -20,7 +20,6 @@
  */
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useCallback} from "react";
-import {createSiweMessage} from "viem/siwe";
 
 import {activeChain} from "@/lib/chain/config";
 import {t} from "@/lib/i18n";
@@ -37,6 +36,15 @@ export type SessionInfo = {
 };
 
 const SESSION_KEY = ["session"] as const;
+
+type ConnectedSelection = {address: `0x${string}`; chainId: number};
+
+type AuthenticateInput = {
+  /** Birden fazla eklenti varsa kullanıcıya sağlayıcı seçimini açıkça göster. */
+  chooseWallet?: boolean;
+  /** Hesap değiştirme akışının seçip doğruladığı bağlantı. */
+  selected?: ConnectedSelection;
+};
 
 async function fetchSession(): Promise<SessionInfo> {
   const response = await fetch("/api/auth/session", {cache: "no-store"});
@@ -96,14 +104,14 @@ export function useAuth() {
    * kullanıcı sitede ikinci kez bir düğmeye basmaz.
    */
   const authenticate = useMutation({
-    mutationFn: async (
-      selected?: {address: `0x${string}`; chainId: number},
-    ) => {
+    mutationFn: async (input?: AuthenticateInput) => {
       try {
-        let signingAddress = selected?.address ?? address;
-        let connectedChainId = selected?.chainId ?? chainId;
+        let signingAddress =
+          input?.selected?.address ?? (input?.chooseWallet ? undefined : address);
+        let connectedChainId =
+          input?.selected?.chainId ?? (input?.chooseWallet ? undefined : chainId);
 
-        if (!signingAddress) {
+        if (input?.chooseWallet || !signingAddress) {
           const connected = await connect();
           signingAddress = connected.address;
           connectedChainId = connected.chainId;
@@ -128,7 +136,12 @@ export function useAuth() {
           throw new Error(nonceJson.error ?? t.auth.signInFailed);
         }
 
-        /* 2. EIP-4361 mesajını kur — cüzdanda görünen açıklama İngilizce. */
+        /*
+         * 2. EIP-4361 mesajını kur — cüzdanda görünen açıklama İngilizce.
+         * SIWE/kriptografi kodu yalnızca giriş yapılırken yüklenir; herkese açık
+         * sayfaların ilk JavaScript paketini gereksiz yere büyütmez.
+         */
+        const {createSiweMessage} = await import("viem/siwe");
         const message = createSiweMessage({
           address: signingAddress,
           chainId: activeChain.id,
@@ -152,6 +165,9 @@ export function useAuth() {
         });
         const verifyJson = await verifyResponse.json();
         if (!verifyJson.ok) {
+          if (verifyJson.code === "INVALID_SIGNATURE") {
+            throw new Error(t.auth.signatureMismatch);
+          }
           throw new Error(verifyJson.error ?? t.auth.signInFailed);
         }
 
@@ -208,7 +224,7 @@ export function useAuth() {
           isAdmin: false,
         } satisfies SessionInfo);
 
-        return await authenticate.mutateAsync(selected);
+        return await authenticate.mutateAsync({selected});
       } catch (error) {
         const code = (error as {code?: number}).code;
         const message = error instanceof Error ? error.message.toLowerCase() : "";

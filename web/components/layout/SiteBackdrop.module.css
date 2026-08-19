@@ -1,0 +1,182 @@
+.backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.backdrop::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.34;
+  background:
+    radial-gradient(circle at 88% 20%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 24%),
+    radial-gradient(circle at 8% 72%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 22%),
+    linear-gradient(color-mix(in srgb, var(--border-accent) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border-accent) 8%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 64px 64px, 64px 64px;
+  mask-image: linear-gradient(to bottom, transparent 2%, black 20%, black 78%, transparent 100%);
+}
+
+.network {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  width: max(90rem, 115vw);
+  height: 92%;
+  opacity: 0.2;
+  transform: translateX(-50%);
+}
+
+.longPath,
+.shortPath {
+  vector-effect: non-scaling-stroke;
+  stroke: url("#site-chain-line");
+  stroke-linecap: round;
+}
+
+.longPath {
+  stroke-width: 1.5;
+  stroke-dasharray: 8 12;
+  animation: site-path-flow 28s linear infinite;
+}
+
+.shortPath {
+  stroke-width: 1;
+  stroke-dasharray: 3 14;
+  opacity: 0.65;
+}
+
+.nodes circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: site-node-pulse 6s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  width: 26rem;
+  height: 26rem;
+  border: 1px solid color-mix(in srgb, var(--border-accent) 20%, transparent);
+  border-radius: 999px;
+  opacity: 0.48;
+}
+
+.ring::before,
+.ring::after {
+  position: absolute;
+  content: "";
+  border: 1px solid color-mix(in srgb, var(--border-accent) 16%, transparent);
+  border-radius: inherit;
+}
+
+.ring::before {
+  inset: 4rem;
+}
+
+.ring::after {
+  inset: 8rem;
+}
+
+.ringRight {
+  top: 12%;
+  right: -17rem;
+}
+
+.ringLeft {
+  bottom: 6%;
+  left: -19rem;
+}
+
+.ring span,
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 16px var(--accent);
+  animation: site-spark 5s ease-in-out infinite;
+}
+
+.ring span:nth-child(1) {
+  top: 9%;
+  left: 26%;
+}
+
+.ring span:nth-child(2) {
+  top: 50%;
+  right: -3px;
+}
+
+.ring span:nth-child(3) {
+  bottom: 12%;
+  left: 20%;
+}
+
+.sparkOne {
+  top: 30%;
+  left: 4%;
+}
+
+.sparkTwo {
+  top: 64%;
+  right: 5%;
+  animation-delay: -1.8s;
+}
+
+.sparkThree {
+  right: 22%;
+  bottom: 8%;
+  width: 4px;
+  height: 4px;
+  animation-delay: -3.1s;
+}
+
+@keyframes site-path-flow {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes site-node-pulse {
+  50% {
+    opacity: 0.42;
+    transform: scale(0.76);
+  }
+}
+
+@keyframes site-spark {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.72);
+  }
+}
+
+@media (max-width: 767px) {
+  .backdrop::before {
+    opacity: 0.24;
+    background-size: auto, auto, 48px 48px, 48px 48px;
+  }
+
+  .network {
+    width: 110rem;
+    opacity: 0.14;
+  }
+
+  .ring {
+    opacity: 0.3;
+    transform: scale(0.72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .longPath,
+  .nodes circle,
+  .ring span,
+  .spark {
+    animation: none;
+  }
+}

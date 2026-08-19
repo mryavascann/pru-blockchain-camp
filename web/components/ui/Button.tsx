@@ -40,10 +40,12 @@ type Size = "sm" | "md" | "lg";
  * sınıflarda böyle bir belirsizlik yoktur.
  */
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-primary text-primary-fg border border-transparent hover:brightness-110",
-  accent: "bg-accent text-accent-fg border border-transparent hover:brightness-110",
+  primary:
+    "bg-primary text-primary-fg border border-line-accent shadow-[var(--shadow-action)] hover:brightness-110 hover:shadow-[var(--shadow-action-hover)] focus-visible:shadow-[var(--shadow-action-focus)]",
+  accent:
+    "bg-accent text-accent-fg border border-line-accent shadow-[var(--shadow-action)] hover:brightness-110 hover:shadow-[var(--shadow-action-hover)] focus-visible:shadow-[var(--shadow-action-focus)]",
   secondary:
-    "bg-surface text-fg border border-line-strong hover:border-line-accent hover:bg-subtle",
+    "bg-surface text-fg border border-line-strong shadow-[var(--shadow-sm)] hover:border-line-accent hover:bg-subtle hover:shadow-[var(--shadow-md)]",
   ghost:
     "bg-transparent text-fg-secondary border border-transparent hover:bg-subtle hover:text-fg",
   danger: "bg-danger text-white border border-transparent hover:brightness-110",
@@ -56,10 +58,10 @@ const SIZES: Record<Size, string> = {
 };
 
 const BASE = [
-  "relative inline-flex items-center justify-center rounded-md",
+  "relative isolate inline-flex items-center justify-center overflow-hidden rounded-lg",
   "font-semibold whitespace-nowrap select-none no-underline",
-  "transition-[transform,filter,background-color,border-color,color] duration-150 ease-out",
-  "hover:-translate-y-px active:translate-y-0",
+  "transition-[transform,filter,background-color,border-color,color,box-shadow] duration-200 ease-out",
+  "hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97]",
 ].join(" ");
 
 /** Ortak stil üretici — `Button` ve `ButtonLink` ikisi de bunu kullanır */
@@ -75,6 +77,8 @@ export function buttonClasses({
   className?: string;
 } = {}): string {
   return [
+    "pru-button",
+    `pru-button--${variant}`,
     BASE,
     VARIANTS[variant],
     SIZES[size],
@@ -117,7 +121,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={[
         buttonClasses({variant, size, fullWidth, className}),
         "disabled:opacity-45 disabled:cursor-not-allowed",
-        "disabled:hover:translate-y-0 disabled:hover:brightness-100",
+        "disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100 disabled:hover:shadow-none",
       ].join(" ")}
       {...rest}
     >

@@ -116,7 +116,17 @@ export function StudentPortal({camp, students}: {camp: Camp; students: Student[]
 
       <div className="grid gap-3 sm:grid-cols-4">
         {(["ALL", "PENDING", "APPROVED", "REJECTED"] as const).map((status) => (
-          <button key={status} type="button" onClick={() => setFilter(status)} className={`rounded-lg border p-4 text-left ${filter === status ? "border-line-accent bg-subtle" : "border-line bg-surface"}`}>
+          <button
+            key={status}
+            type="button"
+            onClick={() => setFilter(status)}
+            aria-pressed={filter === status}
+            className={`rounded-lg border p-4 text-left transition-colors ${
+              filter === status
+                ? "border-line-accent bg-subtle"
+                : "border-line bg-surface hover:border-line-strong"
+            }`}
+          >
             <span className="block text-2xl font-extrabold">{counts[status]}</span>
             <span className="text-xs text-fg-secondary">{status === "ALL" ? "Toplam" : status === "PENDING" ? "Bekleyen" : status === "APPROVED" ? "Onaylı" : "Reddedilen"}</span>
           </button>
@@ -158,7 +168,7 @@ export function StudentPortal({camp, students}: {camp: Camp; students: Student[]
                         <Pill tone={student.status === "APPROVED" ? "reward" : student.status === "PENDING" ? "accent" : "danger"}>{student.status === "APPROVED" ? "onaylı" : student.status === "PENDING" ? "bekliyor" : "reddedildi"}</Pill>
                       </div>
                       <p className="mt-1 break-all font-mono text-xs text-fg-muted">{student.address}</p>
-                      <p className="mt-2 text-sm text-fg-secondary">Beyan: {student.declaredWeek}. hafta · İlerleme: {latest}/{camp.weekCount} · {student.noteCount} ortak not</p>
+                      <p className="mt-2 text-sm text-fg-secondary">Başlangıç: {student.declaredWeek}. hafta · İlerleme: {latest}/{camp.weekCount} · {student.noteCount} ortak not</p>
                       {(student.university || student.referralSource) && <p className="mt-1 text-xs text-fg-muted">{student.university || "Üniversite belirtilmedi"}{student.referralSource ? ` · Kaynak: ${student.referralSource}` : ""}</p>}
                       {student.note && <p className="mt-2 rounded-md bg-subtle p-2 text-xs text-fg-secondary">“{student.note}”</p>}
                     </div>
@@ -178,4 +188,3 @@ export function StudentPortal({camp, students}: {camp: Camp; students: Student[]
     </div>
   );
 }
-

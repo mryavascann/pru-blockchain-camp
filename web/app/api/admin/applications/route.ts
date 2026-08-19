@@ -25,7 +25,6 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import {requireAdmin} from "@/lib/auth/guards";
-import {recordBackfillCompletions} from "@/lib/merkle/service";
 import {fail, handle, ok, readJson} from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -113,15 +112,24 @@ export async function PATCH(request: Request) {
 
     /* ---- REDDET ---- */
     if (action === "reject") {
-      const updated = await db.application.update({
-        where: {id: applicationId},
-        data: {
-          status: "REJECTED",
-          reviewedBy: admin.address!,
-          reviewedAt: new Date(),
-          reviewNote: reviewNote ?? null,
-        },
+      const updated = await db.$transaction(async (tx) => {
+        const claimed = await tx.application.updateMany({
+          where: {id: applicationId, status: "PENDING"},
+          data: {
+            status: "REJECTED",
+            reviewedBy: admin.address!,
+            reviewedAt: new Date(),
+            reviewNote: reviewNote ?? null,
+          },
+        });
+
+        if (claimed.count !== 1) return null;
+        return tx.application.findUnique({where: {id: applicationId}});
       });
+
+      if (!updated) {
+        return fail("Bu başvuru daha önce incelenmiş.", 409, "ALREADY_REVIEWED");
+      }
       return ok({application: updated, completionsCreated: 0});
     }
 
@@ -142,27 +150,46 @@ export async function PATCH(request: Request) {
      * "3. haftadan başlayan katılımcı 1. ve 2. hafta rozetlerini de alır"
      * şartının uygulandığı yer.
      */
-    const completionsCreated = await recordBackfillCompletions(
-      application.address,
-      application.campId,
-      week,
-      admin.address!,
-    );
+    const rows = Array.from({length: week}, (_, index) => ({
+      address: application.address.toLowerCase(),
+      campId: application.campId,
+      weekNumber: index + 1,
+      source: "backfill",
+      createdBy: admin.address!,
+    }));
 
-    const updated = await db.application.update({
-      where: {id: applicationId},
-      data: {
-        status: "APPROVED",
-        declaredWeek: week, // adminin düzelttiği değer kaydedilir
-        reviewedBy: admin.address!,
-        reviewedAt: new Date(),
-        reviewNote: reviewNote ?? null,
-      },
+    const result = await db.$transaction(async (tx) => {
+      const claimed = await tx.application.updateMany({
+        where: {id: applicationId, status: "PENDING"},
+        data: {
+          status: "APPROVED",
+          declaredWeek: week, // adminin düzelttiği değer kaydedilir
+          reviewedBy: admin.address!,
+          reviewedAt: new Date(),
+          reviewNote: reviewNote ?? null,
+        },
+      });
+
+      if (claimed.count !== 1) return null;
+
+      const completions = await tx.weeklyCompletion.createMany({
+        data: rows,
+        skipDuplicates: true,
+      });
+      const updated = await tx.application.findUnique({
+        where: {id: applicationId},
+      });
+
+      return {updated, completionsCreated: completions.count};
     });
 
+    if (!result?.updated) {
+      return fail("Bu başvuru daha önce incelenmiş.", 409, "ALREADY_REVIEWED");
+    }
+
     return ok({
-      application: updated,
-      completionsCreated,
+      application: result.updated,
+      completionsCreated: result.completionsCreated,
       /** Sonraki adımın hatırlatması — admin panelinde gösterilecek */
       nextStep:
         `1..${week}. haftalar için merkle ağaçlarını yeniden üret ` +

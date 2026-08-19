@@ -19,47 +19,29 @@
  * kullanıcı yanlış kamp kimliğiyle mint etmeye çalışır ve kimse sebebini
  * anlamaz.
  *
- * KATILIMCI: deploy cüzdanı (0x133a…). Gerçek Base Sepolia ETH'si var ve
- * zincirde nicki kayıtlı — yani gerçek bir kullanıcıyı temsil edebiliyor.
- * Directors kampında hiç rozeti yok, test için temiz bir alan.
+ * KATILIMCI: şifreli Foundry test keystore'u. Gerçek Base Sepolia ETH'si ve
+ * zincirde kayıtlı nicki var. Test tekrar çalıştırılabilir; daha önce alınmış
+ * rozetler claim adımında otomatik atlanır.
  *
  * Kullanım:  npm run e2e:full
  * ============================================================================
  */
-import {execFileSync} from "node:child_process";
-import {homedir} from "node:os";
-import {join} from "node:path";
-
-import {privateKeyToAccount} from "viem/accounts";
 import {createSiweMessage} from "viem/siwe";
 
 import {db} from "../lib/db";
 import {activeChain, contractAddress} from "../lib/chain/config";
 import {readBalancesForPairs, readMerkleRoot} from "../lib/chain/client";
 import {encodeTokenId} from "../lib/chain/tokenId";
+import {loadFoundryKeystore} from "./helpers/foundry-keystore";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100";
 const RPC = "https://sepolia.base.org";
 
-/** Katılımcı: deploy cüzdanı (keystore'da, gerçek ETH'si var) */
-const PARTICIPANT =
-  process.env.E2E_PARTICIPANT ?? "0x133aa2E0709a4339FFFCb3ca1FAaBB5Fd26EC4aa";
-const KEYSTORE_ACCOUNT = process.env.E2E_KEYSTORE_ACCOUNT ?? "pru-testnet";
+/** Admin ve katılımcı işlemleri aynı şifreli testnet keystore'uyla imzalanır. */
+const keystore = loadFoundryKeystore();
+const PARTICIPANT = process.env.E2E_PARTICIPANT ?? keystore.address;
 
-/**
- * Keystore parolası ORTAM DEĞİŞKENİNDEN okunur, koda gömülmez.
- *
- * Testnet cüzdanı olsa bile bir keystore parolasını depoya yazmak kötü bir
- * alışkanlık: aynı desen bir gün mainnet cüzdanına uygulanır. Parola
- * `web/.env.local` içinde durur ve o dosya git'e girmez.
- */
-const KEYSTORE_PASSWORD = process.env.E2E_KEYSTORE_PASSWORD ?? "";
-
-/** Admin: Anvil hesap #0 — herkesçe bilinen test anahtarı */
-const ADMIN_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-const admin = privateKeyToAccount(ADMIN_KEY);
-
-/** Test alanı: Directors kampı (campId 2), 1-3. haftalar */
+/** Test alanı: Directors kampı (campId 2), 1-6. haftalar */
 const CAMP_ID = 2;
 const CAMP_SLUG = "directors";
 const THROUGH_WEEK = 6;
@@ -67,8 +49,6 @@ const THROUGH_WEEK = 6;
 let cookieJar = "";
 let failures = 0;
 let step = 0;
-
-const CAST = join(homedir(), ".foundry", "bin", "cast.exe");
 
 function heading(title: string): void {
   step += 1;
@@ -116,20 +96,9 @@ async function api<T = unknown>(
  * ile yeniden deneniyor.
  */
 function castSendRaw(args: string[]): string {
-  return execFileSync(
-    CAST,
-    [
-      "send",
-      contractAddress,
-      ...args,
-      "--rpc-url",
-      RPC,
-      "--account",
-      KEYSTORE_ACCOUNT,
-      "--password",
-      KEYSTORE_PASSWORD,
-    ],
-    {encoding: "utf8", timeout: 180_000},
+  return keystore.run(
+    ["send", contractAddress, ...args, "--rpc-url", RPC],
+    180_000,
   );
 }
 
@@ -143,25 +112,21 @@ function castSend(args: string[], retries = 3): string {
         message.includes("estimate gas") || message.includes("execution reverted");
       if (!isLag || attempt >= retries) throw error;
       console.log(`     (RPC gecikmesi, ${(attempt + 1) * 5} sn sonra tekrar)`);
-      execFileSync(
-        process.execPath,
-        ["-e", `setTimeout(()=>{}, ${(attempt + 1) * 5000})`],
-        {timeout: (attempt + 1) * 6000},
+      Atomics.wait(
+        new Int32Array(new SharedArrayBuffer(4)),
+        0,
+        0,
+        (attempt + 1) * 5_000,
       );
     }
   }
 }
 
 async function main(): Promise<void> {
-  if (!KEYSTORE_PASSWORD) {
-    console.error(
-      "\n✖ E2E_KEYSTORE_PASSWORD tanımlı değil.\n\n" +
-        "  Bu test gerçek zincir işlemleri gönderiyor ve deploy cüzdanının\n" +
-        "  şifreli keystore'unu açması gerekiyor.\n\n" +
-        "  web/.env.local dosyasına ekle:\n" +
-        "    E2E_KEYSTORE_PASSWORD=\"…\"\n",
+  if (PARTICIPANT.toLowerCase() !== keystore.address.toLowerCase()) {
+    throw new Error(
+      `E2E_PARTICIPANT (${PARTICIPANT}) ile ${keystore.accountName} adresi (${keystore.address}) aynı değil.`,
     );
-    process.exit(1);
   }
 
   console.log("");
@@ -205,7 +170,7 @@ async function main(): Promise<void> {
   check("nonce alındı", Boolean(nonce));
 
   const message = createSiweMessage({
-    address: admin.address,
+    address: keystore.address,
     chainId: activeChain.id,
     domain: new URL(BASE_URL).host,
     nonce: nonce!,
@@ -213,7 +178,7 @@ async function main(): Promise<void> {
     version: "1",
     issuedAt: new Date(),
   });
-  const signature = await admin.signMessage({message});
+  const signature = keystore.signMessage(message);
 
   const verify = await api<{address: string}>("/api/auth/verify", {
     method: "POST",
@@ -272,9 +237,9 @@ async function main(): Promise<void> {
   heading("Köklerin zincire yazılması (deploy cüzdanı)");
 
   /*
-   * TEK İŞLEMDE üç kök: `setMerkleRoots` toplu fonksiyonu.
+   * TEK İŞLEMDE tüm kökler: `setMerkleRoots` toplu fonksiyonu.
    *
-   * İlk denemede üç ayrı `cast send` gönderilmişti ve "nonce too low"
+   * İlk denemede art arda ayrı `cast send` işlemleri gönderilmişti ve "nonce too low"
    * hatası alındı — art arda gönderilen işlemlerde RPC'nin bekleyen nonce
    * takibi yetişemiyor. Toplu fonksiyon bu yarışı tamamen ortadan kaldırıyor
    * ve haftalık akışta da zaten kullanılacak olan yol bu.

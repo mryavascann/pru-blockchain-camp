@@ -67,15 +67,15 @@ contract SoulboundTest is BaseTest {
     function test_ThirdPartyTransfer_Reverts() public {
         vm.prank(bob);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IERC1155Errors.ERC1155MissingApprovalForAll.selector, bob, alice
-            )
+            abi.encodeWithSelector(IERC1155Errors.ERC1155MissingApprovalForAll.selector, bob, alice)
         );
         badges.safeTransferFrom(alice, bob, tokenIdWeek1, 1, "");
     }
 
     /// @dev Hedef adres ne olursa olsun transfer engellenir.
-    function testFuzz_TransferAlwaysReverts(address to) public {
+    function testFuzz_TransferAlwaysReverts(
+        address to
+    ) public {
         // Sıfır adres ERC-1155'in kendi "geçersiz alıcı" kontrolüne takılır,
         // bu ayrı bir yol olduğu için fuzz kapsamı dışında tutuluyor.
         vm.assume(to != address(0));
@@ -108,10 +108,10 @@ contract SoulboundTest is BaseTest {
         assertFalse(badges.isApprovedForAll(address(0), address(0)));
     }
 
-    function testFuzz_IsApprovedForAll_AlwaysFalse(address account, address operator)
-        public
-        view
-    {
+    function testFuzz_IsApprovedForAll_AlwaysFalse(
+        address account,
+        address operator
+    ) public view {
         assertFalse(badges.isApprovedForAll(account, operator));
     }
 

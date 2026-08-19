@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {ERC1155Upgradeable} from
-    "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {Ownable2StepUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {PausableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import {UUPSUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    ERC1155Upgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {
+    Ownable2StepUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {CampRegistry} from "./CampRegistry.sol";
@@ -158,10 +160,11 @@ contract PruCampBadges is
     /// @param baseURI_     Metadata şablonu, "{id}" yer tutucusu KORUNMALI
     ///                     örn: https://prublockchain.vercel.app/api/metadata/{id}.json
     /// @param contractURI_ Koleksiyon metadata URI'si
-    function initialize(address initialOwner, string memory baseURI_, string memory contractURI_)
-        public
-        initializer
-    {
+    function initialize(
+        address initialOwner,
+        string memory baseURI_,
+        string memory contractURI_
+    ) public initializer {
         if (initialOwner == address(0)) revert ZeroAddress();
         if (bytes(baseURI_).length == 0) revert EmptyURI();
 
@@ -190,7 +193,9 @@ contract PruCampBadges is
     /// @param nickname 3-20 karakter, a-z A-Z 0-9 _ ; harfle başlar.
     /// @dev İlk kayıt serbesttir; sonraki değişiklikler 30 günlük bekleme
     ///      süresine tabidir.
-    function registerNickname(string calldata nickname) external whenNotPaused {
+    function registerNickname(
+        string calldata nickname
+    ) external whenNotPaused {
         _setNickname(_msgSender(), nickname);
     }
 
@@ -202,10 +207,11 @@ contract PruCampBadges is
     /// @param campId Kamp kimliği
     /// @param week   Hafta numarası
     /// @param proof  Backend'den alınan merkle proof
-    function claim(uint256 campId, uint256 week, bytes32[] calldata proof)
-        external
-        whenNotPaused
-    {
+    function claim(
+        uint256 campId,
+        uint256 week,
+        bytes32[] calldata proof
+    ) external whenNotPaused {
         address account = _msgSender();
         _requireClaimPreconditions(account, campId);
         _requireValidWeek(campId, week);
@@ -257,37 +263,138 @@ contract PruCampBadges is
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                    KULLANICI — ROZET ALIMI İÇ YARDIMCILARI
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Rozet almanın ortak ön koşulları.
+    ///
+    ///      NICK NEDEN ZORUNLU: Leaderboard'un değişmezi "rozeti olan herkesin
+    ///      nicki vardır"dır. Bunu kontrat seviyesinde zorlamak, frontend'in
+    ///      hiçbir zaman nicksiz bir satır göstermek zorunda kalmamasını
+    ///      garanti eder. Tek işlemde halletmek isteyen kullanıcı için
+    ///      `registerAndClaimBatch` vardır.
+    function _requireClaimPreconditions(
+        address account,
+        uint256 campId
+    ) private view {
+        _requireCampActive(campId);
+        if (!hasNickname(account)) revert NicknameRequired();
+    }
+
+    /// @dev Toplu rozet alımının ortak gövdesi.
+    function _claimBatch(
+        address account,
+        uint256 campId,
+        uint256[] calldata weekNumbers,
+        bytes32[][] calldata proofs
+    ) private {
+        _requireClaimPreconditions(account, campId);
+
+        uint256 count = weekNumbers.length;
+        if (count == 0) revert EmptyInput();
+        if (proofs.length != count) revert ArrayLengthMismatch(count, proofs.length);
+
+        uint256[] memory ids = new uint256[](count);
+        uint256[] memory amounts = new uint256[](count);
+
+        for (uint256 i = 0; i < count; ++i) {
+            uint256 week = weekNumbers[i];
+            _requireValidWeek(campId, week);
+
+            uint256 tokenId = encodeTokenId(campId, week);
+            // Her hafta KENDİ root'una karşı ayrı doğrulanır.
+            // Aynı hafta iki kez geçerse ikincisi AlreadyClaimed ile döner.
+            _verifyAndMarkClaimed(account, campId, week, tokenId, proofs[i]);
+
+            ids[i] = tokenId;
+            amounts[i] = 1;
+
+            emit BadgeClaimed(account, campId, week, tokenId);
+        }
+
+        // Tek `_mintBatch` → tek olay, tek geçiş, ~3 kat daha ucuz.
+        _mintBatch(account, ids, amounts, "");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                         KULLANICI — ROZET İLERLEMESİ
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Bir kullanıcının bir kamptaki ilerlemesini döner.
+    /// @return owned Uzunluğu kampın hafta sayısı kadar olan dizi;
+    ///         `owned[i]` true ise (i+1). haftanın rozeti alınmış demektir.
+    /// @dev Frontend'deki ilerleme kutucuklarını (■ ■ ■ □ □ …) besler.
+    ///      Hafta sayısı VERİDEN gelir — hiçbir yerde "15" sabiti yoktur.
+    function progressOf(
+        address account,
+        uint256 campId
+    ) external view returns (bool[] memory owned) {
+        Camp memory camp = getCamp(campId);
+        uint256 total = camp.weekCount;
+        owned = new bool[](total);
+
+        for (uint256 i = 0; i < total; ++i) {
+            uint256 week = i + 1;
+            owned[i] = balanceOf(account, encodeTokenId(campId, week)) > 0;
+        }
+    }
+
+    /// @notice Bir kullanıcının bir kampta kaç rozeti olduğunu döner.
+    /// @dev Leaderboard sıralaması bu değere göre yapılır.
+    function claimedWeekCount(
+        address account,
+        uint256 campId
+    ) external view returns (uint256 count) {
+        Camp memory camp = getCamp(campId);
+        uint256 total = camp.weekCount;
+
+        for (uint256 i = 0; i < total; ++i) {
+            if (balanceOf(account, encodeTokenId(campId, i + 1)) > 0) {
+                ++count;
+            }
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                            YÖNETİCİ — KAMPLAR
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Yeni bir kamp oluşturur.
     /// @dev Yeni kamp açmak İÇİN KOD DEĞİŞİKLİĞİ VEYA DEPLOY GEREKMEZ.
     ///      Tek bir işlem yeterlidir.
-    function createCamp(string calldata name, uint16 weekCount)
-        external
-        onlyOwner
-        returns (uint256 campId)
-    {
+    function createCamp(
+        string calldata name,
+        uint16 weekCount
+    ) external onlyOwner returns (uint256 campId) {
         return _createCamp(name, weekCount);
     }
 
     /// @notice Kampın adını değiştirir.
     /// @dev Metadata'yı backend ürettiği için isim değişikliği BASILMIŞ TÜM
     ///      ROZETLERE anında yansır — ek işlem veya gas gerekmez.
-    function setCampName(uint256 campId, string calldata newName) external onlyOwner {
+    function setCampName(
+        uint256 campId,
+        string calldata newName
+    ) external onlyOwner {
         _setCampName(campId, newName);
     }
 
     /// @notice Kampın hafta sayısını artırır (15 → 18 gibi).
     /// @dev Azaltma kontrat seviyesinde yasaktır.
-    function setCampWeekCount(uint256 campId, uint16 newCount) external onlyOwner {
+    function setCampWeekCount(
+        uint256 campId,
+        uint16 newCount
+    ) external onlyOwner {
         _setCampWeekCount(campId, newCount);
     }
 
     /// @notice Kampı aktif/pasif yapar.
     /// @dev Global `pause`tan farkı: yalnızca bu kampı durdurur, diğer kamplar
     ///      çalışmaya devam eder.
-    function setCampActive(uint256 campId, bool active) external onlyOwner {
+    function setCampActive(
+        uint256 campId,
+        bool active
+    ) external onlyOwner {
         _setCampActive(campId, active);
     }
 
@@ -296,7 +403,11 @@ contract PruCampBadges is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Bir (kamp, hafta) için merkle root yazar veya günceller.
-    function setMerkleRoot(uint256 campId, uint256 week, bytes32 root) external onlyOwner {
+    function setMerkleRoot(
+        uint256 campId,
+        uint256 week,
+        bytes32 root
+    ) external onlyOwner {
         _requireValidWeek(campId, week);
         _setMerkleRoot(campId, week, root);
     }
@@ -333,7 +444,11 @@ contract PruCampBadges is
     ///
     ///      Duraklatma (pause) sırasında da çalışır: acil durumda yönetici
     ///      önce basımı durdurup sonra temizlik yapabilmelidir.
-    function adminBurn(address account, uint256 campId, uint256 week) external onlyOwner {
+    function adminBurn(
+        address account,
+        uint256 campId,
+        uint256 week
+    ) external onlyOwner {
         uint256 tokenId = encodeTokenId(campId, week);
 
         if (balanceOf(account, tokenId) == 0) {
@@ -376,7 +491,9 @@ contract PruCampBadges is
     ///      yüklenir ve buraya `ipfs://<klasörCID>/{id}.json` yazılır. Ardından
     ///      `freezeMetadata()` çağrılır ve rozetler dış sunucudan tamamen
     ///      bağımsız, kalıcı hâle gelir.
-    function setBaseURI(string calldata newURI) external onlyOwner {
+    function setBaseURI(
+        string calldata newURI
+    ) external onlyOwner {
         if (_metadataFrozen) revert MetadataIsFrozen();
         if (bytes(newURI).length == 0) revert EmptyURI();
         _setURI(newURI);
@@ -384,7 +501,9 @@ contract PruCampBadges is
     }
 
     /// @notice Koleksiyon metadata URI'sini değiştirir.
-    function setContractURI(string calldata newURI) external onlyOwner {
+    function setContractURI(
+        string calldata newURI
+    ) external onlyOwner {
         if (_metadataFrozen) revert MetadataIsFrozen();
         _contractURI = newURI;
         emit ContractURISet(newURI);
@@ -423,141 +542,6 @@ contract PruCampBadges is
         revert OwnershipRenounceDisabled();
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                        SOULBOUND (DEVREDİLEMEZLİK)
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Bu rozet kilitli mi? Her zaman `true`.
-    /// @dev ERC-5192'nin `locked()` imzasıyla uyumlu okunabilir bir sinyaldir.
-    ///      ERC-5192'nin arayüz kimliğini (0xb45a3c0e) DÖNDÜRMÜYORUZ, çünkü o
-    ///      standart ERC-721'e özgüdür ve uymadığımız bir standarda uyuyormuş
-    ///      gibi davranmak yanıltıcı olur.
-    function locked(uint256) external pure returns (bool) {
-        return true;
-    }
-
-    /// @notice Onay verme devre dışı.
-    /// @dev Transfer zaten engelli olduğu için onay anlamsızdır. Açık bırakmak
-    ///      pazaryeri arayüzlerinde "satışa çıkar" gibi çalışmayacak butonlar
-    ///      gösterilmesine ve kullanıcının yanılmasına yol açar.
-    function setApprovalForAll(address, bool) public pure override {
-        revert ApprovalsDisabled();
-    }
-
-    /// @notice Hiçbir adres bir başkası adına işlem yapamaz.
-    function isApprovedForAll(address, address) public pure override returns (bool) {
-        return false;
-    }
-
-    /// @dev Tüm bakiye değişiklikleri bu fonksiyondan geçer — devredilemezliği
-    ///      burada zorlamak, tek bir transfer yolunu bile açıkta bırakmamayı
-    ///      garanti eder.
-    ///
-    ///        from == 0  →  BASIM (mint)   : serbest
-    ///        to   == 0  →  YAKIM (burn)   : serbest
-    ///        diğer      →  TRANSFER       : yasak
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
-        internal
-        override
-    {
-        if (from != address(0) && to != address(0)) {
-            revert TransfersDisabled();
-        }
-        super._update(from, to, ids, values);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                           ROZET İLERLEME GÖRÜNÜMLERİ
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Bir kullanıcının bir kamptaki ilerlemesini döner.
-    /// @return owned Uzunluğu kampın hafta sayısı kadar olan dizi;
-    ///         `owned[i]` true ise (i+1). haftanın rozeti alınmış demektir.
-    /// @dev Frontend'deki ilerleme kutucuklarını (■ ■ ■ □ □ …) besler.
-    ///      Hafta sayısı VERİDEN gelir — hiçbir yerde "15" sabiti yoktur.
-    function progressOf(address account, uint256 campId)
-        external
-        view
-        returns (bool[] memory owned)
-    {
-        Camp memory camp = getCamp(campId);
-        uint256 total = camp.weekCount;
-        owned = new bool[](total);
-
-        for (uint256 i = 0; i < total; ++i) {
-            uint256 week = i + 1;
-            owned[i] = balanceOf(account, encodeTokenId(campId, week)) > 0;
-        }
-    }
-
-    /// @notice Bir kullanıcının bir kampta kaç rozeti olduğunu döner.
-    /// @dev Leaderboard sıralaması bu değere göre yapılır.
-    function claimedWeekCount(address account, uint256 campId)
-        external
-        view
-        returns (uint256 count)
-    {
-        Camp memory camp = getCamp(campId);
-        uint256 total = camp.weekCount;
-
-        for (uint256 i = 0; i < total; ++i) {
-            if (balanceOf(account, encodeTokenId(campId, i + 1)) > 0) {
-                ++count;
-            }
-        }
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                              İÇ YARDIMCILAR
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Rozet almanın ortak ön koşulları.
-    ///
-    ///      NICK NEDEN ZORUNLU: Leaderboard'un değişmezi "rozeti olan herkesin
-    ///      nicki vardır"dır. Bunu kontrat seviyesinde zorlamak, frontend'in
-    ///      hiçbir zaman nicksiz bir satır göstermek zorunda kalmamasını
-    ///      garanti eder. Tek işlemde halletmek isteyen kullanıcı için
-    ///      `registerAndClaimBatch` vardır.
-    function _requireClaimPreconditions(address account, uint256 campId) private view {
-        _requireCampActive(campId);
-        if (!hasNickname(account)) revert NicknameRequired();
-    }
-
-    /// @dev Toplu rozet alımının ortak gövdesi.
-    function _claimBatch(
-        address account,
-        uint256 campId,
-        uint256[] calldata weekNumbers,
-        bytes32[][] calldata proofs
-    ) private {
-        _requireClaimPreconditions(account, campId);
-
-        uint256 count = weekNumbers.length;
-        if (count == 0) revert EmptyInput();
-        if (proofs.length != count) revert ArrayLengthMismatch(count, proofs.length);
-
-        uint256[] memory ids = new uint256[](count);
-        uint256[] memory amounts = new uint256[](count);
-
-        for (uint256 i = 0; i < count; ++i) {
-            uint256 week = weekNumbers[i];
-            _requireValidWeek(campId, week);
-
-            uint256 tokenId = encodeTokenId(campId, week);
-            // Her hafta KENDİ root'una karşı ayrı doğrulanır.
-            // Aynı hafta iki kez geçerse ikincisi AlreadyClaimed ile döner.
-            _verifyAndMarkClaimed(account, campId, week, tokenId, proofs[i]);
-
-            ids[i] = tokenId;
-            amounts[i] = 1;
-
-            emit BadgeClaimed(account, campId, week, tokenId);
-        }
-
-        // Tek `_mintBatch` → tek olay, tek geçiş, ~3 kat daha ucuz.
-        _mintBatch(account, ids, amounts, "");
-    }
-
     /// @dev Upgrade yetkisi yalnızca sahibindedir.
     ///
     ///      UYARI: Bu, kontratın en geniş yetkisidir. Bu fonksiyonu
@@ -568,5 +552,60 @@ contract PruCampBadges is
     ///      yapılır ve yeni implementation adresinin geçerliliğini
     ///      `UUPSUpgradeable` zaten doğrular. Parametre adı yazılmaz —
     ///      kullanılmayan bir isim hem derleyici hem statik analiz uyarısı üretir.
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(
+        address
+    ) internal override onlyOwner {}
+
+    /*//////////////////////////////////////////////////////////////////////////
+                        SOULBOUND (DEVREDİLEMEZLİK)
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Bu rozet kilitli mi? Her zaman `true`.
+    /// @dev ERC-5192'nin `locked()` imzasıyla uyumlu okunabilir bir sinyaldir.
+    ///      ERC-5192'nin arayüz kimliğini (0xb45a3c0e) DÖNDÜRMÜYORUZ, çünkü o
+    ///      standart ERC-721'e özgüdür ve uymadığımız bir standarda uyuyormuş
+    ///      gibi davranmak yanıltıcı olur.
+    function locked(
+        uint256
+    ) external pure returns (bool) {
+        return true;
+    }
+
+    /// @notice Onay verme devre dışı.
+    /// @dev Transfer zaten engelli olduğu için onay anlamsızdır. Açık bırakmak
+    ///      pazaryeri arayüzlerinde "satışa çıkar" gibi çalışmayacak butonlar
+    ///      gösterilmesine ve kullanıcının yanılmasına yol açar.
+    function setApprovalForAll(
+        address,
+        bool
+    ) public pure override {
+        revert ApprovalsDisabled();
+    }
+
+    /// @notice Hiçbir adres bir başkası adına işlem yapamaz.
+    function isApprovedForAll(
+        address,
+        address
+    ) public pure override returns (bool) {
+        return false;
+    }
+
+    /// @dev Tüm bakiye değişiklikleri bu fonksiyondan geçer — devredilemezliği
+    ///      burada zorlamak, tek bir transfer yolunu bile açıkta bırakmamayı
+    ///      garanti eder.
+    ///
+    ///        from == 0  →  BASIM (mint)   : serbest
+    ///        to   == 0  →  YAKIM (burn)   : serbest
+    ///        diğer      →  TRANSFER       : yasak
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal override {
+        if (from != address(0) && to != address(0)) {
+            revert TransfersDisabled();
+        }
+        super._update(from, to, ids, values);
+    }
 }

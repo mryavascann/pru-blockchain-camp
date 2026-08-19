@@ -1,0 +1,432 @@
+PRU CAMP OS — HACKATHON SAHNE METNİ VE SORU-CEVAP
+
+======================================================================
+BU DOSYAYI NASIL KULLANACAKSIN?
+======================================================================
+
+1. Sunumdan önce hackathon-pitch.html dosyasını aç.
+2. Ayrı sekmelerde ana sayfayı, eğitmen panelini ve önceden seçtiğin gerçek
+   bir öğrenci portfolyosunu hazır tut.
+3. Cüzdan demosu yapacaksan hesabı ve ağı önceden kontrol et. Cüzdan akışına
+   güvenmiyorsan oturumu bağlı bırak; iki dakikalık sunumu riske atma.
+4. Aşağıdaki [EKRANDA] satırlarını söyleme. Bunlar sana ne yapacağını gösterir.
+5. İki dakika kesin sınırsa yalnızca “2 DAKİKALIK ANA SUNUM” bölümünü kullan.
+6. Jüri süre verirse ana sunumdan sonra 60–90 saniyelik demoyu yap.
+7. Metni kelimesi kelimesine ezberlemek yerine açılış, problem, fark ve kapanış
+   cümlelerini ezberle. Sorulara kısa cevap ver; sonra isterlerse detaylandır.
+
+SUNUMDAN ÖNCE HAZIRLA
+
+- hackathon-pitch.html açık ve tam ekran
+- Ana sayfa açık
+- Eğitmen panelinde örnek bir kamp açık
+- Öğrenci görünümünde bir hafta açık
+- Gerçek bir nickin herkese açık portfolyosu açık
+- Base Sepolia kontratının Blockscout sayfası açık
+- İnternet kesilmesine karşı 60–90 saniyelik ekran kaydı hazır
+- Bildirimler kapalı, tarayıcı yakınlaştırması kontrol edilmiş
+
+======================================================================
+2 DAKİKALIK ANA SUNUM — BURAYI SESLİ OKU
+======================================================================
+
+SLAYT 1 — AÇILIŞ (0:00–0:18)
+
+[EKRANDA] İlk slayt.
+
+Merhaba, biz PRU Camp OS. Eğitim kamplarındaki içerik, ilerleme ve sertifika
+problemini tek üründe çözüyoruz. Eğitmen kampını kuruyor, öğrenci öğreniyor;
+tamamlanan her hafta cüzdanda doğrulanabilir ve devredilemez bir öğrenme
+kanıtına dönüşüyor.
+
+
+SLAYT 2 — PROBLEM (0:18–0:38)
+
+[EKRANDA] Problem slaytı.
+
+Bugün bir kampın içeriği Notion’da, öğrenci takibi tabloda, sonuç ise kolayca
+kopyalanabilen bir PDF’te kalıyor. PDF yalnızca “katıldı” diyor; öğrencinin
+hangi haftayı tamamladığını, hangi beceriyi kazandığını ve bunu kimin
+onayladığını göstermiyor. Kamp bitince öğrenmenin izi de kayboluyor.
+
+
+SLAYT 3 — ÇÖZÜM (0:38–1:00)
+
+[EKRANDA] Eğitmen, öğrenci ve portfolyo akışını göster.
+
+PRU Camp OS bu parçaları üç kesintisiz deneyimde birleştiriyor. Eğitmen kendi
+kampını, içeriğini, kaynaklarını ve haftalık NFT görsellerini yönetiyor.
+Öğrenci birden fazla kampta bağımsız ilerliyor. Sonuçta ortaya, herkesin nick
+ile açıp doğrulayabildiği yaşayan bir öğrenme portfolyosu çıkıyor.
+
+
+SLAYT 4 — ÜRÜN AKIŞI (1:00–1:22)
+
+[EKRANDA] Kamp oluşturma ve öğrenci yönetimi akışını gösteren slayt.
+
+Yeni kamp açmak teknik bir deploy süreci değil. Eğitmen kamp iskeletini
+oluşturuyor, haftalık içerikleri ve görselleri yüklüyor, öğrencilerini izliyor
+ve tamamlamaları onaylıyor. Platform kontrolünden sonra kamp aynı kontrata
+bağlanıyor. Yani her yeni kamp için yeni kod veya yeni kontrat gerekmiyor.
+
+
+SLAYT 5 — TEKNİK FARK (1:22–1:44)
+
+[EKRANDA] Offchain ve onchain mimari slaytı.
+
+Mimaride hız, gizlilik ve doğrulanabilirliği ayırdık. Kişisel bilgiler, notlar
+ve kilitli ders içerikleri Postgres ve Next.js tarafında kalıyor. Zincire
+yalnızca hak ediş kanıtı gidiyor. Merkle yapısı maliyeti düşürüyor; ERC-1155
+soulbound rozetler ise satılamıyor ve devredilemiyor. Backend hiçbir zaman
+private key tutmuyor.
+
+
+SLAYT 6 — KAPANIŞ (1:44–2:00)
+
+[EKRANDA] Son slayt. Son cümleden sonra dur ve jüriye bak.
+
+Bu bir fikir değil, çalışan bir ürün: Base Sepolia kontratı, iki gerçek kamp,
+27 haftalık program, eğitmen stüdyosu, öğrenci portalı ve açık portfolyo hazır.
+Kontrat tarafında 142 testimiz var. PRU Camp OS ile her eğitmen kendi
+doğrulanabilir öğrenme ekosistemini kurabilir. Öğren, kanıtla, paylaş.
+
+======================================================================
+60–90 SANİYELİK CANLI DEMO — SÜRE VERİLİRSE
+======================================================================
+
+1. ANA SAYFA — 10 SANİYE
+
+[EKRANDA] Ana sayfa ve kamplar.
+
+SÖYLE:
+“Öğrenci burada aktif kampları görüyor. Sistem tek bir kulübün iki sabit kampı
+değil; farklı eğitmenlerin açabileceği veri tabanlı bir kamp platformu.”
+
+
+2. EĞİTMEN STÜDYOSU — 20 SANİYE
+
+[EKRANDA] Eğitmen paneli, kamp düzenleme ve öğrenci listesi.
+
+SÖYLE:
+“Eğitmen kendi kampını oluşturuyor; hafta sayısını, açıklamaları, kaynakları ve
+haftalık rozet görsellerini panelden yönetiyor. Başvuruları ve öğrencilerin
+ilerlemesini de aynı kamp üzerinden görebiliyor.”
+
+
+3. ÖĞRENCİ AKIŞI — 20 SANİYE
+
+[EKRANDA] Kamp/hafta sayfası ve ilerleme görünümü.
+
+SÖYLE:
+“Öğrenci cüzdanını bağlıyor, başvurusunu yapıyor ve birden fazla kampta ayrı
+ayrı ilerliyor. Not ve bekleme koşulları kişi bazında çalışıyor; bir öğrencinin
+süresi diğer öğrencinin haftasını açmıyor.”
+
+
+4. AÇIK PORTFOLYO — 15 SANİYE
+
+[EKRANDA] Hazırladığın gerçek nicke ait /profil/[nickname] sayfası.
+
+SÖYLE:
+“İşveren, topluluk veya başka bir öğrenci yalnızca nicki yazarak bu kişinin
+hangi kampları tamamladığını ve aktif kamplarda kaçıncı haftada olduğunu
+görebiliyor.”
+
+
+5. ONCHAIN KANIT — 10 SANİYE
+
+[EKRANDA] Blockscout kontrat sayfası veya alınmış bir rozet işlemi.
+
+SÖYLE:
+“Bu ilerleme yalnızca bizim veritabanımızdaki bir sayı değil. Hak ediş ve rozet
+Base Sepolia üzerinde herkese açık biçimde doğrulanabiliyor.”
+
+DEMO AKSARSA SÖYLE:
+
+“Sunum ekranındaki cüzdan uzantısı açılmadığı için akışı yedek kayıttan
+göstereceğim. Ürün ve kontrat canlı; aynı işlemler Base Sepolia üzerinde
+herkese açık olarak doğrulanabiliyor.”
+
+======================================================================
+“BU ÜRÜN NASIL KULLANILIR?” DİYE SORARLARSA
+======================================================================
+
+KISA CEVAP:
+
+“Üç kullanıcı tipi var. Eğitmen cüzdanıyla giriş yapıp kampını, haftalarını,
+içeriklerini ve rozet görsellerini oluşturuyor; öğrencilerini ve
+tamamlamalarını yönetiyor. Öğrenci cüzdanını bağlayıp kamplara katılıyor,
+haftalık içerikte ilerliyor ve hak ettiği soulbound rozetleri alıyor. Üçüncü
+kişiler ise öğrencinin nickini aratarak açık öğrenme portfolyosunu ve onchain
+kanıtlarını doğruluyor.”
+
+EĞİTMEN İÇİN ADIM ADIM:
+
+1. Cüzdanıyla giriş yapar.
+2. Eğitmen portalından kamp başvurusu veya kamp taslağı oluşturur.
+3. Kamp adı, açıklama, hafta sayısı ve başvuru bilgilerini girer.
+4. Her haftanın açıklamasını, ders içeriğini ve kaynaklarını ekler.
+5. Her haftaya özel NFT/rozet görselini yükler.
+6. Başvuruları, öğrencileri, notları ve tamamlanma durumlarını inceler.
+7. Tamamlamaları onaylar ve hak ediş listesini yayınlama akışına taşır.
+8. Platform onayından sonra kamp aynı kontrat altında aktif olur.
+
+ÖĞRENCİ İÇİN ADIM ADIM:
+
+1. Cüzdanını bağlar ve İngilizce giriş mesajını imzalar.
+2. Nickini ve gerekli profil bilgilerini oluşturur.
+3. Bir veya birden fazla kampa başvurur.
+4. Her kampta kendi haftasından bağımsız biçimde ilerler.
+5. Haftalık içeriği tamamlar ve gerekli notunu ekler.
+6. Bekleme süresi varsa kendi hesabına ait geri sayımı görür.
+7. Hak ediş yayınlandığında rozetlerini tekli veya toplu olarak alır.
+8. Kazandığı rozetler ve kamp ilerlemesi açık portfolyosunda görünür.
+
+DOĞRULAYAN KİŞİ İÇİN:
+
+1. Öğrencinin nickini aratır.
+2. Tamamladığı kampları ve aktif ilerlemesini görür.
+3. Rozet ve işlemleri zincir üzerinde doğrular.
+
+======================================================================
+JÜRİDEN GELEBİLECEK SORULAR VE KISA CEVAPLAR
+======================================================================
+
+1. TAM OLARAK HANGİ PROBLEMİ ÇÖZÜYORSUNUZ?
+
+“Eğitim içeriği, öğrenci takibi ve sertifikanın farklı sistemlerde kalması
+problemini çözüyoruz. Kamp tamamlandığında yalnızca PDF değil, hafta bazında
+doğrulanabilir ve taşınabilir bir öğrenme geçmişi bırakıyoruz.”
+
+
+2. NEDEN BLOCKCHAIN GEREKİYOR? NORMAL VERİTABANI YETMEZ Mİ?
+
+“İçerik ve kişisel veri için veritabanı daha doğru, onu zaten kullanıyoruz.
+Blockchain’i yalnızca kurumdan bağımsız doğrulanması gereken hak ediş ve rozet
+katmanında kullanıyoruz. Böylece kanıt platform kapansa bile cüzdanda kalıyor.”
+
+
+3. NEDEN NFT? BU SADECE SERTİFİKANIN NFT HALİ Mİ?
+
+“Hayır. Tek bir bitirme sertifikası yerine her haftayı ayrı bir öğrenme kanıtı
+olarak modelliyoruz. ERC-1155 toplu alımı ucuzlatıyor; soulbound kuralı da bu
+kanıtların satılmasını veya başka birine devredilmesini engelliyor.”
+
+
+4. PDF VEYA LINKEDIN SERTİFİKASINDAN FARKI NE?
+
+“PDF kolayca kopyalanabilir ve çoğunlukla yalnızca ‘katıldı’ der. Bizde hangi
+kampın hangi haftalarının tamamlandığı, bunu hangi issuer’ın onayladığı ve
+kanıtın hangi cüzdana ait olduğu doğrulanabilir.”
+
+
+5. ÖĞRENCİNİN GERÇEKTEN ÖĞRENDİĞİNE KİM KARAR VERİYOR?
+
+“Tamamlamayı yetkili eğitmen ve kamp yöneticisi onaylıyor. Sistem trustless
+olduğunu iddia etmiyor; kanıtın değeri issuer’ın itibarına dayanıyor. Farkımız,
+bu onayı herkese açık, denetlenebilir ve değişim geçmişi görülebilir yapmak.”
+
+
+6. EĞİTMEN SAHTE BAŞARI DAĞITIRSA NE OLUR?
+
+“MVP’de eğitmenler platform onayından geçiyor ve her yönetim işlemi iz
+bırakıyor. Üretim aşamasında issuer profili, itibar geçmişi ve çoklu onay
+mekanizması eklenebilir. Blockchain kötü issuer’ı iyi yapmaz; kimin neyi
+onayladığını gizlenemez hale getirir.”
+
+
+7. KİŞİSEL VERİLERİ BLOCKCHAIN’E Mİ YAZIYORSUNUZ?
+
+“Hayır. İsim, not, başvuru ve kilitli ders içeriği zincire çıkmıyor. Zincirde
+yalnızca cüzdan adresiyle ilişkili doğrulanabilir hak ediş ve rozet bulunuyor.”
+
+
+8. ROZETLER SATILABİLİR VEYA DEVREDİLEBİLİR Mİ?
+
+“Hayır. Kontrat transfer ve approval yollarını kapatıyor. Rozetler soulbound;
+yalnızca mint ve kontrollü burn işlemleri mümkün.”
+
+
+9. ADMIN İSTEDİĞİ ROZETİ SİLEBİLİR Mİ?
+
+“Sınırsız bir silme yetkisi yok. Yanlış basımı düzeltmek için yalnızca mintten
+sonraki yedi gün içinde burn yapılabiliyor. Yedi günden sonra admin dahil
+kimse rozeti silemiyor.”
+
+
+10. CÜZDAN KAYBOLURSA NE OLUR?
+
+“MVP’de soulbound rozetler mevcut cüzdana bağlı. Güvenli cüzdan taşıma henüz
+üründe yok. Production öncesi eski ve yeni cüzdanın imzasına veya kurum
+onayına dayanan açık bir migration/reissue politikası eklememiz gerekir.”
+
+
+11. GAS ÜCRETİNİ KİM ÖDÜYOR?
+
+“Mevcut modelde mint işlemini gönderen kullanıcı ağ ücretini ödüyor. Base’in
+düşük maliyetini ve ERC-1155 batch mint’i kullanıyoruz. Birden fazla haftanın
+rozeti tek işlemde alınabiliyor. Sonraki adım gas sponsorship veya account
+abstraction.”
+
+
+12. NEDEN BASE? NEDEN EDU CHAIN DEĞİL?
+
+“Base’i düşük maliyet, EVM uyumluluğu, olgun araçlar ve çalışan testnet
+altyapısı nedeniyle seçtik. Mimari EVM uyumlu başka ağlara taşınabilir. Kısa
+sürede zincir ismi değiştirmek yerine çalışan ve test edilmiş ürünü korumayı
+tercih ettik.”
+
+
+13. SİSTEM NASIL ÖLÇEKLENİYOR?
+
+“Her kamp için yeni kontrat deploy etmiyoruz. Kamplar ve hafta sayıları veri
+olarak aynı kontrata ekleniyor. Katılımcı listelerini tek tek zincire yazmak
+yerine haftalık Merkle root yayınlıyoruz.”
+
+
+14. MERKLE ROOT NE İŞE YARIYOR?
+
+“Bir haftayı tamamlayan bütün adresleri zincire tek tek yazmak yerine listenin
+kriptografik özetini yazıyoruz. Öğrenci kendi proof’unu getirerek listede
+olduğunu doğruluyor. Böylece depolama ve gas maliyeti ciddi biçimde düşüyor.”
+
+
+15. YENİ BİR KAMP EKLEMEK İÇİN KOD VEYA DEPLOY GEREKİYOR MU?
+
+“Hayır. Kamp adı ve hafta sayısı veri olarak ekleniyor. Eğitmen içeriği panelden
+yönetiyor; platform onayından sonra kamp mevcut kontrat altında aktif oluyor.”
+
+
+16. ÖĞRENCİ AYNI ANDA BİRDEN FAZLA KAMPA KATILABİLİR Mİ?
+
+“Evet. Her kampın ilerlemesi, haftası, not koşulu ve bekleme süresi kullanıcı
+bazında bağımsız tutuluyor.”
+
+
+17. BEKLEME SÜRESİ HERKES İÇİN AYNI ANDA MI AÇILIYOR?
+
+“Hayır. Süre öğrencinin kendi not veya ilerleme zamanına göre hesaplanıyor.
+Bir kişinin haftasının açılması başka bir kişinin haftasını açmıyor.”
+
+
+18. BACKEND ELE GEÇİRİLİRSE SALDIRGAN ROZET BASABİLİR Mİ?
+
+“Backend private key tutmuyor. Zincire yazma yetkili kişinin cüzdanında kalıyor.
+Sunucu ele geçirilse bile tek başına admin adına kontrat işlemi imzalayamaz.”
+
+
+19. KONTRAT UPGRADE EDİLEBİLİYORSA GERÇEKTEN DEĞİŞMEZ Mİ?
+
+“Kontrat UUPS ile yükseltilebilir; bu merkeziyet riskini gizlemiyoruz. Dört
+aylık bir kamp sırasında kritik hata çıkarsa düzeltme imkânı için bu tercihi
+yaptık. Yetki owner ile sınırlı, sahiplik iki adımlı ve üretimde multisig’e
+taşınması gerekir.”
+
+
+20. GÜVENLİĞİ NASIL TEST ETTİNİZ?
+
+“Kontratta yetki, upgrade, storage koruması, Merkle proof, soulbound transfer
+engeli, çoklu kamp ve mint senaryolarını kapsayan 142 test var. Güncel coverage
+yüzde 99,62 satır ve yüzde 100 branch/function seviyesinde.”
+
+
+21. NOTION ÇÖKERSE SİTE DE ÇÖKER Mİ?
+
+“Hayır. Notion canlı veri kaynağı değil, içerik yönetim aracı. İçerik önce
+Postgres’e senkronize ediliyor ve site her zaman Postgres’ten okuyor. Son
+başarılı içerik çalışmaya devam ediyor.”
+
+
+22. RAKİPLERDEN FARKINIZ NE?
+
+“LMS’ler içeriği, badge ürünleri sonucu yönetiyor. Biz eğitmenin kamp kurma ve
+öğrenci yönetme sürecini, öğrencinin hafta bazlı ilerlemesini ve herkese açık
+onchain portfolyoyu tek üründe birleştiriyoruz.”
+
+
+23. HEDEF KULLANICINIZ KİM?
+
+“İlk hedefimiz üniversite kulüpleri, bootcamp’ler ve cohort tabanlı eğitim
+toplulukları. Çünkü haftalık ilerleme, eğitmen onayı ve topluluk itibarı bu
+yapılarda doğrudan değer üretiyor.”
+
+
+24. NASIL PARA KAZANACAKSINIZ?
+
+“MVP’nin odağı kullanım doğrulaması. Sürdürülebilir model; kurum başına abonelik,
+aktif kamp veya öğrenci kotası ve white-label portal olabilir. Rozeti satmak
+yerine eğitim operasyon aracını kurumlara sunarız.”
+
+
+25. ŞU ANDA NE KADARI GERÇEKTEN ÇALIŞIYOR?
+
+“Base Sepolia kontratı, iki kamp, eğitmen portalı, kamp ve hafta yönetimi,
+öğrenci başvuruları, not/ilerleme akışı, leaderboard ve nick bazlı açık
+portfolyo çalışıyor. Kontrat testleri ve production build de geçiyor.”
+
+
+26. TRACTION’INIZ NEDİR?
+
+“Şu anda doğrulanmış kanıtımız iki gerçek kamp ve toplam 27 haftalık programın
+üründe modellenmiş olması. Henüz doğrulamadığımız kullanıcı sayısını söylemek
+yerine bir sonraki hedefimiz bağımsız bir eğitmenle pilot kamp açmak.”
+
+
+27. SONRAKİ ADIMINIZ NE?
+
+“Bağımsız bir eğitmenle pilot, gas sponsorship, issuer profilleri ve ana ağ
+öncesi profesyonel güvenlik denetimi. Teknik olarak yeni kamp ekleme altyapısı
+hazır; sıradaki doğrulama ürünün başka bir topluluk tarafından kullanılması.”
+
+
+28. PROJEDE YAPAY ZEKA VAR MI?
+
+“Yapay zekayı yalnızca etiket olsun diye ürüne eklemedik. Çözdüğümüz temel
+problem doğrulanabilir eğitim geçmişi ve bunun doğru aracı blockchain. İleride
+içerik özetleme veya eğitmene müfredat desteği eklenebilir; fakat öğrencinin
+başarısını onaylayan otorite insan ve kurum olarak kalmalı.”
+
+======================================================================
+SÖYLEMEMEN GEREKEN ŞEYLER
+======================================================================
+
+- “Tamamen merkeziyetsiz ve trustless.”
+  Doğrusu: Eğitmen/issuer onayına dayalı, işlemleri açık bir sistem.
+
+- “Kontrat kesinlikle değiştirilemez.”
+  Doğrusu: UUPS upgrade edilebilir; bu risk bilinçli ve açıklanıyor.
+
+- “Bütün öğrenci verileri blockchain’de.”
+  Doğrusu: Kişisel veri ve içerik offchain; yalnızca hak ediş onchain.
+
+- “Her işlem gas’siz.”
+  Doğrusu: Giriş imzası ücretsizdir; zincir işlemleri gas gerektirebilir.
+
+- “EDU Chain üzerinde çalışıyoruz.”
+  Doğrusu: Şu an Base Sepolia; mimari diğer EVM ağlarına taşınabilir.
+
+- “Binlerce aktif kullanıcımız var.”
+  Doğrulanmış sayı yoksa kullanıcı sayısı verme.
+
+- “AI destekli eğitim platformuyuz.”
+  Üründe olmayan özelliği sunum için ekleme.
+
+======================================================================
+30 SANİYELİK ACİL DURUM ÖZETİ
+======================================================================
+
+“PRU Camp OS, eğitim kampının içeriğini, öğrenci ilerlemesini ve sertifikasını
+tek üründe birleştiriyor. Eğitmen kampını ve haftalarını panelden yönetiyor;
+öğrenci birden fazla kampta ilerleyip her tamamladığı hafta için devredilemez
+ERC-1155 rozet alıyor. Kişisel veri offchain kalırken hak ediş Merkle kanıtıyla
+Base üzerinde doğrulanıyor. Çalışan Base Sepolia kontratımız, iki gerçek
+kampımız, açık öğrenci portfolyomuz ve 142 kontrat testimiz hazır. Öğren,
+kanıtla, paylaş.”
+
+======================================================================
+TEK CÜMLELİK TANIM
+======================================================================
+
+“PRU Camp OS, her eğitmenin kendi kampını yönetebildiği ve öğrencinin hafta
+bazlı ilerlemesini doğrulanabilir bir öğrenme portfolyosuna dönüştürdüğü
+onchain eğitim işletim sistemidir.”

@@ -1,27 +1,24 @@
 /**
- * /api/applications — Geri doldurma başvuruları (Faz A)
+ * /api/applications — Kampa katılım ve ileri hafta talepleri
  *
- *   POST  → "Ben bu kampın N. haftasındayım" beyanı
- *   GET   → Kendi başvurularımın durumu
+ *   POST  → 1. haftadan katılım veya N. haftadan başlama talebi
+ *   GET   → Kendi katılım/talep durumlarım
  *
  * ---------------------------------------------------------------------------
- * ⚠️ BU SİSTEMİN TEK GÜVEN NOKTASI
+ * ⚠️ İLERİ HAFTA GÜVEN SINIRI
  *
- * Beyan edilen hafta HİÇBİR otomatik doğrulamadan geçmez. Kullanıcı "15.
- * haftadayım" diyebilir. Bunu doğrulayan tek şey, kulüp yöneticisinin admin
- * panelinde tek tek inceleyip onaylamasıdır.
- *
- * Bu bilinçli bir tasarım tercihi (proje şartlarında açıkça istendi):
- * otomasyon yok, otomatik doğrulama yok. Onay verilene kadar zincirde
- * hiçbir şey olmaz — beyan yalnızca bir kuyruk kaydıdır.
+ * 1. hafta kamp ayarına göre doğrudan açılabilir. 2. hafta ve sonrasındaki
+ * başlangıç talepleri otomatik doğrulanmaz; eğitmen veya platform yöneticisi
+ * inceleyip onaylayana kadar içerik ve rozet hakkı oluşturulmaz.
  * ---------------------------------------------------------------------------
  */
 import {z} from "zod";
 
-import {db} from "@/lib/db";
+import {decideApplication} from "@/lib/applications/policy";
+import {fail, handle, ok, readJson} from "@/lib/api";
 import {requireViewer} from "@/lib/auth/guards";
 import {getCampBySlug} from "@/lib/content/access";
-import {fail, handle, ok, readJson} from "@/lib/api";
+import {db} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -65,11 +62,16 @@ export async function POST(request: Request) {
 
     if (declaredWeek > camp.weekCount) {
       return fail(
-        `Bu kamp ${camp.weekCount} haftalık. ${declaredWeek}. hafta beyan edilemez.`,
+        `Bu kamp ${camp.weekCount} haftalık. ${declaredWeek}. hafta başlangıç olarak seçilemez.`,
         400,
         "WEEK_OUT_OF_RANGE",
       );
     }
+
+    const decision = decideApplication(
+      declaredWeek,
+      camp.firstWeekRequiresApproval,
+    );
 
     /* ---- Aynı kampa ikinci başvuru ---- */
     const existing = await db.application.findUnique({
@@ -95,34 +97,54 @@ export async function POST(request: Request) {
       }
       // REDDEDİLMİŞ başvuru → tekrar denemeye izin veriyoruz.
       // Kişi eksik bilgi vermiş olabilir; kalıcı olarak engellemek doğru değil.
-      const updated = await db.application.update({
-        where: {id: existing.id},
-        data: {
-          declaredWeek,
-          nickname: nickname ?? null,
-          note: note ?? null,
-          status: "PENDING",
-          reviewedBy: null,
-          reviewedAt: null,
-          reviewNote: null,
-        },
-      });
-
-      return ok({application: updated, resubmitted: true});
     }
 
-    const application = await db.application.create({
-      data: {
-        address: viewer.address!,
-        campId: camp.id,
-        declaredWeek,
-        nickname: nickname ?? null,
-        note: note ?? null,
-        status: "PENDING",
-      },
+    const result = await db.$transaction(async (tx) => {
+      const application = existing
+        ? await tx.application.update({
+            where: {id: existing.id},
+            data: {
+              declaredWeek,
+              nickname: nickname ?? null,
+              note: note ?? null,
+              status: decision.status,
+              reviewedBy: null,
+              reviewedAt: null,
+              reviewNote: null,
+            },
+          })
+        : await tx.application.create({
+            data: {
+              address: viewer.address!,
+              campId: camp.id,
+              declaredWeek,
+              nickname: nickname ?? null,
+              note: note ?? null,
+              status: decision.status,
+            },
+          });
+
+      if (decision.completionWeeks.length > 0) {
+        await tx.weeklyCompletion.createMany({
+          data: decision.completionWeeks.map((weekNumber) => ({
+            address: viewer.address!,
+            campId: camp.id,
+            weekNumber,
+            source: "join",
+            createdBy: null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return {
+        application,
+        autoApproved: !decision.requiresReview,
+        resubmitted: Boolean(existing),
+      };
     });
 
-    return ok({application, resubmitted: false}, {status: 201});
+    return existing ? ok(result) : ok(result, {status: 201});
   });
 }
 

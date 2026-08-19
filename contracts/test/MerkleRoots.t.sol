@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {BaseTest, MerkleLib} from "./Helpers.sol";
 import {MerkleClaim} from "../src/MerkleClaim.sol";
@@ -25,9 +26,7 @@ contract MerkleRootsTest is BaseTest {
     function test_SetMerkleRoot_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.setMerkleRoot(devCampId, 1, bytes32(uint256(1)));
     }
@@ -46,9 +45,7 @@ contract MerkleRootsTest is BaseTest {
 
     function test_SetMerkleRoot_RevertsOnInvalidWeek() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(WeekOutOfRange.selector, devCampId, DEV_WEEKS + 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(WeekOutOfRange.selector, devCampId, DEV_WEEKS + 1));
         badges.setMerkleRoot(devCampId, DEV_WEEKS + 1, bytes32(uint256(1)));
     }
 
@@ -194,7 +191,9 @@ contract MerkleRootsTest is BaseTest {
 
     /// @dev Rastgele üretilmiş hiçbir proof geçerli olmamalı.
     ///      512 tur fuzzing ile denenir (foundry.toml).
-    function testFuzz_RandomProofIsRejected(bytes32[] calldata randomProof) public {
+    function testFuzz_RandomProofIsRejected(
+        bytes32[] calldata randomProof
+    ) public {
         _giveNickname(alice, "alice");
         bytes32[] memory leaves = _publishRoot(devCampId, 1, _addresses(alice, bob, carol));
 
@@ -209,7 +208,9 @@ contract MerkleRootsTest is BaseTest {
     }
 
     /// @dev Listede olmayan rastgele bir adres rozet alamaz.
-    function testFuzz_UnlistedAccountCannotClaim(address outsider) public {
+    function testFuzz_UnlistedAccountCannotClaim(
+        address outsider
+    ) public {
         vm.assume(outsider != alice && outsider != bob && outsider != address(0));
         vm.assume(outsider.code.length == 0); // EOA olsun
 
@@ -234,9 +235,8 @@ contract MerkleRootsTest is BaseTest {
     ///      Bu test formatı değiştirmeye karşı bir bekçidir: birisi çift
     ///      hash'lemeyi tek hash'e indirirse burada kırmızı yanar.
     function test_MerkleLeaf_FormatIsStable() public view {
-        bytes32 expected = keccak256(
-            bytes.concat(keccak256(abi.encode(alice, devCampId, uint256(3))))
-        );
+        bytes32 expected =
+            keccak256(bytes.concat(keccak256(abi.encode(alice, devCampId, uint256(3)))));
         assertEq(badges.merkleLeaf(alice, devCampId, 3), expected);
     }
 

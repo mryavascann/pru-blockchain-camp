@@ -1,11 +1,9 @@
-import {privateKeyToAccount} from "viem/accounts";
+import {generatePrivateKey, privateKeyToAccount} from "viem/accounts";
 import {createSiweMessage} from "viem/siwe";
 import {db} from "../lib/db";
 
 const BASE = "http://localhost:3100";
-const acct = privateKeyToAccount(
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-);
+const acct = privateKeyToAccount(generatePrivateKey());
 let cookie = "";
 let fails = 0;
 
@@ -148,13 +146,6 @@ async function main() {
   const anon = await api("/api/participant");
   check("oturumsuz istek reddedildi", anon.status === 401, `HTTP ${anon.status}`);
   cookie = savedCookie;
-
-  /* --- Admin sayfasi dagilimi gosteriyor mu --- */
-  const adminHtml = await (
-    await fetch(BASE + "/admin", {headers: {Cookie: cookie}})
-  ).text();
-  check("admin ozetinde dagilim var", adminHtml.includes("Siteyi nereden duydular"));
-  check("Instagram satiri gorunuyor", adminHtml.includes("Instagram"));
 
   await db.participant.deleteMany({where: {address: acct.address.toLowerCase()}});
 

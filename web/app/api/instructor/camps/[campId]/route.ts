@@ -16,6 +16,7 @@ const patchSchema = z.object({
   instructorName: z.string().trim().min(2).max(80).optional(),
   startDate: z.string().date().nullable().optional(),
   weekCount: z.number().int().min(1).max(52).optional(),
+  firstWeekRequiresApproval: z.boolean().optional(),
   publicWeekNumber: z.number().int().min(1).nullable().optional(),
   action: z.enum(["submit-review", "reopen-draft"]).optional(),
 });
@@ -38,6 +39,7 @@ export async function PATCH(request: Request, {params}: Context) {
       select: {
         lifecycle: true,
         weekCount: true,
+        firstWeekRequiresApproval: true,
         slug: true,
         weeks: {
           orderBy: {weekNumber: "asc"},
@@ -149,6 +151,38 @@ export async function PATCH(request: Request, {params}: Context) {
 
     try {
       const updated = await db.$transaction(async (tx) => {
+        if (
+          current.firstWeekRequiresApproval &&
+          data.firstWeekRequiresApproval === false
+        ) {
+          const pendingFirstWeek = await tx.application.findMany({
+            where: {campId, declaredWeek: 1, status: "PENDING"},
+            select: {address: true},
+          });
+
+          if (pendingFirstWeek.length > 0) {
+            await tx.weeklyCompletion.createMany({
+              data: pendingFirstWeek.map(({address}) => ({
+                address,
+                campId,
+                weekNumber: 1,
+                source: "join",
+                createdBy: null,
+              })),
+              skipDuplicates: true,
+            });
+            await tx.application.updateMany({
+              where: {campId, declaredWeek: 1, status: "PENDING"},
+              data: {
+                status: "APPROVED",
+                reviewedBy: null,
+                reviewedAt: null,
+                reviewNote: null,
+              },
+            });
+          }
+        }
+
         if (data.weekCount && data.weekCount > current.weekCount) {
           await tx.week.createMany({
             data: Array.from(
@@ -177,6 +211,9 @@ export async function PATCH(request: Request, {params}: Context) {
             ...(data.description !== undefined ? {description: data.description} : {}),
             ...(data.instructorName !== undefined ? {instructorName: data.instructorName} : {}),
             ...(data.weekCount !== undefined ? {weekCount: data.weekCount} : {}),
+            ...(data.firstWeekRequiresApproval !== undefined
+              ? {firstWeekRequiresApproval: data.firstWeekRequiresApproval}
+              : {}),
             ...(data.publicWeekNumber !== undefined
               ? {publicWeekNumber: data.publicWeekNumber}
               : {}),

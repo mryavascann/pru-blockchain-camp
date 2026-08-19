@@ -110,6 +110,7 @@ async function main(): Promise<void> {
         description: meta.description,
         weekCount: camp.weekCount,
         active: camp.active,
+        firstWeekRequiresApproval: false,
         lifecycle: "PUBLISHED",
         notionSourceId: meta.notionSourceId,
         displayOrder: meta.order,
@@ -125,8 +126,8 @@ async function main(): Promise<void> {
         description: meta.description,
         notionSourceId: meta.notionSourceId,
         displayOrder: meta.order,
-        // `publicWeekNumber` KASITLI OLARAK YOK —
-        // admin panelinden yapılan ayar ezilmemeli.
+        // `publicWeekNumber` ve `firstWeekRequiresApproval` KASITLI OLARAK YOK —
+        // admin/eğitmen panelinden yapılan ayarlar ezilmemeli.
       },
     });
 

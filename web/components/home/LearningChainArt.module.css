@@ -1,0 +1,476 @@
+.scene {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 35rem);
+  height: 35rem;
+  justify-self: end;
+  isolation: isolate;
+}
+
+.heroField {
+  position: absolute;
+  z-index: -4;
+  top: -30%;
+  right: -28vw;
+  width: 160vw;
+  height: 165%;
+  opacity: 0.72;
+  background:
+    radial-gradient(circle at 79% 48%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 27%),
+    radial-gradient(circle at 91% 16%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 18%),
+    linear-gradient(color-mix(in srgb, var(--border-accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border-accent) 10%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 46px 46px, 46px 46px;
+  mask-image: radial-gradient(ellipse 70% 70% at 76% 48%, black 22%, transparent 78%);
+}
+
+.leftOrbit {
+  position: absolute;
+  z-index: -2;
+  top: 58%;
+  right: calc(100% + 34vw);
+  width: 19rem;
+  height: 19rem;
+  border: 1px solid color-mix(in srgb, var(--border-accent) 24%, transparent);
+  border-radius: 999px;
+  opacity: 0.65;
+}
+
+.leftOrbit::before,
+.leftOrbit::after {
+  position: absolute;
+  content: "";
+  border: 1px solid color-mix(in srgb, var(--border-accent) 20%, transparent);
+  border-radius: inherit;
+}
+
+.leftOrbit::before {
+  inset: 3.25rem;
+}
+
+.leftOrbit::after {
+  inset: 6.5rem;
+}
+
+.leftOrbit span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 18px var(--accent);
+}
+
+.leftOrbit span:nth-child(1) {
+  top: 12%;
+  right: 17%;
+}
+
+.leftOrbit span:nth-child(2) {
+  right: 1%;
+  bottom: 38%;
+}
+
+.leftOrbit span:nth-child(3) {
+  bottom: 16%;
+  left: 18%;
+}
+
+.orbit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbitLine {
+  stroke: color-mix(in srgb, var(--border-accent) 30%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 5 12;
+}
+
+.pathLine {
+  stroke: url("#learning-path");
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 10 7;
+  opacity: 0.72;
+  animation: path-flow 18s linear infinite;
+}
+
+.nodes circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 3.6s ease-in-out infinite;
+}
+
+.badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11rem;
+  height: 11rem;
+  padding: 8px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(145deg, var(--accent-text), var(--primary), var(--reward));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--fg-primary) 12%, transparent),
+    0 0 54px color-mix(in srgb, var(--accent) 38%, transparent),
+    var(--shadow-lg);
+  animation: badge-breathe 5.5s ease-in-out infinite;
+}
+
+.badgeRing {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--fg-primary) 28%, transparent);
+  border-radius: inherit;
+  background: var(--bg-base);
+}
+
+.badgeCore {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid var(--border-accent);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 42%),
+    var(--bg-surface);
+}
+
+.badgeCore svg {
+  width: 2.7rem;
+  height: 2.7rem;
+  stroke: var(--accent-text);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badgeCore strong {
+  font-size: 1.35rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.badgeCore span {
+  color: var(--fg-muted);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.weekCard {
+  position: absolute;
+  display: flex;
+  width: 10.75rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.85rem;
+  color: var(--fg-primary);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+}
+
+.weekNumber {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid currentcolor;
+  border-radius: 0.65rem;
+  font-family: var(--font-mono-code), monospace;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.weekCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.weekCopy strong {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+
+.weekCopy small {
+  margin-top: 2px;
+  color: var(--fg-muted);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.stateMark {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.earned {
+  border-color: color-mix(in srgb, var(--success) 65%, var(--border-subtle));
+}
+
+.earned .weekNumber,
+.earned .stateMark {
+  color: var(--success);
+}
+
+.earned .stateMark {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.active {
+  border-color: var(--border-accent);
+}
+
+.active .weekNumber,
+.active .stateMark {
+  color: var(--accent-text);
+}
+
+.active .stateMark {
+  background: var(--accent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.locked {
+  opacity: 0.7;
+}
+
+.locked .weekNumber,
+.locked .stateMark {
+  color: var(--fg-muted);
+}
+
+.cardOne {
+  top: 21%;
+  left: 0;
+  transform: rotate(-5deg);
+  animation: float-one 6s ease-in-out infinite;
+}
+
+.cardTwo {
+  top: 10%;
+  right: -1%;
+  transform: rotate(5deg);
+  animation: float-two 7s ease-in-out -1.2s infinite;
+}
+
+.cardThree {
+  right: -2%;
+  bottom: 17%;
+  transform: rotate(-3deg);
+  animation: float-three 6.5s ease-in-out -2.1s infinite;
+}
+
+.chainChip,
+.proofChip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  color: var(--fg-secondary);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.chainChip {
+  top: 2%;
+  left: 34%;
+  gap: 0.45rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.chainDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 12px var(--success);
+}
+
+.proofChip {
+  bottom: 8%;
+  left: 10%;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.65rem;
+  font-size: 0.62rem;
+}
+
+.proofChip code {
+  color: var(--accent-text);
+  font-family: var(--font-mono-code), monospace;
+}
+
+.proofChip span {
+  color: var(--success);
+  font-weight: 800;
+}
+
+@keyframes path-flow {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes node-pulse {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.78);
+  }
+}
+
+@keyframes badge-breathe {
+  50% {
+    transform: translate(-50%, -50%) scale(1.025);
+  }
+}
+
+@keyframes float-one {
+  50% {
+    transform: translateY(-9px) rotate(-3deg);
+  }
+}
+
+@keyframes float-two {
+  50% {
+    transform: translateY(8px) rotate(3deg);
+  }
+}
+
+@keyframes float-three {
+  50% {
+    transform: translateY(-7px) rotate(-1deg);
+  }
+}
+
+@media (max-width: 1023px) {
+  .scene {
+    height: 31rem;
+    justify-self: center;
+  }
+
+  .leftOrbit {
+    display: none;
+  }
+
+  .heroField {
+    right: -45vw;
+    width: 190vw;
+    mask-image: radial-gradient(ellipse 76% 64% at 60% 52%, black 18%, transparent 78%);
+  }
+}
+
+@media (max-width: 639px) {
+  .scene {
+    width: calc(100% + 1rem);
+    height: 22rem;
+    margin-inline: -0.5rem;
+  }
+
+  .badge {
+    width: 8.25rem;
+    height: 8.25rem;
+  }
+
+  .badgeCore svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .badgeCore strong {
+    font-size: 1rem;
+  }
+
+  .badgeCore span {
+    font-size: 0.38rem;
+  }
+
+  .weekCard {
+    width: 8.25rem;
+    gap: 0.45rem;
+    padding: 0.55rem;
+  }
+
+  .weekNumber {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.7rem;
+  }
+
+  .weekCopy strong {
+    font-size: 0.57rem;
+  }
+
+  .weekCopy small {
+    font-size: 0.43rem;
+  }
+
+  .stateMark {
+    display: none;
+  }
+
+  .cardOne {
+    top: 19%;
+  }
+
+  .cardTwo {
+    top: 7%;
+    right: 0;
+  }
+
+  .cardThree {
+    right: 0;
+    bottom: 12%;
+  }
+
+  .chainChip {
+    left: 31%;
+    font-size: 0.48rem;
+  }
+
+  .proofChip {
+    bottom: 4%;
+    left: 5%;
+    gap: 0.4rem;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pathLine,
+  .nodes circle,
+  .badge,
+  .weekCard {
+    animation: none;
+  }
+}

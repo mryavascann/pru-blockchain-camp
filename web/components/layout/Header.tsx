@@ -38,12 +38,12 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur">
+    <header className="site-header sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur">
       <Container>
         <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
           <Link
             href="/"
-            className="flex items-center gap-2.5 font-[family-name:var(--font-heading)] font-extrabold tracking-tight"
+            className="brand-mark flex items-center gap-2.5 font-[family-name:var(--font-heading)] font-extrabold tracking-tight"
           >
             <Logo />
             <span className="hidden sm:inline">{t.site.shortName}</span>
@@ -59,7 +59,7 @@ export function Header() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={[
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "site-nav-link rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     active
                       ? "bg-subtle text-fg"
                       : "text-fg-secondary hover:bg-subtle hover:text-fg",
@@ -90,7 +90,7 @@ export function Header() {
 
       {open && (
         <nav
-          className="border-t border-line bg-surface md:hidden"
+          className="reveal-soft border-t border-line bg-surface/95 backdrop-blur md:hidden"
           aria-label="Mobil menü"
         >
           <Container className="flex flex-col py-2">

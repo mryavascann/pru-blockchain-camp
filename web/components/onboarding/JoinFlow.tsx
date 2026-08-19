@@ -7,12 +7,11 @@
  *   1. Cüzdanı bağla ve imzala   (ücretsiz, zincire gitmez)
  *   2. Nick belirle              (zincir işlemi, gas gerekir)
  *   3. Kendini tanıt             (zincir dışı, yalnızca yönetim görür)
- *   4. Haftanı bildir            (zincir dışı, admin onayına gider)
+ *   4. Kampa katıl               (1. hafta doğrudan veya kamp ayarına göre onaylı)
  *
- * 4. ADIM HER KAMP İÇİN AYRI: Bir kişi birden fazla kampa katılabilir ve
- * kamplarda FARKLI haftalarda olabilir — hem Developers'ta 4. hafta, hem
- * Directors'ta 2. hafta gibi. Bu yüzden tek bir kamp/hafta seçimi yerine
- * her kamp kendi bloğunda, kendi haftasıyla beyan ediliyor.
+ * 4. ADIM HER KAMP İÇİN AYRI: Bir kişi birden fazla kampa katılabilir. Herkes
+ * varsayılan olarak 1. haftadan başlar; yalnızca gerçekten ileride olan kişi
+ * küçük seçeneği açarak o kamp için ileri hafta inceleme talebi gönderir.
  *
  * brand.md §9.1: cüzdan kapıda zorlanmaz. Kullanıcı buraya kendi isteğiyle
  * geliyor, o yüzden burada bağlantı istemek doğru.
@@ -48,6 +47,7 @@ type Camp = {
   slug: string;
   name: string;
   weekCount: number;
+  firstWeekRequiresApproval: boolean;
   active: boolean;
 };
 
@@ -501,19 +501,19 @@ function ProfileStep({
 }
 
 /* -------------------------------------------------------------------------- */
-/*                          4. ADIM — HAFTA BEYANI                            */
+/*                       4. ADIM — KAMPA KATILIM                              */
 /* -------------------------------------------------------------------------- */
 
 /**
- * HER KAMP İÇİN AYRI BEYAN.
+ * HER KAMP İÇİN AYRI KATILIM.
  *
  * Önceki hâli tek bir açılır listeydi: bir kamp seç, bir hafta seç, gönder.
  * Bu, iki kampa birden katılan kişiyi çıkmaza sokuyordu — birinci kampa
  * başvurduktan sonra ikincisini beyan edecek yer kalmıyordu.
  *
- * Şimdi her kamp kendi bloğunda ve kendi durumunu gösteriyor. Kamplar
- * BİRBİRİNDEN BAĞIMSIZ: Developers'ta 6. haftada, Directors'ta 2. haftada
- * olabilirsin; iki ayrı başvuru, iki ayrı onay, iki ayrı rozet dizisi.
+ * Herkes varsayılan olarak 1. haftadan başlar. Yalnızca başka bir programdan
+ * devam edenler küçük ileri hafta seçeneğini açıp inceleme talebi gönderir.
+ * Kamplar birbirinden bağımsızdır.
  */
 function ApplicationStep({
   camps,
@@ -536,15 +536,15 @@ function ApplicationStep({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-relaxed text-fg-secondary">
-        Katıldığın <strong className="text-fg">her kamp için ayrı ayrı</strong>{" "}
-        haftanı bildir. Kamplar birbirinden bağımsız ilerler — birinde 6.
-        haftada, diğerinde 2. haftada olabilirsin.
+        İstediğin kampın <strong className="text-fg">1. haftasına başla</strong>.
+        Başka bir programda ilerlediysen ilgili kampın içinden ileri hafta
+        talebi gönderebilirsin.
       </p>
 
       {activeCamps.length > 1 && (
         <p className="rounded-lg border border-line-accent bg-subtle px-3 py-2 text-sm font-semibold text-accent-text">
-          Birden fazla kamp seçebilirsin. Aşağıdaki her kampın hafta seçimi ve
-          başvurusu birbirinden bağımsızdır.
+          Birden fazla kampa katılabilirsin; her kampın katılımı ve ilerlemesi
+          birbirinden bağımsızdır.
         </p>
       )}
 
@@ -567,25 +567,20 @@ function ApplicationStep({
         </div>
       ))}
 
-      {/*
-        DÜRÜSTLÜK NOTU — Faz 0'da kararlaştırıldı:
-        beyan edilen hafta sistemin tek güven noktası. Kullanıcı bunu bilsin.
-      */}
       <div className="rounded-lg border border-line bg-subtle p-3">
         <Pill tone="muted">Nasıl işliyor?</Pill>
         <p className="mt-2 text-xs leading-relaxed text-fg-secondary">
-          Beyan ettiğin hafta otomatik olarak doğrulanmaz. Kulüp yöneticisi
-          başvurunu elle inceleyip onaylar. Onaylandığında{" "}
-          <strong>1. haftadan beyan ettiğin haftaya kadar</strong> tüm rozetleri
-          tek işlemde alabilirsin. Beyan ettiğin haftadan itibaren, her haftanın
-          rozetini alırken ortak deftere bir not bırakman gerekecek.
+          1. hafta çoğu kampta hemen açılır; eğitmen isterse ilk katılım için de
+          onay isteyebilir. <strong>2. hafta ve sonrası her zaman eğitmen
+          incelemesine gider.</strong> Onaylanan ileri hafta talebi, 1. haftadan
+          seçtiğin haftaya kadar erişimini açar.
         </p>
       </div>
     </div>
   );
 }
 
-/** Tek bir kampın beyan bloğu — kendi haftası, kendi durumu */
+/** Tek bir kampın katılım bloğu — kendi başlangıcı, kendi durumu */
 function CampApplication({
   camp,
   application,
@@ -595,7 +590,12 @@ function CampApplication({
   application: ApplicationRecord | null;
   onChanged: () => void;
 }) {
-  const [week, setWeek] = useState(application?.declaredWeek ?? 1);
+  const [advancedOpen, setAdvancedOpen] = useState(
+    Boolean(application && application.declaredWeek > 1),
+  );
+  const [week, setWeek] = useState(
+    Math.max(2, application?.declaredWeek ?? 2),
+  );
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -604,7 +604,7 @@ function CampApplication({
   const locked =
     application?.status === "PENDING" || application?.status === "APPROVED";
 
-  async function submit() {
+  async function submit(requestedWeek: number) {
     setStatus("sending");
     setMessage("");
     try {
@@ -613,7 +613,7 @@ function CampApplication({
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
           campSlug: camp.slug,
-          declaredWeek: week,
+          declaredWeek: requestedWeek,
           note: note || undefined,
         }),
       });
@@ -622,6 +622,7 @@ function CampApplication({
       if (json.ok) {
         setStatus("idle");
         setNote("");
+        setAdvancedOpen(false);
         onChanged();
       } else {
         setStatus("error");
@@ -658,9 +659,13 @@ function CampApplication({
             }
           >
             {application.status === "APPROVED"
-              ? `✓ onaylandı — ${application.declaredWeek}. hafta`
+              ? application.declaredWeek === 1
+                ? "✓ 1. hafta açık"
+                : `✓ ${application.declaredWeek}. haftaya kadar onaylı`
               : application.status === "PENDING"
-                ? `inceleniyor — ${application.declaredWeek}. hafta`
+                ? application.declaredWeek === 1
+                  ? "1. hafta onayı bekleniyor"
+                  : `${application.declaredWeek}. hafta isteği inceleniyor`
                 : "reddedildi"}
           </Pill>
         ) : (
@@ -673,12 +678,20 @@ function CampApplication({
       {/* ---- Onaylanmış ---- */}
       {application?.status === "APPROVED" && (
         <p className="mt-2 text-sm text-fg-secondary">
-          1–{application.declaredWeek}. hafta rozetlerin hazır.{" "}
+          {application.declaredWeek === 1
+            ? "1. hafta erişimin açık. İçeriğe başlayabilirsin. "
+            : `1–${application.declaredWeek}. hafta erişimin açıldı. `}
           <Link
-            href="/profil"
+            href={
+              application.declaredWeek === 1
+                ? `/kamplar/${camp.slug}/hafta/1`
+                : "/profil"
+            }
             className="font-semibold text-accent-text underline underline-offset-2"
           >
-            Profilinden alabilirsin →
+            {application.declaredWeek === 1
+              ? "1. haftaya git →"
+              : "Profilini aç →"}
           </Link>
         </p>
       )}
@@ -686,7 +699,9 @@ function CampApplication({
       {/* ---- Bekliyor ---- */}
       {application?.status === "PENDING" && (
         <p className="mt-2 text-sm text-fg-secondary">
-          {t.onboarding.submittedHelp}
+          {application.declaredWeek === 1
+            ? "Bu kampın eğitmeni ilk katılımı onaylıyor. Onaydan sonra 1. hafta açılacak."
+            : `${application.declaredWeek}. haftadan başlama isteğin eğitmenin incelemesinde.`}
         </p>
       )}
 
@@ -697,62 +712,98 @@ function CampApplication({
         </p>
       )}
 
-      {/* ---- Beyan formu ---- */}
+      {/* ---- Katılım ve ileri hafta talebi ---- */}
       {!locked && (
         <div className="mt-3 flex flex-col gap-3">
-          <div>
-            <span className="mb-1.5 block text-sm font-semibold">
-              {t.onboarding.weekLabel}
-            </span>
-
-            {/*
-              Hafta seçimi düğme ızgarası olarak — açılır listede 15 seçenek
-              taramak yerine tek bakışta görülüp tıklanabiliyor. Kutucuk
-              sayısı kampın hafta sayısından geliyor, sabit değil.
-            */}
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({length: camp.weekCount}, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setWeek(n)}
-                  aria-pressed={week === n}
-                  className={[
-                    "h-9 w-9 rounded-md border text-sm font-semibold transition-colors",
-                    week === n
-                      ? "border-line-accent bg-accent text-accent-fg"
-                      : "border-line-strong bg-surface text-fg-secondary hover:border-line-accent",
-                  ].join(" ")}
-                >
-                  {n}
-                </button>
-              ))}
+          <div className="rounded-lg border border-line bg-subtle p-3">
+            <p className="text-sm font-semibold">1. haftadan başla</p>
+            <p className="mt-1 text-xs leading-relaxed text-fg-muted">
+              {camp.firstWeekRequiresApproval
+                ? "Bu kamp ilk katılımı eğitmen onayından sonra açıyor."
+                : "Ek onay beklemeden kampın 1. haftası hemen açılır."}
+            </p>
+            <div className="mt-3">
+              <Button
+                variant="accent"
+                loading={status === "sending"}
+                onClick={() => submit(1)}
+              >
+                {camp.firstWeekRequiresApproval
+                  ? "1. hafta için başvur"
+                  : "Kampa katıl ve 1. haftayı aç"}
+              </Button>
             </div>
-
-            <p className="mt-2 text-xs text-fg-muted">{t.onboarding.weekHelp}</p>
           </div>
 
-          <label className="block">
-            <span className="mb-1 block text-sm font-semibold">
-              {t.onboarding.noteLabel}
-            </span>
-            <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder={t.onboarding.notePlaceholder}
-              rows={2}
-              maxLength={500}
-              className="w-full resize-y rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent"
-            />
-          </label>
+          {camp.weekCount > 1 && (
+            <button
+              type="button"
+              aria-expanded={advancedOpen}
+              disabled={status === "sending"}
+              onClick={() => setAdvancedOpen((open) => !open)}
+              className="self-start text-xs font-semibold text-accent-text underline underline-offset-4 disabled:opacity-50"
+            >
+              {advancedOpen
+                ? "İleri hafta talebini kapat"
+                : "Zaten ileride misin? İleri haftadan başlama isteği gönder"}
+            </button>
+          )}
 
-          <Button variant="accent" loading={status === "sending"} onClick={submit}>
-            {status === "sending"
-              ? t.onboarding.submitting
-              : application?.status === "REJECTED"
-                ? "Tekrar gönder"
-                : `${camp.name} için gönder`}
-          </Button>
+          {advancedOpen && camp.weekCount > 1 && (
+            <div className="flex flex-col gap-3 rounded-lg border border-line-accent p-3">
+              <div>
+                <span className="mb-1.5 block text-sm font-semibold">
+                  Başlamak istediğin hafta
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(
+                    {length: camp.weekCount - 1},
+                    (_, index) => index + 2,
+                  ).map((number) => (
+                    <button
+                      key={number}
+                      type="button"
+                      onClick={() => setWeek(number)}
+                      aria-pressed={week === number}
+                      className={[
+                        "h-9 w-9 rounded-md border text-sm font-semibold transition-colors",
+                        week === number
+                          ? "border-line-accent bg-accent text-accent-fg"
+                          : "border-line-strong bg-surface text-fg-secondary hover:border-line-accent",
+                      ].join(" ")}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-fg-muted">
+                  İleri hafta talepleri eğitmen tarafından kontrol edilip onaylanır.
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-semibold">
+                  Kısa açıklama (isteğe bağlı)
+                </span>
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Önceki ilerlemeni doğrulamaya yardımcı olacak bilgi yazabilirsin."
+                  rows={2}
+                  maxLength={500}
+                  className="w-full resize-y rounded-md border border-line-strong bg-surface px-3 py-2 text-fg outline-none focus:border-line-accent"
+                />
+              </label>
+
+              <Button
+                variant="secondary"
+                loading={status === "sending"}
+                onClick={() => submit(week)}
+              >
+                {week}. haftadan başlama isteği gönder
+              </Button>
+            </div>
+          )}
 
           {status === "error" && (
             <p role="alert" className="text-sm text-danger">

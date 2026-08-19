@@ -23,14 +23,14 @@ export function Card({
   return (
     <div
       className={[
-        "rounded-lg border bg-surface",
+        "pru-card rounded-xl border bg-surface",
         "p-4 md:p-6",
         "shadow-[var(--shadow-sm)]",
         accent
-          ? "border-line-accent"
+          ? "pru-card-accent border-line-accent"
           : "border-line",
         interactive
-          ? "transition-shadow duration-200 ease-out hover:shadow-[var(--shadow-md)]"
+          ? "pru-card-interactive transition-[transform,box-shadow,border-color] duration-300 ease-out"
           : "",
         className,
       ].join(" ")}
@@ -67,7 +67,7 @@ export function Pill({
   return (
     <span
       className={[
-        "inline-flex items-center gap-1 rounded-full border",
+        "pru-pill inline-flex items-center gap-1 rounded-full border",
         "px-2.5 py-0.5 text-xs font-semibold tracking-wide",
         PILL_TONES[tone],
         className,
@@ -140,7 +140,7 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
+    <div className="pru-empty-state flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-12 text-center">
       {icon && <div className="text-fg-muted">{icon}</div>}
       <p className="font-semibold">{title}</p>
       {description && (

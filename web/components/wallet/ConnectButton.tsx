@@ -12,7 +12,7 @@ import {useEffect, useRef, useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 
-import {Button, type ButtonProps} from "@/components/ui/Button";
+import {Button, ButtonLink, type ButtonProps} from "@/components/ui/Button";
 import {shortenAddress} from "@/components/ui/Address";
 import {activeChain} from "@/lib/chain/config";
 import {useAuth} from "@/lib/hooks/useAuth";
@@ -78,7 +78,7 @@ export function ConnectButton() {
           loading={authenticate.isPending}
           onClick={() => {
             changeAccount.reset();
-            authenticate.mutate(undefined);
+            authenticate.mutate({chooseWallet: true});
           }}
           title={t.wallet.signInHint}
         >
@@ -88,14 +88,10 @@ export function ConnectButton() {
               ? fmt(t.wallet.switchNetwork, {network: activeChain.name})
               : t.wallet.connect}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+        <ChangeWalletButton
           loading={changeAccount.isPending}
           onClick={() => void chooseAnotherWallet()}
-        >
-          {changeAccount.isPending ? t.wallet.changing : t.wallet.change}
-        </Button>
+        />
         <AuthError error={changeAccount.error ?? authenticate.error} />
       </div>
     );
@@ -212,15 +208,14 @@ export function ConnectButton() {
 
   if (!hasWallet) {
     return (
-      <a
+      <ButtonLink
         href="https://metamask.io/download/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex h-10 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-fg"
+        external
+        variant="accent"
         title={t.wallet.noWalletHelp}
       >
         {t.wallet.installMetamask}
-      </a>
+      </ButtonLink>
     );
   }
 
@@ -231,21 +226,95 @@ export function ConnectButton() {
         loading={authenticate.isPending}
         onClick={() => {
           changeAccount.reset();
-          authenticate.mutate(undefined);
+          authenticate.mutate({chooseWallet: true});
         }}
       >
         {authenticate.isPending ? t.wallet.signingIn : t.wallet.connect}
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
+      <ChangeWalletButton
         loading={changeAccount.isPending}
         onClick={() => void chooseAnotherWallet()}
-      >
-        {changeAccount.isPending ? t.wallet.changing : t.wallet.change}
-      </Button>
+      />
       <AuthError error={changeAccount.error ?? authenticate.error} />
     </div>
+  );
+}
+
+/**
+ * Sık kullanılmayan cüzdan değiştirme eylemi normalde yalnızca ikon kaplar.
+ * Fareyle üzerine gelince veya klavyeyle odaklanınca metin sağa doğru açılır.
+ */
+function ChangeWalletButton({
+  loading,
+  onClick,
+}: {
+  loading: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      aria-label={t.wallet.change}
+      title={t.wallet.change}
+      className="group inline-flex h-10 w-10 shrink-0 items-center gap-2 overflow-hidden rounded-md border border-transparent bg-transparent px-2.5 text-fg-secondary transition-[width,background-color,border-color,color] duration-300 ease-out hover:w-48 hover:border-line-strong hover:bg-subtle hover:text-fg focus-visible:w-48 focus-visible:border-line-accent focus-visible:bg-subtle focus-visible:text-fg focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {loading ? <LoadingIcon /> : <SwitchWalletIcon />}
+      <span className="max-w-0 -translate-x-2 whitespace-nowrap text-sm font-semibold opacity-0 transition-[max-width,opacity,transform] duration-300 ease-out group-hover:max-w-36 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:max-w-36 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
+        {loading ? t.wallet.changing : t.wallet.change}
+      </span>
+    </button>
+  );
+}
+
+function SwitchWalletIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M4 7h12" />
+      <path d="m13 4 3 3-3 3" />
+      <path d="M20 17H8" />
+      <path d="m11 14-3 3 3 3" />
+    </svg>
+  );
+}
+
+function LoadingIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="shrink-0 animate-spin"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2"
+        opacity="0.25"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -272,7 +341,7 @@ export function WalletGateButton({
   async function continueAfterAuthentication() {
     try {
       if (!session?.address || needsSignIn) {
-        await authenticate.mutateAsync(undefined);
+        await authenticate.mutateAsync({chooseWallet: true});
       }
       router.push(continueTo);
       router.refresh();

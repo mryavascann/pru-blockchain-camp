@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {PausableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import {BaseTest, MerkleLib} from "./Helpers.sol";
 import {
@@ -114,9 +115,7 @@ contract MintingTest is BaseTest {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(WeekOutOfRange.selector, devCampId, DEV_WEEKS + 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(WeekOutOfRange.selector, devCampId, DEV_WEEKS + 1));
         badges.claim(devCampId, DEV_WEEKS + 1, emptyProof);
     }
 
@@ -224,9 +223,7 @@ contract MintingTest is BaseTest {
             _publishWeekRange(devCampId, 1, 3, _addresses(alice, bob));
 
         vm.prank(alice);
-        badges.registerAndClaimBatch(
-            "alice", devCampId, _range(1, 3), _proofsFor(leavesPerWeek, 0)
-        );
+        badges.registerAndClaimBatch("alice", devCampId, _range(1, 3), _proofsFor(leavesPerWeek, 0));
 
         assertEq(badges.nicknameOf(alice), "alice");
         assertEq(badges.claimedWeekCount(alice, devCampId), 3);
@@ -253,9 +250,7 @@ contract MintingTest is BaseTest {
         assertEq(badges.claimedWeekCount(alice, dirCampId), 2);
 
         // tokenId'ler çakışmıyor
-        assertTrue(
-            badges.encodeTokenId(devCampId, 1) != badges.encodeTokenId(dirCampId, 1)
-        );
+        assertTrue(badges.encodeTokenId(devCampId, 1) != badges.encodeTokenId(dirCampId, 1));
     }
 
     /// @dev Bir kampın duraklatılması diğerini etkilemez.

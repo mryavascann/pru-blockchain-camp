@@ -20,7 +20,8 @@ import type {Address, PublicClient} from "viem";
 
 import {getServerEnv} from "@/lib/env";
 import {pruCampBadgesAbi} from "./abi";
-import {activeChain, contractAddress, createReadTransport} from "./config";
+import {activeChain, contractAddress} from "./config";
+import {createReadTransport} from "./transport";
 import {tokenIdsForCamp} from "./tokenId";
 
 let cached: PublicClient | null = null;
@@ -35,7 +36,7 @@ export function getPublicClient(): PublicClient {
     chain: activeChain,
     /*
      * TEK RPC DEĞİL, HAVUZ. `RPC_URL` tanımlıysa önce o denenir; cevap
-     * vermezse sıradaki adrese geçilir (bkz. config.ts → createReadTransport).
+     * vermezse sıradaki adrese geçilir (bkz. transport.ts).
      *
      * Eskiden burada tek adres ve `retryCount: 3` vardı. Bir sağlayıcı
      * kalıcı olarak `eth_call` reddetmeye başladığında üç deneme de aynı

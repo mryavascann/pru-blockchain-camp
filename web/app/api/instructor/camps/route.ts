@@ -14,6 +14,7 @@ const createSchema = z.object({
   description: z.string().trim().min(20).max(1200),
   instructorName: z.string().trim().min(2).max(80),
   weekCount: z.number().int().min(1).max(52),
+  firstWeekRequiresApproval: z.boolean().optional(),
   startDate: z.string().date().nullable().optional(),
 });
 
@@ -30,6 +31,7 @@ export async function GET() {
         description: true,
         instructorName: true,
         weekCount: true,
+        firstWeekRequiresApproval: true,
         lifecycle: true,
         chainCampId: true,
         coverAssetId: true,
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
         description: data.description,
         instructorName: data.instructorName,
         weekCount: data.weekCount,
+        firstWeekRequiresApproval: data.firstWeekRequiresApproval ?? false,
         startDate: data.startDate ? new Date(`${data.startDate}T00:00:00.000Z`) : null,
         active: false,
         lifecycle: "DRAFT",

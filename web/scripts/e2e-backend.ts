@@ -14,15 +14,15 @@
  * bir testte görünür.
  *
  * KULLANILAN CÜZDAN:
- * Anvil'in 0 numaralı hesabı — private key'i tüm dünyaca bilinen, yalnızca
- * test için var olan bir anahtar. Gerçek bir cüzdan kullanmıyoruz.
+ * Her çalıştırmada bellekte rastgele üretilen, bakiyesiz ve geçici bir
+ * test cüzdanı. Anahtar diske veya depoya yazılmaz.
  *
  * Kullanım:
  *   1. npm run dev          (ayrı terminalde)
  *   2. npm run e2e
  * ============================================================================
  */
-import {privateKeyToAccount} from "viem/accounts";
+import {generatePrivateKey, privateKeyToAccount} from "viem/accounts";
 import {createSiweMessage} from "viem/siwe";
 
 import {db} from "../lib/db";
@@ -32,11 +32,7 @@ import {readIsProofValid} from "../lib/chain/client";
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100";
 const DOMAIN = new URL(BASE_URL).host;
 
-/** Anvil hesap #0 — herkesçe bilinen test anahtarı, gerçek değeri yok */
-const TEST_PRIVATE_KEY =
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-
-const account = privateKeyToAccount(TEST_PRIVATE_KEY);
+const account = privateKeyToAccount(generatePrivateKey());
 
 let cookieJar = "";
 let failures = 0;
@@ -166,7 +162,7 @@ async function main(): Promise<void> {
 
   const lockedWithSession = await api<{
     level: string;
-    reason?: string;
+    reason?: {kind: string};
     week: Record<string, unknown>;
   }>("/api/camps/developers/weeks/3");
 
@@ -186,8 +182,8 @@ async function main(): Promise<void> {
     );
     check(
       'kilit sebebi "no-nickname" (cüzdan bağlı ama nick yok)',
-      lockedWithSession.body.data?.reason === "no-nickname",
-      `reason: ${lockedWithSession.body.data?.reason}`,
+      lockedWithSession.body.data?.reason?.kind === "no-nickname",
+      `reason: ${lockedWithSession.body.data?.reason?.kind}`,
     );
     check(
       ">>> contentHtml YANITTA YOK",
@@ -196,7 +192,7 @@ async function main(): Promise<void> {
   }
 
   /* ====================================================================== */
-  step("Geri doldurma başvurusu");
+  step("Kampa katılım ve ileri hafta talebi");
 
   await db.application.deleteMany({
     where: {address: account.address.toLowerCase()},
@@ -205,7 +201,56 @@ async function main(): Promise<void> {
     where: {address: account.address.toLowerCase()},
   });
 
-  const application = await api<{application: {id: string}}>("/api/applications", {
+  const instantJoin = await api<{
+    application: {id: string; campId: number; status: string};
+    autoApproved: boolean;
+  }>("/api/applications", {
+    method: "POST",
+    body: JSON.stringify({
+      campSlug: "developers",
+      declaredWeek: 1,
+    }),
+  });
+  check(
+    "1. hafta onaysız açıldı",
+    Boolean(
+      instantJoin.body.ok &&
+        instantJoin.body.data?.autoApproved &&
+        instantJoin.body.data.application.status === "APPROVED",
+    ),
+    instantJoin.body.error,
+  );
+
+  const instantApplication = instantJoin.body.data?.application;
+  const instantCompletion = instantApplication
+    ? await db.weeklyCompletion.findUnique({
+        where: {
+          address_campId_weekNumber: {
+            address: account.address.toLowerCase(),
+            campId: instantApplication.campId,
+            weekNumber: 1,
+          },
+        },
+      })
+    : null;
+  check(
+    '1. hafta erişim kaydı "join" kaynağıyla oluştu',
+    instantCompletion?.source === "join",
+  );
+
+  if (instantApplication) {
+    await db.$transaction([
+      db.application.delete({where: {id: instantApplication.id}}),
+      db.weeklyCompletion.deleteMany({
+        where: {
+          address: account.address.toLowerCase(),
+          campId: instantApplication.campId,
+        },
+      }),
+    ]);
+  }
+
+  const application = await api<{application: {id: string; status: string}}>("/api/applications", {
     method: "POST",
     body: JSON.stringify({
       campSlug: "developers",
@@ -215,10 +260,17 @@ async function main(): Promise<void> {
     }),
   });
 
-  check("başvuru kaydedildi", application.body.ok, application.body.error);
+  check(
+    "ileri hafta talebi onay kuyruğuna kaydedildi",
+    Boolean(
+      application.body.ok &&
+        application.body.data?.application.status === "PENDING",
+    ),
+    application.body.error,
+  );
   const applicationId = application.body.data?.application.id;
 
-  const secondApplication = await api("/api/applications", {
+  const secondApplication = await api<{application: {status: string}}>("/api/applications", {
     method: "POST",
     body: JSON.stringify({
       campSlug: "directors",
@@ -228,7 +280,10 @@ async function main(): Promise<void> {
   });
   check(
     "aynı katılımcı ikinci kampa bağımsız haftayla başvurabildi",
-    secondApplication.body.ok,
+    Boolean(
+      secondApplication.body.ok &&
+        secondApplication.body.data?.application.status === "PENDING",
+    ),
     secondApplication.body.error,
   );
 

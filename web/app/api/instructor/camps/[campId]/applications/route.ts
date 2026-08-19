@@ -3,7 +3,6 @@ import {z} from "zod";
 import {fail, handle, ok, readJson} from "@/lib/api";
 import {requireCampAccess} from "@/lib/camps/permissions";
 import {db} from "@/lib/db";
-import {recordBackfillCompletions} from "@/lib/merkle/service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,15 +38,24 @@ export async function PATCH(request: Request, {params}: Context) {
     }
 
     if (parsed.data.action === "reject") {
-      const updated = await db.application.update({
-        where: {id: application.id},
-        data: {
-          status: "REJECTED",
-          reviewedBy: access.viewer.address,
-          reviewedAt: new Date(),
-          reviewNote: parsed.data.reviewNote || null,
-        },
+      const updated = await db.$transaction(async (tx) => {
+        const claimed = await tx.application.updateMany({
+          where: {id: application.id, campId, status: "PENDING"},
+          data: {
+            status: "REJECTED",
+            reviewedBy: access.viewer.address,
+            reviewedAt: new Date(),
+            reviewNote: parsed.data.reviewNote || null,
+          },
+        });
+
+        if (claimed.count !== 1) return null;
+        return tx.application.findUnique({where: {id: application.id}});
       });
+
+      if (!updated) {
+        return fail("Bu başvuru daha önce incelenmiş.", 409, "ALREADY_REVIEWED");
+      }
       return ok({application: updated, completionsCreated: 0});
     }
 
@@ -60,24 +68,46 @@ export async function PATCH(request: Request, {params}: Context) {
       );
     }
 
-    const completionsCreated = await recordBackfillCompletions(
-      application.address,
+    const rows = Array.from({length: week}, (_, index) => ({
+      address: application.address.toLowerCase(),
       campId,
-      week,
-      access.viewer.address,
-    );
-    const updated = await db.application.update({
-      where: {id: application.id},
-      data: {
-        status: "APPROVED",
-        declaredWeek: week,
-        reviewedBy: access.viewer.address,
-        reviewedAt: new Date(),
-        reviewNote: parsed.data.reviewNote || null,
-      },
+      weekNumber: index + 1,
+      source: "backfill",
+      createdBy: access.viewer.address,
+    }));
+
+    const result = await db.$transaction(async (tx) => {
+      const claimed = await tx.application.updateMany({
+        where: {id: application.id, campId, status: "PENDING"},
+        data: {
+          status: "APPROVED",
+          declaredWeek: week,
+          reviewedBy: access.viewer.address,
+          reviewedAt: new Date(),
+          reviewNote: parsed.data.reviewNote || null,
+        },
+      });
+
+      if (claimed.count !== 1) return null;
+
+      const completions = await tx.weeklyCompletion.createMany({
+        data: rows,
+        skipDuplicates: true,
+      });
+      const updated = await tx.application.findUnique({
+        where: {id: application.id},
+      });
+
+      return {updated, completionsCreated: completions.count};
     });
 
-    return ok({application: updated, completionsCreated});
+    if (!result?.updated) {
+      return fail("Bu başvuru daha önce incelenmiş.", 409, "ALREADY_REVIEWED");
+    }
+
+    return ok({
+      application: result.updated,
+      completionsCreated: result.completionsCreated,
+    });
   });
 }
-

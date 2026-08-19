@@ -84,6 +84,10 @@ model Camp {
   /// Kamp yeni rozet almaya açık mı (zincirdeki `active` ile eşleşmeli)
   active Boolean @default(true)
 
+  /// Açıksa 1. haftadan başlayan katılımcı da eğitmen onayı bekler.
+  /// Kapalıysa 1. hafta anında açılır; ileri hafta talepleri her zaman incelenir.
+  firstWeekRequiresApproval Boolean @default(false)
+
   /// Kampın yayın yaşam döngüsü. Eski kamplar geriye uyumluluk için yayındadır.
   lifecycle CampLifecycle @default(PUBLISHED)
 
@@ -332,12 +336,11 @@ enum ApplicationStatus {
   REJECTED
 }
 
-/// Geri doldurma başvurusu: "Ben bu kampın N. haftasındayım."
+/// Kampa katılım veya ileri hafta talebi: "N. haftadan başlamak istiyorum."
 ///
-/// ⚠️ BU SİSTEMİN TEK GÜVEN NOKTASI.
-/// Beyan edilen hafta hiçbir otomatik doğrulamadan geçmez — bilinçli bir
-/// tercih. Admin (kulüp yöneticisi) her başvuruyu elle inceler ve onaylar.
-/// Onay verilene kadar zincirde hiçbir şey olmaz.
+/// 1. hafta kamp ayarına göre doğrudan açılabilir. 2..N başlangıç talepleri
+/// hiçbir otomatik doğrulamadan geçmez; eğitmen veya platform yöneticisi
+/// inceleyip onaylayana kadar ilgili haftalar açılmaz.
 model Application {
   id String @id @default(cuid())
 
@@ -350,7 +353,8 @@ model Application {
   campId Int
   camp   Camp @relation(fields: [campId], references: [id], onDelete: Cascade)
 
-  /// Katılımcının beyan ettiği hafta. 1..camp.weekCount aralığında olmalı.
+  /// Talep edilen başlangıç haftası. 1..camp.weekCount aralığında olmalı.
+  /// 1 doğrudan katılımı, 2..N ileri hafta talebini belirtir.
   declaredWeek Int
 
   /// Katılımcının seçtiği nick (henüz zincirde değil, sadece beyan).
@@ -386,9 +390,10 @@ model Application {
 /// "Bu adres, bu kampın bu haftasını tamamladı" kaydı.
 /// Merkle ağaçları DOĞRUDAN bu tablodan üretilir.
 ///
-/// İki yoldan oluşur:
-///   1. Geri doldurma onayı → beyan edilen hafta N ise 1..N için N kayıt
-///   2. Haftalık işleyiş    → admin o haftayı tamamlayanları işaretler
+/// Üç yoldan oluşur:
+///   1. Doğrudan katılım   → onaysız 1. hafta için tek kayıt
+///   2. Geri doldurma onayı → talep edilen hafta N ise 1..N için N kayıt
+///   3. Haftalık işleyiş    → admin o haftayı tamamlayanları işaretler
 model WeeklyCompletion {
   id String @id @default(cuid())
 
@@ -400,7 +405,7 @@ model WeeklyCompletion {
 
   weekNumber Int
 
-  /// Kaydın kaynağı: "backfill" | "weekly" | "import"
+  /// Kaydın kaynağı: "join" | "backfill" | "weekly" | "import"
   /// Denetim için tutulur — bir rozetin nereden geldiği her zaman izlenebilir.
   source String @default("weekly")
 

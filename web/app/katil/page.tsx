@@ -29,8 +29,8 @@ export default async function JoinPage() {
         </h1>
         <p className="mt-3 text-lg leading-relaxed text-fg-secondary">
           Dört adım: cüzdanını bağla, kendine bir nick seç, kendini tanıt ve
-          her kamp için kaçıncı haftada olduğunu bildir. Kulüp yöneticisi
-          onayladığında rozetlerin hazır olur.
+          istediğin kampın 1. haftasına başla. Daha ilerideysen yalnızca o kamp
+          için ileri hafta isteği gönderebilirsin.
         </p>
       </header>
 
@@ -40,6 +40,7 @@ export default async function JoinPage() {
           slug: camp.slug,
           name: camp.name,
           weekCount: camp.weekCount,
+          firstWeekRequiresApproval: camp.firstWeekRequiresApproval,
           active: camp.active,
         }))}
       />

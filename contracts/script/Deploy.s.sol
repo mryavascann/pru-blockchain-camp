@@ -57,9 +57,8 @@ contract Deploy is Script {
         // 2) Proxy — kurulum çağrısı deploy ile AYNI işlemde yapılır.
         //    Bu önemli: ayrı işlemler olsaydı arada bir saldırgan proxy'yi
         //    kendi adına initialize edebilirdi (front-running).
-        bytes memory initData = abi.encodeCall(
-            PruCampBadges.initialize, (initialOwner, baseURI, contractURI)
-        );
+        bytes memory initData =
+            abi.encodeCall(PruCampBadges.initialize, (initialOwner, baseURI, contractURI));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
 
         vm.stopBroadcast();

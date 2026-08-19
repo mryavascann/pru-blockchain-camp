@@ -4,17 +4,9 @@
  * ============================================================================
  * Başvuru onay kuyruğu
  *
- * Faz 0 şartı, birebir:
- *   "Bu konuda otomasyon, otomatik doğrulama veya kolaylaştırıcı mekanizma
- *    istemiyorum — bana sadece basit bir liste yeter: adres, nick, beyan
- *    edilen hafta, onayla/reddet."
- *
- * Bu yüzden burada toplu onay, otomatik eşleştirme, skorlama veya öneri YOK.
- * Her satır tek tek okunur ve tek tek karar verilir.
- *
- * TEK EKLENTİ: adminin beyan edilen haftayı DÜZELTEBİLMESİ. Katılımcı
- * "5. haftadayım" der ama sen 3 olduğunu biliyorsan, reddedip yeniden
- * başvurmasını beklemek yerine doğru değeri girip onaylarsın.
+ * Yalnızca eğitmen onayı isteyen 1. hafta katılımları ve 2..N ileri hafta
+ * talepleri burada görünür. Doğrudan açılan 1. hafta katılımları kuyruğa girmez.
+ * İnceleyen kişi talep edilen başlangıç haftasını gerektiğinde düzeltebilir.
  * ============================================================================
  */
 import {useState} from "react";
@@ -235,7 +227,7 @@ function ApplicationRow({
         </div>
       </div>
 
-      {/* ---- Beyan ---- */}
+      {/* ---- Talep edilen başlangıç haftası ---- */}
       <div className="mt-3 rounded-md border border-line bg-subtle p-3">
         <p className="text-sm">
           <span className="text-fg-muted">{t.admin.declaredWeek}:</span>{" "}
@@ -286,7 +278,7 @@ function ApplicationRow({
             </div>
             {corrected && (
               <p className="mt-2 text-xs text-warning">
-                Beyan {application.declaredWeek} idi, {week} olarak
+                Talep {application.declaredWeek}. haftaydı, {week}. hafta olarak
                 onaylayacaksın.
               </p>
             )}

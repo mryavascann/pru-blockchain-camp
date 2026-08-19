@@ -6,7 +6,7 @@ import {t} from "@/lib/i18n";
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t border-line bg-surface">
+    <footer className="site-footer relative z-10 mt-24 overflow-hidden border-t border-line bg-surface">
       <Container className="py-10">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
           <div className="max-w-sm">

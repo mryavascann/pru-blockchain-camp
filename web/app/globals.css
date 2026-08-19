@@ -201,6 +201,21 @@
   --shadow-md: 0 4px 12px rgb(36 0 76 / 0.08);
   --shadow-lg: 0 12px 32px rgb(36 0 76 / 0.12);
   --shadow-glow: 0 0 0 3px rgb(172 85 222 / 0.25);
+  --shadow-action:
+    0 0 0 1px rgb(172 85 222 / 0.14),
+    0 6px 16px rgb(36 0 76 / 0.2);
+  --shadow-action-hover:
+    0 0 0 1px rgb(172 85 222 / 0.28),
+    0 8px 22px rgb(36 0 76 / 0.28);
+  --shadow-action-focus:
+    0 0 0 3px rgb(172 85 222 / 0.3),
+    0 8px 22px rgb(36 0 76 / 0.26);
+  --shadow-active-control:
+    inset 0 0 0 1px rgb(172 85 222 / 0.2),
+    0 3px 12px rgb(36 0 76 / 0.14);
+  --shadow-active-control-focus:
+    0 0 0 3px rgb(172 85 222 / 0.28),
+    0 3px 12px rgb(36 0 76 / 0.16);
 
   /* --------------------------------------------------------------------
      5. LAYOUT  (brand.md §6)
@@ -262,6 +277,24 @@
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
     --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+    --shadow-action:
+      0 0 0 1px rgb(222 173 231 / 0.28),
+      0 0 24px rgb(172 85 222 / 0.38),
+      0 9px 24px rgb(0 0 0 / 0.42);
+    --shadow-action-hover:
+      0 0 0 1px rgb(244 236 253 / 0.42),
+      0 0 34px rgb(199 125 239 / 0.54),
+      0 12px 30px rgb(0 0 0 / 0.5);
+    --shadow-action-focus:
+      0 0 0 3px rgb(222 173 231 / 0.42),
+      0 0 32px rgb(199 125 239 / 0.52),
+      0 12px 30px rgb(0 0 0 / 0.5);
+    --shadow-active-control:
+      inset 0 0 0 1px rgb(222 173 231 / 0.22),
+      0 0 18px rgb(172 85 222 / 0.3);
+    --shadow-active-control-focus:
+      0 0 0 3px rgb(222 173 231 / 0.38),
+      0 0 22px rgb(172 85 222 / 0.38);
   }
 }
 
@@ -305,6 +338,24 @@
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
   --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+  --shadow-action:
+    0 0 0 1px rgb(222 173 231 / 0.28),
+    0 0 24px rgb(172 85 222 / 0.38),
+    0 9px 24px rgb(0 0 0 / 0.42);
+  --shadow-action-hover:
+    0 0 0 1px rgb(244 236 253 / 0.42),
+    0 0 34px rgb(199 125 239 / 0.54),
+    0 12px 30px rgb(0 0 0 / 0.5);
+  --shadow-action-focus:
+    0 0 0 3px rgb(222 173 231 / 0.42),
+    0 0 32px rgb(199 125 239 / 0.52),
+    0 12px 30px rgb(0 0 0 / 0.5);
+  --shadow-active-control:
+    inset 0 0 0 1px rgb(222 173 231 / 0.22),
+    0 0 18px rgb(172 85 222 / 0.3);
+  --shadow-active-control-focus:
+    0 0 0 3px rgb(222 173 231 / 0.38),
+    0 0 22px rgb(172 85 222 / 0.38);
 }
 
 
@@ -359,6 +410,236 @@ h4 {
   font-variant-ligatures: none;
 }
 } /* @layer base sonu */
+
+/*
+ * Seçili filtreler, sekmeler ve hafta düğmeleri farklı bileşenlerde kendi
+ * renklerini korur; ortak ışık katmanı aktif olduklarını her sayfada aynı
+ * kuvvetle gösterir. `aria-*` üzerinden çalıştığı için görsel ile erişilebilir
+ * durum birbirinden kopmaz.
+ */
+:where(button, a)[aria-pressed="true"],
+a[aria-current="page"] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    color-mix(in srgb, var(--primary) 8%, transparent)
+  );
+  box-shadow: var(--shadow-active-control);
+  filter: brightness(1.08) saturate(1.08);
+}
+
+:where(button, a)[aria-pressed="true"]:focus-visible,
+a[aria-current="page"]:focus-visible {
+  box-shadow: var(--shadow-active-control-focus);
+}
+
+/* ---------------------------------------------------------------------------
+   ETKİLEŞİM YÜZEYLERİ — buton, kart, navigasyon
+
+   Hareketler 120–300ms aralığında ve küçük mesafeli. Amaç eylemi hissettirmek;
+   sürekli hareket eden bir arayüz üretmek değil. Reduced-motion kuralı üstte
+   bütün bu geçişleri otomatik olarak kısaltır.
+   --------------------------------------------------------------------------- */
+.pru-button::before {
+  position: absolute;
+  inset: -55% auto -55% -42%;
+  width: 32%;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.34),
+    transparent
+  );
+  transform: skewX(-18deg) translateX(-180%);
+  transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+}
+
+.pru-button:hover::before,
+.pru-button:focus-visible::before {
+  opacity: 1;
+  transform: skewX(-18deg) translateX(570%);
+}
+
+.pru-button::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.pru-button--secondary::before,
+.pru-button--ghost::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    transparent
+  );
+}
+
+.pru-button--danger {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
+.pru-button svg:not(.animate-spin),
+button:not(.pru-button) > svg {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pru-button:hover svg:not(.animate-spin) {
+  transform: translateX(2px) scale(1.04);
+}
+
+button:not(:disabled) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(.pru-button):not(:disabled):hover {
+  filter: brightness(1.07) saturate(1.04);
+}
+
+button:not(.pru-button):not(:disabled):active {
+  transform: translateY(1px) scale(0.975);
+}
+
+button:not(.pru-button):not(:disabled):hover > svg {
+  transform: scale(1.1) rotate(2deg);
+}
+
+.pru-card {
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 4%, transparent),
+    transparent 34%,
+    color-mix(in srgb, var(--primary) 2%, transparent)
+  );
+}
+
+.pru-card-accent {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 10px 30px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.pru-card-interactive:hover {
+  border-color: color-mix(in srgb, var(--border-accent) 72%, var(--border-subtle));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 16px 38px color-mix(in srgb, var(--accent) 14%, transparent),
+    var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+.pru-pill {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  transition: filter 180ms ease, border-color 180ms ease;
+}
+
+.pru-empty-state {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 48%),
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 14px,
+      color-mix(in srgb, var(--border-accent) 4%, transparent) 14px,
+      color-mix(in srgb, var(--border-accent) 4%, transparent) 15px
+    );
+}
+
+.site-header {
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.08);
+}
+
+.site-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 8%,
+    color-mix(in srgb, var(--accent) 52%, transparent) 34%,
+    color-mix(in srgb, var(--primary) 30%, transparent) 68%,
+    transparent 92%
+  );
+}
+
+.brand-mark :is(img, span) {
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 260ms ease;
+}
+
+.brand-mark:hover :is(img, span) {
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 42%, transparent);
+  transform: rotate(-3deg) scale(1.06);
+}
+
+.site-nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.site-nav-link::after {
+  position: absolute;
+  right: 24%;
+  bottom: 3px;
+  left: 24%;
+  height: 2px;
+  border-radius: 999px;
+  content: "";
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  transform: scaleX(0);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.site-nav-link:hover::after,
+.site-nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.site-footer::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: 0.45;
+  background:
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 30%),
+    linear-gradient(90deg, color-mix(in srgb, var(--border-accent) 6%, transparent) 1px, transparent 1px);
+  background-size: auto, 56px 56px;
+  mask-image: linear-gradient(to left, black, transparent 68%);
+}
+
+.site-footer > * {
+  position: relative;
+}
+
+:is(input, textarea, select):not(:disabled) {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+:is(input, textarea, select):not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--border-accent) 62%, var(--border-strong));
+}
+
+input[type="file"]::file-selector-button {
+  transition: transform 180ms ease, border-color 180ms ease, filter 180ms ease;
+}
+
+input[type="file"]:hover::file-selector-button {
+  border-color: var(--border-accent);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
 
 /* ---------------------------------------------------------------------------
    HAREKET  (brand.md §10)

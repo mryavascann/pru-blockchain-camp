@@ -33,10 +33,10 @@ import {pruCampBadgesAbi} from "@/lib/chain/abi";
 import {
   activeChain,
   contractAddress,
-  createReadTransport,
   explorerUrl,
   rpcUrls,
 } from "@/lib/chain/config";
+import {createReadTransport} from "@/lib/chain/transport";
 
 const [rawAddress, triedNickname] = process.argv.slice(2);
 

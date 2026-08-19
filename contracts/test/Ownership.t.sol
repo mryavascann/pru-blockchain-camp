@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {OwnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {BaseTest} from "./Helpers.sol";
 import {OwnershipRenounceDisabled} from "../src/PruTypes.sol";
@@ -54,9 +55,7 @@ contract OwnershipTest is BaseTest {
 
         vm.prank(newOwner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, newOwner
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, newOwner)
         );
         badges.createCamp("Erken Kamp", 5);
     }
@@ -79,9 +78,7 @@ contract OwnershipTest is BaseTest {
 
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.acceptOwnership();
     }
@@ -89,9 +86,7 @@ contract OwnershipTest is BaseTest {
     function test_TransferOwnership_OnlyOwner() public {
         vm.prank(attacker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, attacker)
         );
         badges.transferOwnership(attacker);
     }
@@ -108,9 +103,7 @@ contract OwnershipTest is BaseTest {
 
         vm.prank(newOwner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, newOwner
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, newOwner)
         );
         badges.acceptOwnership();
     }
@@ -125,9 +118,7 @@ contract OwnershipTest is BaseTest {
 
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, owner
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, owner)
         );
         badges.createCamp("Eski Sahip Kampi", 5);
 

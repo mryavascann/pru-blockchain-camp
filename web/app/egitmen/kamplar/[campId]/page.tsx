@@ -27,6 +27,7 @@ export default async function CampStudioPage({params}: Props) {
       description: true,
       instructorName: true,
       weekCount: true,
+      firstWeekRequiresApproval: true,
       publicWeekNumber: true,
       lifecycle: true,
       chainCampId: true,

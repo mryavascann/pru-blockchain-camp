@@ -1,45 +1,63 @@
 import {createHash} from "node:crypto";
 
+import sharp from "sharp";
+
 export const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
+export const MAX_CAMP_MEDIA_BYTES = 150 * 1024 * 1024;
+export const MAX_MEDIA_PIXELS = 16_777_216;
 
-const MIME_BY_MAGIC = [
-  {
-    mime: "image/png",
-    matches: (b: Uint8Array) =>
-      b.length >= 8 &&
-      b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 &&
-      b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a,
-  },
-  {
-    mime: "image/jpeg",
-    matches: (b: Uint8Array) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
-  },
-  {
-    mime: "image/gif",
-    matches: (b: Uint8Array) => {
-      const head = String.fromCharCode(...b.slice(0, 6));
-      return head === "GIF87a" || head === "GIF89a";
-    },
-  },
-  {
-    mime: "image/webp",
-    matches: (b: Uint8Array) =>
-      b.length >= 12 &&
-      String.fromCharCode(...b.slice(0, 4)) === "RIFF" &&
-      String.fromCharCode(...b.slice(8, 12)) === "WEBP",
-  },
-] as const;
+const MIME_BY_FORMAT: Record<string, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+};
 
-export function inspectRasterImage(bytes: Uint8Array): {
+/**
+ * Dosyayı yalnızca sihirli baytlarla değil, gerçek bir görsel decoder'ıyla
+ * açar. Böylece PNG başlığı eklenmiş bozuk veya yarım dosyalar depoya
+ * giremez. Piksel sınırı da sıkıştırma bombalarını engeller.
+ */
+export async function inspectRasterImage(bytes: Uint8Array): Promise<{
   mimeType: string;
   sha256: string;
-} | null {
-  const match = MIME_BY_MAGIC.find((entry) => entry.matches(bytes));
-  if (!match) return null;
+  width: number;
+  height: number;
+} | null> {
+  if (bytes.byteLength < 1 || bytes.byteLength > MAX_MEDIA_BYTES) return null;
 
-  return {
-    mimeType: match.mime,
-    sha256: createHash("sha256").update(bytes).digest("hex"),
-  };
+  try {
+    const input = Buffer.from(bytes);
+    const image = sharp(input, {
+      animated: false,
+      failOn: "warning",
+      limitInputPixels: MAX_MEDIA_PIXELS,
+    });
+    const metadata = await image.metadata();
+    const mimeType = metadata.format ? MIME_BY_FORMAT[metadata.format] : undefined;
+    const width = metadata.width ?? 0;
+    const height = metadata.height ?? 0;
+
+    if (
+      !mimeType ||
+      width < 1 ||
+      height < 1 ||
+      width * height > MAX_MEDIA_PIXELS
+    ) {
+      return null;
+    }
+
+    // Metadata okumak tek başına kesik dosyayı her formatta yakalamaz.
+    // Bir kareyi tamamen decode ederek dosyanın gerçekten açılabildiğini kanıtla.
+    await image.toBuffer();
+
+    return {
+      mimeType,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      width,
+      height,
+    };
+  } catch {
+    return null;
+  }
 }
-

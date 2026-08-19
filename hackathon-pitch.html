@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRU Camp OS — Hackathon Pitch</title>
+  <style>
+    :root {
+      --ink: #f8f7ff;
+      --muted: #b8b1d1;
+      --purple: #8b5cf6;
+      --violet: #5b21b6;
+      --cyan: #5eead4;
+      --panel: rgba(255, 255, 255, .075);
+      --line: rgba(255, 255, 255, .15);
+      --bg: #090612;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      display: grid;
+      place-items: center;
+      background: #030207;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .deck {
+      position: relative;
+      width: min(100vw, 177.7778vh);
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 84% 14%, rgba(139, 92, 246, .2), transparent 28%),
+        linear-gradient(145deg, #100923 0%, var(--bg) 48%, #071217 100%);
+    }
+    .deck::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .24;
+      background-image:
+        linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+      background-size: 4.2vw 4.2vw;
+      mask-image: linear-gradient(to bottom, #000, transparent 88%);
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 5.8% 6.2% 5.2%;
+      isolation: isolate;
+    }
+    .slide.active { display: flex; flex-direction: column; animation: enter .34s ease-out both; }
+    @keyframes enter { from { opacity: 0; transform: translateX(1.4%); } to { opacity: 1; transform: none; } }
+    .eyebrow {
+      margin: 0 0 1.4%;
+      color: var(--cyan);
+      font-size: clamp(12px, 1.05vw, 20px);
+      font-weight: 800;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 92%;
+      margin-bottom: 2.3%;
+      font-size: clamp(44px, 5.45vw, 104px);
+      line-height: .98;
+      letter-spacing: -.055em;
+    }
+    h2 {
+      max-width: 92%;
+      margin-bottom: 3.8%;
+      font-size: clamp(34px, 4vw, 76px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+    h3 {
+      margin-bottom: 4%;
+      font-size: clamp(21px, 2vw, 38px);
+      line-height: 1.08;
+      letter-spacing: -.025em;
+    }
+    .lead {
+      max-width: 79%;
+      color: var(--muted);
+      font-size: clamp(18px, 1.75vw, 34px);
+      line-height: 1.4;
+    }
+    .accent { color: var(--cyan); }
+    .purple { color: #c4a7ff; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.22fr .78fr;
+      gap: 5%;
+      align-items: center;
+      flex: 1;
+    }
+    .hero-mark {
+      position: relative;
+      display: grid;
+      place-items: center;
+      justify-self: stretch;
+      aspect-ratio: 1;
+      max-height: 68vh;
+    }
+    .hero-mark::before, .hero-mark::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(139, 92, 246, .45);
+      border-radius: 50%;
+    }
+    .hero-mark::before { inset: 3%; }
+    .hero-mark::after { inset: 17%; border-color: rgba(94, 234, 212, .35); }
+    .hero-mark img {
+      width: 42%;
+      filter: drop-shadow(0 0 42px rgba(139, 92, 246, .45));
+    }
+    .microline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .7em 1.4em;
+      margin-top: 5%;
+      color: #d9d3eb;
+      font-size: clamp(13px, 1.15vw, 22px);
+      font-weight: 700;
+    }
+    .microline span::before { content: "✦"; margin-right: .55em; color: var(--purple); }
+    .problem-layout {
+      display: grid;
+      grid-template-columns: .92fr 1.08fr;
+      gap: 7%;
+      align-items: end;
+      flex: 1;
+    }
+    .quote {
+      padding: 7% 0 2%;
+      color: #efeaff;
+      font-size: clamp(25px, 3vw, 56px);
+      font-weight: 760;
+      line-height: 1.12;
+      letter-spacing: -.035em;
+      border-top: 1px solid var(--line);
+    }
+    .stack { display: grid; gap: 1.1vw; }
+    .fault {
+      display: grid;
+      grid-template-columns: 2.4em 1fr;
+      gap: 1em;
+      align-items: start;
+      padding: 1.35em 1.45em;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    .fault b { color: var(--cyan); font-size: clamp(18px, 1.55vw, 30px); }
+    .fault p { margin: .25em 0 0; color: var(--muted); font-size: clamp(15px, 1.2vw, 23px); line-height: 1.35; }
+    .columns-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5%;
+      flex: 1;
+      align-items: stretch;
+    }
+    .column {
+      position: relative;
+      padding: 8.5% 7% 6.5%;
+      background: linear-gradient(180deg, rgba(139,92,246,.13), rgba(255,255,255,.055));
+      border-top: 3px solid var(--purple);
+      border-bottom: 1px solid var(--line);
+    }
+    .column:nth-child(2) { border-top-color: var(--cyan); }
+    .column:nth-child(3) { border-top-color: #f0abfc; }
+    .index {
+      display: block;
+      margin-bottom: 12%;
+      color: rgba(255,255,255,.32);
+      font-size: clamp(26px, 3.7vw, 70px);
+      font-weight: 850;
+      line-height: 1;
+    }
+    .column p { color: var(--muted); font-size: clamp(15px, 1.25vw, 24px); line-height: 1.42; }
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4.6%;
+      align-items: start;
+      flex: 1;
+      position: relative;
+      padding-top: 2%;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 18%;
+      left: 7%;
+      right: 7%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      z-index: -1;
+    }
+    .step { padding-top: 3.5%; }
+    .node {
+      display: grid;
+      place-items: center;
+      width: 3.4em;
+      aspect-ratio: 1;
+      margin-bottom: 11%;
+      border-radius: 50%;
+      background: #0c0719;
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-size: clamp(18px, 1.5vw, 29px);
+      font-weight: 900;
+    }
+    .step p { max-width: 92%; color: var(--muted); font-size: clamp(15px, 1.25vw, 24px); line-height: 1.42; }
+    .trustline {
+      margin-top: auto;
+      padding-top: 2.2%;
+      color: #d7d0e8;
+      font-size: clamp(14px, 1.15vw, 22px);
+      font-weight: 700;
+      border-top: 1px solid var(--line);
+    }
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr 9% 1fr;
+      align-items: center;
+      flex: 1;
+    }
+    .plane {
+      min-height: 72%;
+      padding: 7%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    .plane.onchain { background: linear-gradient(145deg, rgba(94,234,212,.1), rgba(139,92,246,.11)); }
+    .plane-kicker { color: var(--cyan); font-size: clamp(12px, 1vw, 19px); font-weight: 850; letter-spacing: .17em; text-transform: uppercase; }
+    .plane ul { margin: 8% 0 0; padding: 0; list-style: none; }
+    .plane li {
+      padding: .75em 0;
+      color: #e6e1f0;
+      font-size: clamp(16px, 1.4vw, 27px);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .bridge { text-align: center; color: var(--purple); font-size: clamp(28px, 4vw, 76px); font-weight: 300; }
+    .proof-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2%;
+      margin-top: 2.5%;
+    }
+    .proof-strip span {
+      padding: .9em .7em;
+      color: #dcd6eb;
+      font-size: clamp(12px, 1.05vw, 20px);
+      text-align: center;
+      border-top: 1px solid var(--line);
+    }
+    .close {
+      justify-content: center;
+      padding-right: 17%;
+    }
+    .close h2 { max-width: 88%; font-size: clamp(42px, 5.15vw, 98px); }
+    .close-line { width: 22%; height: 4px; margin: 1% 0 3%; background: linear-gradient(90deg, var(--purple), var(--cyan)); }
+    .built {
+      display: grid;
+      grid-template-columns: repeat(4, auto);
+      gap: 2.6em;
+      align-items: start;
+      margin-top: 3.5%;
+    }
+    .built strong { display: block; color: var(--cyan); font-size: clamp(19px, 1.6vw, 30px); }
+    .built span { display: block; margin-top: .35em; color: var(--muted); font-size: clamp(12px, 1vw, 19px); }
+    .brand {
+      position: absolute;
+      right: 6.2%;
+      top: 5.6%;
+      display: flex;
+      align-items: center;
+      gap: .65em;
+      color: #d8d1eb;
+      font-size: clamp(11px, .95vw, 18px);
+      font-weight: 850;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+    .brand img { width: 1.65em; height: 1.65em; object-fit: contain; }
+    .progress {
+      position: absolute;
+      left: 6.2%;
+      right: 6.2%;
+      bottom: 2.2%;
+      display: flex;
+      align-items: center;
+      gap: .6em;
+      z-index: 20;
+    }
+    .progress button {
+      width: .54em;
+      height: .54em;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      cursor: pointer;
+    }
+    .progress button.active { width: 2.2em; border-radius: 999px; background: var(--cyan); }
+    .counter { margin-left: auto; color: rgba(255,255,255,.45); font: 700 clamp(10px,.8vw,15px)/1 ui-monospace, monospace; }
+    .notes {
+      position: absolute;
+      z-index: 30;
+      right: 2%;
+      bottom: 5.5%;
+      display: none;
+      width: min(43%, 680px);
+      max-height: 42%;
+      overflow: auto;
+      padding: 1.4em 1.6em;
+      color: #130c25;
+      background: rgba(250,248,255,.96);
+      border-left: 7px solid var(--purple);
+      box-shadow: 0 24px 80px rgba(0,0,0,.42);
+      font-size: clamp(13px, 1vw, 18px);
+      line-height: 1.48;
+    }
+    .notes.visible { display: block; }
+    .notes b { display: block; margin-bottom: .5em; color: var(--violet); }
+    @media (max-aspect-ratio: 4/3) {
+      .deck { width: 100vw; height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="PRU Camp OS hackathon sunumu">
+    <section class="slide active" data-notes="Merhaba, biz PRU Camp OS. Eğitim kamplarındaki içerik, ilerleme ve sertifika problemini tek üründe çözüyoruz. Eğitmen kampını kuruyor, öğrenci öğreniyor; tamamlanan her hafta cüzdanda doğrulanabilir ve devredilemez bir kanıta dönüşüyor.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Onchain learning infrastructure · Base</p>
+          <h1>Öğrenmeyi,<br><span class="accent">doğrulanabilir</span><br>bir yolculuğa dönüştürüyoruz.</h1>
+          <p class="lead">Eğitmen kampını kurar. Öğrenci ilerler. Her hafta cüzdanda kalıcı bir kanıta dönüşür.</p>
+          <div class="microline"><span>Eğitmen Stüdyosu</span><span>Soulbound Rozet</span><span>Açık Portfolyo</span></div>
+        </div>
+        <div class="hero-mark" aria-hidden="true"><img src="web/public/logo-512.png" alt="" /></div>
+      </div>
+    </section>
+
+    <section class="slide" data-notes="Bugün bir kampın içeriği Notion'da, öğrenci takibi tabloda, sonuç ise doğrulanamayan bir PDF'te kalıyor. Bir PDF yalnızca katıldı der; hangi haftayı tamamladığını, hangi beceriyi kazandığını ve kimin onayladığını göstermez. Öğrenmenin izi kamp bittiğinde kaybolur.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <p class="eyebrow">Problem</p>
+      <h2>Kamp bitiyor; <span class="purple">öğrenme izi</span> kayboluyor.</h2>
+      <div class="problem-layout">
+        <div class="quote">“Bir PDF yalnızca <span class="accent">katıldı</span> der. Nasıl ilerlediğini kanıtlamaz.”</div>
+        <div class="stack">
+          <div class="fault"><b>01</b><div><h3>İçerik dağınık</h3><p>Kaynaklar, haftalar ve eğitmen notları farklı araçlarda.</p></div></div>
+          <div class="fault"><b>02</b><div><h3>İlerleme görünmez</h3><p>Çoklu kamp ve hafta durumu elle takip ediliyor.</p></div></div>
+          <div class="fault"><b>03</b><div><h3>Başarı taşınamaz</h3><p>Sertifika doğrulanamıyor; öğrenme geçmişi paylaşılamıyor.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-notes="Biz bu dağınık yapıyı üç kesintisiz deneyimde birleştiriyoruz. Eğitmen içerik, kaynak ve haftalık NFT görsellerini kendi stüdyosundan yönetiyor. Öğrenci cüzdanını tek akışta bağlayıp birden fazla kampta bağımsız ilerliyor. Sonuç ise nick ile açılan, herkese açık bir öğrenme portfolyosu oluyor.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <p class="eyebrow">Çözüm</p>
+      <h2>Tek platform, üç kesintisiz deneyim.</h2>
+      <div class="columns-3">
+        <article class="column"><span class="index">01</span><h3>Eğitmen kurar</h3><p>Kamp, haftalar, kaynaklar ve NFT art’ları tek stüdyoda. Başvurular ve öğrenciler kamp bazında yönetilir.</p></article>
+        <article class="column"><span class="index">02</span><h3>Öğrenci ilerler</h3><p>Tek akışta cüzdan girişi. Birden fazla kampta bağımsız hafta, not ve rozet süreci.</p></article>
+        <article class="column"><span class="index">03</span><h3>Ekosistem görür</h3><p>Nick ile açılan portfolyoda kamp ilerlemesi ve zincir rozetleri doğrulanır, paylaşılır.</p></article>
+      </div>
+    </section>
+
+    <section class="slide" data-notes="Kamp açmak artık teknik bir deploy süreci değil. Eğitmen iskeleti oluşturup haftalık içeriği ve görselleri yükler. Öğrencileri inceler, tamamlamaları onaylar. Platform kontrolünden sonra kamp aynı kontrata bağlanır ve yayınlanır. Backend hiçbir zaman private key tutmaz; zincir işlemi yetkili kişinin cüzdanında kalır.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <p class="eyebrow">Ürün akışı</p>
+      <h2>Bir kamp, birkaç adımda onchain programa dönüşür.</h2>
+      <div class="timeline">
+        <article class="step"><div class="node">1</div><h3>Kur</h3><p>Kamp iskeleti, haftalar, içerikler, kaynaklar ve görseller hazırlanır.</p></article>
+        <article class="step"><div class="node">2</div><h3>Yönet</h3><p>Başvurular incelenir; her öğrencinin ilerlemesi kamp bazında onaylanır.</p></article>
+        <article class="step"><div class="node">3</div><h3>Yayınla</h3><p>Kamp tek kontrata bağlanır; hak edişler Merkle kanıtıyla Base’e taşınır.</p></article>
+      </div>
+      <p class="trustline">Backend private key tutmaz · Zincir yazma işlemi yetkili insanın cüzdanında kalır</p>
+    </section>
+
+    <section class="slide" data-notes="Mimaride hız ve güveni ayırdık. Kişisel bilgiler, notlar ve kilitli ders içeriği Postgres ve Next.js tarafında kalıyor; yetkisiz kullanıcıya içerik gönderilmiyor. Zincire yalnızca doğrulanabilir hak ediş gidiyor. Merkle kanıtları gas maliyetini düşürüyor; ERC-1155 soulbound rozetler ise satılamıyor ve devredilemiyor.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <p class="eyebrow">Güven mimarisi</p>
+      <h2>Kanıt zincirde; kişisel veri zincire çıkmıyor.</h2>
+      <div class="architecture">
+        <section class="plane"><span class="plane-kicker">Offchain hız</span><ul><li>Notion / eğitmen içeriği</li><li>Postgres ilerleme ve notlar</li><li>Next.js erişim kontrolü</li></ul></section>
+        <div class="bridge" aria-hidden="true">→</div>
+        <section class="plane onchain"><span class="plane-kicker">Onchain güven</span><ul><li>Merkle hak ediş kanıtı</li><li>Base ERC-1155 rozet</li><li>Devredilemez öğrenme izi</li></ul></section>
+      </div>
+      <div class="proof-strip"><span>viem + EIP-6963</span><span>Çoklu kamp ilerlemesi</span><span>Tek işlemde geri doldurma</span><span>Nick tabanlı portfolyo</span></div>
+    </section>
+
+    <section class="slide close" data-notes="Bu bir fikir değil, çalışan bir ürün: Base Sepolia kontratı, iki gerçek kamp, eğitmen stüdyosu, öğrenci portalı ve açık portfolyo hazır. Kontrat tarafında 142 testimiz var. PRU Camp OS ile her eğitmen kendi doğrulanabilir öğrenme ekosistemini kurabilir. Öğren, kanıtla, paylaş.">
+      <div class="brand"><img src="web/public/logo.png" alt="PRU logo" /> PRU Camp OS</div>
+      <p class="eyebrow">Bugün çalışıyor · Yarın ölçekleniyor</p>
+      <h2>Her eğitmen kendi <span class="accent">doğrulanabilir öğrenme</span> ekosistemini kurabilir.</h2>
+      <div class="close-line"></div>
+      <p class="lead">PRU Camp OS · Öğren, kanıtla, paylaş.</p>
+      <div class="built">
+        <div><strong>Base Sepolia</strong><span>canlı kontrat</span></div>
+        <div><strong>2 kamp</strong><span>15 + 12 haftalık program</span></div>
+        <div><strong>142 test</strong><span>kontrat doğrulaması</span></div>
+        <div><strong>Uçtan uca</strong><span>eğitmen → öğrenci → portfolyo</span></div>
+      </div>
+    </section>
+
+    <nav class="progress" aria-label="Slaytlar"></nav>
+    <aside class="notes" aria-live="polite"></aside>
+  </main>
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    const progress = document.querySelector('.progress');
+    const notes = document.querySelector('.notes');
+    let index = 0;
+    let notesVisible = false;
+
+    slides.forEach((_, i) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('aria-label', `${i + 1}. slayta git`);
+      button.addEventListener('click', () => show(i));
+      progress.appendChild(button);
+    });
+    const counter = document.createElement('span');
+    counter.className = 'counter';
+    progress.appendChild(counter);
+
+    function show(next) {
+      index = (next + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+      [...progress.querySelectorAll('button')].forEach((button, i) => button.classList.toggle('active', i === index));
+      counter.textContent = `${String(index + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      notes.innerHTML = `<b>Sunucu notu</b>${slides[index].dataset.notes}`;
+      notes.classList.toggle('visible', notesVisible);
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); show(index + 1); }
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); show(index - 1); }
+      if (event.key.toLowerCase() === 'n') { notesVisible = !notesVisible; notes.classList.toggle('visible', notesVisible); }
+      if (event.key === 'Home') show(0);
+      if (event.key === 'End') show(slides.length - 1);
+      if (event.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+    });
+    show(0);
+  </script>
+</body>
+</html>

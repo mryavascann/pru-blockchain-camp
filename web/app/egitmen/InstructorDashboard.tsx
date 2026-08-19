@@ -51,6 +51,8 @@ export function InstructorDashboard({camps}: {camps: Camp[]}) {
           description: form.get("description"),
           instructorName: form.get("instructorName"),
           weekCount: Number(form.get("weekCount")),
+          firstWeekRequiresApproval:
+            form.get("firstWeekRequiresApproval") === "on",
           startDate: form.get("startDate") || null,
         }),
       });
@@ -106,6 +108,22 @@ export function InstructorDashboard({camps}: {camps: Camp[]}) {
             <Field label="Başlangıç tarihi" help="İsteğe bağlıdır.">
               <input name="startDate" type="date" className="input" />
             </Field>
+            <label className="flex items-start gap-3 rounded-lg border border-line bg-subtle p-3 md:col-span-2">
+              <input
+                name="firstWeekRequiresApproval"
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+              />
+              <span>
+                <span className="block text-sm font-semibold">
+                  1. hafta için eğitmen onayı iste
+                </span>
+                <span className="mt-1 block text-xs text-fg-muted">
+                  Kapalıysa herkes 1. haftaya hemen başlar. İleri hafta istekleri
+                  her zaman onaya düşer.
+                </span>
+              </span>
+            </label>
             <div className="md:col-span-2">
               <Field label="Kamp açıklaması" help="Ana sayfadaki kamp kartında görünecek.">
                 <textarea name="description" required minLength={20} maxLength={1200} rows={4} placeholder="Katılımcı bu kampın sonunda ne öğrenecek?" className="input resize-y" />
@@ -169,4 +187,3 @@ function Field({label, help, children}: {label: string; help?: string; children:
     </label>
   );
 }
-

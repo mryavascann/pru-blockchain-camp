@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- * TEK SEFERLİK KARŞILAMA — ilk notunu yazacak kişiye
+ * TEK SEFERLİK POPUP — ilk notunu yazacak kişiye
  *
  * ---------------------------------------------------------------------------
  * NEDEN AYRI BİR EKRAN, NEDEN "TEK SEFERLİK" YAZIYOR
@@ -11,9 +11,8 @@
  * için gerekli, ikinci notunu yazan için gürültü. Sonra bir bağlantının
  * arkasına alındı — bu sefer ilk gelen kişi hiç okumadan boş kutuya bakıyordu.
  *
- * Doğrusu ikisinin ortası: rehber İLK notta bir kez, kendi ekranında,
- * okunmayı hak edecek kadar öne çıkarak gelir; kişi "Okudum, Anladım" der ve
- * BİR DAHA ÇIKMAZ.
+ * Rehber ilk notta bir kez modal olarak açılır; kişi "Okudum, Anladım" der
+ * ve bir daha otomatik olarak gösterilmez.
  *
  * Üstteki "TEK SEFERLİK" etiketi ve altındaki cümle bilerek var. Bir kullanıcı
  * karşısına çıkan uzun metni "bu her seferinde mi çıkacak?" diye okur; cevabı
@@ -31,6 +30,8 @@
  * formun altındaki bağlantıdan her zaman açılabiliyor.
  * ============================================================================
  */
+import {useEffect, useRef} from "react";
+
 import {Button} from "@/components/ui/Button";
 import type {NoteKind} from "@/lib/notes/rules";
 import {NotesGuide} from "./NotesGuide";
@@ -71,77 +72,148 @@ export function FirstNoteGuide({
   onDone: () => void;
   onCancel?: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && onCancel) {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          document.activeElement === dialogRef.current)
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+          !dialogRef.current.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [onCancel]);
+
   return (
-    <div className="reveal-soft flex flex-col gap-4">
-      {/*
-        BU BLOK BİLEREK YÜKSEK SESLE KONUŞUYOR.
-
-        Altında uzun bir rehber var; kullanıcı onu okumadan önce "bu her
-        seferinde mi çıkacak?" sorusunun cevabını almalı. Cevap sönük bir
-        gri satırda dururken göz onu atlıyor ve metin bir engel gibi
-        görünüyordu. Dolgu rozet, renkli başlık ve kalın vurgu, o tek
-        cümleyi sayfadaki en görünür şey yapıyor.
-
-        Renk: türlerin füşyası (--kind-summary). Dolgu üzerindeki yazı
-        `--kind-summary-fg` ile geliyor; iki temada da kontrast ölçülü.
-      */}
-      <div className="relative overflow-hidden rounded-lg border border-kind-summary bg-subtle py-5 pr-5 pl-6">
-        {/* Sol renk şeridi — kenarlık kalınlığını değiştirmeden ağırlık verir */}
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 w-1.5 bg-kind-summary"
-        />
-
-        {/*
-          İkon YOK ve bu bilinçli: bu arayüzde ışıltı ikonu "yapay zekâ
-          yardımıyla" işaretini taşıyor (bkz. kindVisuals → SparkleIcon).
-          Buraya konsaydı iki ayrı anlam aynı simgeye binerdi. Dolgu rozet
-          zaten yeterince yüksek sesle konuşuyor.
-        */}
-        <span className="inline-flex items-center rounded-full bg-kind-summary px-3 py-1 text-xs font-extrabold tracking-[0.14em] text-kind-summary-fg uppercase">
-          Tek Seferlik
-        </span>
-
-        <h2 className="mt-3 text-2xl leading-tight font-extrabold tracking-tight md:text-3xl">
-          İlk Notundan Önce —{" "}
-          <span className="text-kind-summary">Kısa Bir Açıklama</span>
-        </h2>
-
-        <p className="mt-2.5 text-base leading-relaxed text-fg-secondary">
-          Bu ekranı{" "}
-          <strong className="font-extrabold text-kind-summary">
-            yalnızca bir kez
-          </strong>{" "}
-          göreceksin. Okuyup onayladıktan sonra{" "}
-          <strong className="font-bold text-fg">
-            bir daha karşına çıkmayacak
-          </strong>
-          ; sonraki notlarında formun altındaki{" "}
-          <em className="text-accent-text font-semibold not-italic">
-            &ldquo;İyi not nasıl olur?&rdquo;
-          </em>{" "}
-          bağlantısından istediğinde açabilirsin.
-        </p>
-      </div>
-
-      <NotesGuide variant="write" kind={kind} />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="accent"
-          onClick={() => {
-            markSeen(campSlug);
-            onDone();
+    <div
+      className="fixed inset-0 z-[110] grid place-items-center bg-black/75 p-3 backdrop-blur-md sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel?.();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="first-note-guide-title"
+        aria-describedby="first-note-guide-description"
+        tabIndex={-1}
+        className="reveal-soft relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-xl border-2 border-line-accent bg-elevated shadow-[var(--shadow-action-hover)] outline-none sm:max-h-[calc(100dvh-3rem)]"
+      >
+        <header
+          className="relative overflow-hidden border-b border-line-accent px-5 py-6 sm:px-7"
+          style={{
+            background:
+              "radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 45%), linear-gradient(135deg, color-mix(in srgb, var(--accent) 15%, var(--bg-elevated)), var(--bg-elevated))",
           }}
         >
-          Okudum, Anladım — {weekNumber}. Haftaya Yazmaya Başla
-        </Button>
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1.5 bg-accent"
+          />
 
-        {onCancel && (
-          <Button variant="ghost" onClick={onCancel}>
-            Vazgeç
-          </Button>
-        )}
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              aria-label="İlk not rehberini kapat"
+              className="absolute top-4 right-4 grid h-9 w-9 place-items-center rounded-md border border-line-strong bg-surface/75 text-lg text-fg-secondary transition-colors hover:border-line-accent hover:text-fg"
+            >
+              ×
+            </button>
+          )}
+
+          <span className="inline-flex items-center rounded-full border border-line-accent bg-accent px-3 py-1 text-xs font-extrabold tracking-[0.14em] text-accent-fg uppercase shadow-[var(--shadow-action)]">
+            İlk Not Rehberi · Tek Seferlik
+          </span>
+
+          <h2
+            id="first-note-guide-title"
+            className="mt-4 pr-10 text-2xl leading-tight font-extrabold tracking-tight md:text-3xl"
+          >
+            İlk Notundan Önce —{" "}
+            <span className="text-accent-text">Kısa Bir Açıklama</span>
+          </h2>
+
+          <p
+            id="first-note-guide-description"
+            className="mt-3 max-w-2xl text-base leading-relaxed text-fg-secondary"
+          >
+            Bu rehber ilk notunda{" "}
+            <strong className="font-extrabold text-accent-text">
+              yalnızca bir kez
+            </strong>{" "}
+            gösterilir. Onayladıktan sonra doğrudan not formuna geçersin ve
+            sonraki notlarında otomatik olarak tekrar açılmaz.
+          </p>
+        </header>
+
+        <div className="flex flex-col gap-4 p-4 sm:p-6">
+          <NotesGuide variant="write" kind={kind} />
+
+          <div className="sticky -bottom-4 z-10 -mx-4 -mb-4 flex flex-wrap items-center gap-2 border-t border-line bg-elevated/95 p-4 backdrop-blur sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:p-6">
+            <Button
+              variant="accent"
+              onClick={() => {
+                markSeen(campSlug);
+                onDone();
+              }}
+            >
+              Okudum, Anladım — {weekNumber}. Haftaya Yazmaya Başla
+            </Button>
+
+            {onCancel && (
+              <Button variant="ghost" onClick={onCancel}>
+                Vazgeç
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

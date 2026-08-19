@@ -10,11 +10,10 @@
  * doğrudan yazılmaz. Hepsi buradan gelir.
  * ============================================================================
  */
-import {fallback, http} from "viem";
 import {base, baseSepolia} from "viem/chains";
-import type {Address, Chain, Transport} from "viem";
+import type {Address, Chain} from "viem";
 
-import {publicEnv} from "@/lib/env";
+import {publicEnv} from "@/lib/env/public";
 
 const CHAINS = {
   baseSepolia,
@@ -66,38 +65,6 @@ const RPC_POOL = {
 
 /** Aktif zincirin RPC listesi, denenme sırasıyla */
 export const rpcUrls: readonly string[] = RPC_POOL[publicEnv.NEXT_PUBLIC_CHAIN];
-
-/**
- * Tek bir RPC'nin cevap vermesi için beklenecek süre.
- *
- * Kısa tutuldu (varsayılan 10sn değil): amaç ölü bir adreste beklemek değil,
- * hızla sıradakine geçmek. Üçü birden ölürse en kötü ihtimalle 18 saniyede
- * hata döner — sayfayı süresiz kilitlemez.
- */
-const REQUEST_TIMEOUT = 6_000;
-
-/**
- * Okuma istemcileri için taşıyıcı üretir.
- *
- * @param preferredUrl Varsa listenin BAŞINA alınır (sunucudaki `RPC_URL`
- *                     ortam değişkeni için — özel/ücretli bir uç nokta
- *                     tanımlandıysa önce o denenmeli, ama tek çare olmamalı).
- *
- * `retryCount: 0` bilinçli: yeniden deneme yerine SIRADAKİ ADRESE geçmek
- * istiyoruz. Aynı ölü adrese üç kez sormanın faydası yok — bu, eski
- * yapılandırmanın (`retryCount: 3`) kesintiyi neden karşılayamadığının da
- * cevabı.
- */
-export function createReadTransport(preferredUrl?: string): Transport {
-  const urls = preferredUrl
-    ? [preferredUrl, ...rpcUrls.filter((url) => url !== preferredUrl)]
-    : [...rpcUrls];
-
-  return fallback(
-    urls.map((url) => http(url, {timeout: REQUEST_TIMEOUT})),
-    {retryCount: 0},
-  );
-}
 
 /** Kontratın (proxy) adresi */
 export const contractAddress = publicEnv.NEXT_PUBLIC_CONTRACT_ADDRESS as Address;

@@ -18,34 +18,8 @@
  */
 import {z} from "zod";
 
-/* -------------------------------------------------------------------------- */
-/*                          HERKESE AÇIK DEĞİŞKENLER                          */
-/* -------------------------------------------------------------------------- */
-
-const publicSchema = z.object({
-  /** Sitenin kendi adresi — SIWE imza doğrulamasında domain kontrolü için */
-  NEXT_PUBLIC_APP_URL: z.string().url(),
-
-  /** Ağ seçimi. Tüm ağ değişikliği tek yerden: bu değişken. */
-  NEXT_PUBLIC_CHAIN: z.enum(["baseSepolia", "base"]),
-
-  /** Deploy edilmiş PROXY adresi (implementation değil) */
-  NEXT_PUBLIC_CONTRACT_ADDRESS: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, "Geçerli bir adres olmalı (0x + 40 hex)"),
-});
-
-/**
- * Not: `process.env.X` biçiminde TEK TEK yazılması zorunlu.
- * Next.js `NEXT_PUBLIC_*` değişkenlerini derleme anında metin olarak
- * değiştirir; `process.env[degisken]` gibi dinamik erişim bu değişimi
- * atlar ve tarayıcıda `undefined` döner.
- */
-export const publicEnv = publicSchema.parse({
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  NEXT_PUBLIC_CHAIN: process.env.NEXT_PUBLIC_CHAIN,
-  NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-});
+/* Tarayıcı değişkenleri küçük, bağımlılıksız modülden ortak API olarak sunulur. */
+export {publicEnv} from "@/lib/env/public";
 
 /* -------------------------------------------------------------------------- */
 /*                            SUNUCU DEĞİŞKENLERİ                             */
@@ -88,6 +62,11 @@ type ServerEnv = z.infer<typeof serverSchema> & {
 
 let cached: ServerEnv | null = null;
 
+/** Herkesçe bilinen geliştirme anahtarları production'da admin olamaz. */
+const BLOCKED_PRODUCTION_ADMINS = new Set([
+  "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", // Anvil/Hardhat hesap #0
+]);
+
 /**
  * Sunucu ortam değişkenlerini döner.
  *
@@ -119,6 +98,15 @@ export function getServerEnv(): ServerEnv {
   const adminAddresses = parsed.data.ADMIN_ADDRESSES.split(",")
     .map((a) => a.trim().toLowerCase())
     .filter((a) => /^0x[a-f0-9]{40}$/.test(a));
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    adminAddresses.some((address) => BLOCKED_PRODUCTION_ADMINS.has(address))
+  ) {
+    throw new Error(
+      "ADMIN_ADDRESSES production ortamında herkese açık bir Anvil/Hardhat test hesabı içeriyor.",
+    );
+  }
 
   cached = {...parsed.data, adminAddresses};
   return cached;

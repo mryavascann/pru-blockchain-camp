@@ -9,9 +9,10 @@
  * atmaz. Aynı süreç içinde olduğu için daha hızlı ve ek bir ağ turu yok.
  */
 
+import {HackathonSpotlight} from "@/components/home/HackathonSpotlight";
+import {LearningChainArt} from "@/components/home/LearningChainArt";
 import {ButtonLink} from "@/components/ui/Button";
 import {Card, Container, Pill} from "@/components/ui/Card";
-import {HackathonSpotlight} from "@/components/home/HackathonSpotlight";
 import {listCamps} from "@/lib/content/access";
 import {t} from "@/lib/i18n";
 
@@ -26,18 +27,8 @@ export default async function HomePage() {
       {/* HERO                                                             */}
       {/* ---------------------------------------------------------------- */}
       <section className="relative overflow-hidden border-b border-line">
-        {/* Dekoratif zemin — içerikten bağımsız, ekran okuyucuya görünmez */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 20%, var(--teal-500) 0, transparent 45%), radial-gradient(circle at 80% 60%, var(--navy-500) 0, transparent 45%)",
-          }}
-        />
-
-        <Container className="relative py-20 md:py-32">
-          <div className="max-w-3xl">
+        <Container className="relative grid items-center gap-6 py-16 md:py-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,.85fr)] lg:gap-4 lg:py-24">
+          <div className="relative z-10 max-w-3xl lg:max-w-[680px]">
             <Pill tone="accent">{t.site.university}</Pill>
 
             <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
@@ -55,13 +46,15 @@ export default async function HomePage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/kamplar" variant="accent" size="lg">
-            {t.nav.camps} →
-          </ButtonLink>
+                {t.nav.camps} →
+              </ButtonLink>
               <ButtonLink href="/siralama" variant="secondary" size="lg">
-            {t.nav.leaderboard}
-          </ButtonLink>
+                {t.nav.leaderboard}
+              </ButtonLink>
             </div>
           </div>
+
+          <LearningChainArt />
         </Container>
       </section>
 

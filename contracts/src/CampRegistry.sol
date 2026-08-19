@@ -101,7 +101,10 @@ abstract contract CampRegistry is Initializable {
     ///      hiçbir depolama işlemi gerekmez, frontend de bit kaydırmayla
     ///      tersine çevirebilir. Metadata URI şablonu (`.../{id}.json`) bu
     ///      sayede sonsuza kadar sabit kalır.
-    function encodeTokenId(uint256 campId, uint256 week) public pure returns (uint256) {
+    function encodeTokenId(
+        uint256 campId,
+        uint256 week
+    ) public pure returns (uint256) {
         // campId üst 240 bite, week alt 16 bite sığmalı.
         if (campId == 0 || campId > type(uint240).max) {
             revert InvalidTokenIdInput(campId, week);
@@ -114,7 +117,9 @@ abstract contract CampRegistry is Initializable {
 
     /// @notice tokenId'yi (kamp, hafta) ikilisine geri çevirir.
     /// @dev `encodeTokenId`'nin tersi. Frontend ve indeksleyiciler için.
-    function decodeTokenId(uint256 tokenId) public pure returns (uint256 campId, uint256 week) {
+    function decodeTokenId(
+        uint256 tokenId
+    ) public pure returns (uint256 campId, uint256 week) {
         campId = tokenId >> 16;
         week = tokenId & 0xFFFF;
     }
@@ -131,14 +136,18 @@ abstract contract CampRegistry is Initializable {
     /// @notice Tek bir kampın kaydını döner.
     /// @dev Kamp yoksa revert eder — sessizce sıfır struct dönmez, çünkü
     ///      "adı boş, 0 haftalık kamp" ile "olmayan kamp" karıştırılmamalı.
-    function getCamp(uint256 campId) public view returns (Camp memory) {
+    function getCamp(
+        uint256 campId
+    ) public view returns (Camp memory) {
         Camp memory camp = _camps[campId];
         if (!camp.exists) revert CampNotFound(campId);
         return camp;
     }
 
     /// @notice Bir kampın var olup olmadığını revert etmeden sorgular.
-    function campExists(uint256 campId) public view returns (bool) {
+    function campExists(
+        uint256 campId
+    ) public view returns (bool) {
         return _camps[campId].exists;
     }
 
@@ -168,20 +177,25 @@ abstract contract CampRegistry is Initializable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Yeni kamp oluşturur ve campId döner.
-    function _createCamp(string memory name, uint16 weekCount) internal returns (uint256 campId) {
+    function _createCamp(
+        string memory name,
+        uint16 weekCount
+    ) internal returns (uint256 campId) {
         if (bytes(name).length == 0) revert CampNameEmpty();
         if (weekCount == 0) revert WeekCountZero();
 
         campId = ++_campCount; // 1'den başlayan artan kimlik
 
-        _camps[campId] =
-            Camp({name: name, weekCount: weekCount, active: true, exists: true});
+        _camps[campId] = Camp({name: name, weekCount: weekCount, active: true, exists: true});
 
         emit CampCreated(campId, name, weekCount);
     }
 
     /// @dev Kamp adını günceller.
-    function _setCampName(uint256 campId, string memory newName) internal {
+    function _setCampName(
+        uint256 campId,
+        string memory newName
+    ) internal {
         if (bytes(newName).length == 0) revert CampNameEmpty();
         Camp storage camp = _requireCamp(campId);
 
@@ -196,7 +210,10 @@ abstract contract CampRegistry is Initializable {
     ///      hafta rozetlerini "geçersiz hafta" durumuna sokar; sahipleri
     ///      rozetlerini tutmaya devam eder ama kontrat onları tanımaz hâle
     ///      gelir. Bu tutarsızlığı baştan engelliyoruz.
-    function _setCampWeekCount(uint256 campId, uint16 newCount) internal {
+    function _setCampWeekCount(
+        uint256 campId,
+        uint16 newCount
+    ) internal {
         Camp storage camp = _requireCamp(campId);
         uint16 oldCount = camp.weekCount;
 
@@ -212,7 +229,10 @@ abstract contract CampRegistry is Initializable {
     ///      Pasif kampta yeni rozet ALINAMAZ, ama mevcut rozetler etkilenmez.
     ///      Bu, global `pause`tan farklıdır: tek bir kampı durdururken
     ///      diğerleri çalışmaya devam eder.
-    function _setCampActive(uint256 campId, bool active) internal {
+    function _setCampActive(
+        uint256 campId,
+        bool active
+    ) internal {
         Camp storage camp = _requireCamp(campId);
         camp.active = active;
         emit CampActiveSet(campId, active);
@@ -223,19 +243,26 @@ abstract contract CampRegistry is Initializable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Kampı storage referansı olarak döner, yoksa revert eder.
-    function _requireCamp(uint256 campId) internal view returns (Camp storage camp) {
+    function _requireCamp(
+        uint256 campId
+    ) internal view returns (Camp storage camp) {
         camp = _camps[campId];
         if (!camp.exists) revert CampNotFound(campId);
     }
 
     /// @dev Kamp var VE aktif olmalı.
-    function _requireCampActive(uint256 campId) internal view {
+    function _requireCampActive(
+        uint256 campId
+    ) internal view {
         Camp storage camp = _requireCamp(campId);
         if (!camp.active) revert CampNotActive(campId);
     }
 
     /// @dev Hafta numarası bu kampın geçerli aralığında olmalı.
-    function _requireValidWeek(uint256 campId, uint256 week) internal view {
+    function _requireValidWeek(
+        uint256 campId,
+        uint256 week
+    ) internal view {
         Camp storage camp = _requireCamp(campId);
         if (week == 0 || week > camp.weekCount) {
             revert WeekOutOfRange(campId, week);

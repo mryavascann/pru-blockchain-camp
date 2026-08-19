@@ -132,7 +132,7 @@ export default async function ProfilePage() {
                   <div>
                     <p className="font-semibold">{application.camp.name}</p>
                     <p className="text-sm text-fg-secondary">
-                      Beyan edilen hafta: {application.declaredWeek}
+                      Başlangıç haftası: {application.declaredWeek}
                       {application.reviewNote && ` · ${application.reviewNote}`}
                     </p>
                   </div>

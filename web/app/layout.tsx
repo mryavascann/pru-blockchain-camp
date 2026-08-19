@@ -3,6 +3,7 @@ import {Inter, JetBrains_Mono, Plus_Jakarta_Sans} from "next/font/google";
 
 import {Header} from "@/components/layout/Header";
 import {Footer} from "@/components/layout/Footer";
+import {SiteBackdrop} from "@/components/layout/SiteBackdrop";
 import {TestnetBanner} from "@/components/layout/TestnetBanner";
 import {publicEnv} from "@/lib/env";
 import {t} from "@/lib/i18n";
@@ -104,7 +105,10 @@ export default function RootLayout({
         <Providers>
           <TestnetBanner />
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="relative isolate flex-1">
+            <SiteBackdrop />
+            <div className="relative z-[1]">{children}</div>
+          </main>
           <Footer />
         </Providers>
       </body>
